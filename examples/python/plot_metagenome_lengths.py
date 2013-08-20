@@ -7,7 +7,7 @@
 '''This script retrieves a metagenome_statistics data structure from the MG-RAST API and
 plots a graph using data from the web interface'''
 
-import urllib, json, sys
+import urllib2, json, sys, os
 import numpy as np
 from prettytable import PrettyTable
 
@@ -15,13 +15,23 @@ from prettytable import PrettyTable
 API_URL = "http://api.metagenomics.anl.gov/1"
 
 # <codecell>
+# Assign the value of key from the OS environment
+try:
+    key = os.environ["MGRKEY"]
+except KeyError:
+    key = ""
 
 # retrieve the data by sending at HTTP GET request to the MG-RAST API
 ACCESSIONNUMBER = "mgm4440613.3" # this is a public job
 
 some_url = "%s/metagenome/%s?verbosity=stats" % (API_URL, ACCESSIONNUMBER)
 sys.stderr.write("Retrieving %s\n" % some_url)
-jsonobject = urllib.urlopen(some_url).read()
+try:
+    opener = urllib2.urlopen(some_url)
+    jsonobject = opener.read()
+except urllib2.HTTPError, e:
+    print "Error with HTTP request: %d %s\n%s" % (e.code, e.reason, e.read())
+    sys.exit()
 
 # <codecell>
 

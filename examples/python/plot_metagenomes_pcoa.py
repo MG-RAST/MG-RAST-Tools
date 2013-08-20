@@ -78,7 +78,7 @@ ax.set_zlabel('PCO %d'%zpco)
 # legend
 dots = []
 for i, m in enumerate(mgs):
-    dots.append( Line2D(range(1), range(1), color='white', marker='o', markerfacecolor=c[i]) )
+    dots.append( plt.Line2D(range(1), range(1), color='white', marker='o', markerfacecolor=c[i]) )
 plt.legend(dots, mgs, numpoints=1, loc='center left', fancybox=True, shadow=True, bbox_to_anchor=(1, 0.5))
 plt.show()
 
