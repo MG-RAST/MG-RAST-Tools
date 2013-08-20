@@ -5,6 +5,7 @@
 
 import sys, os, re
 from optparse import OptionParser
+import urllib2
 
 # MG-RAST API url
 API_URL = "http://api.metagenomics.anl.gov/1"
@@ -28,8 +29,8 @@ def retrieveMGRbyaccession(accessionno):
         sys.exit(255)
   
 if __name__ == '__main__':
-    usage  = '''usage: downloadMGR.py <accession number> 
-example: downloadMGR.py  MGR4440613.3'''
+    usage  = '''usage: download_metagenome_sequences.py <accession number> 
+example: download_metagenome_sequences.py  MGR4440613.3'''
     parser = OptionParser(usage)
     (opts, args) = parser.parse_args()
 # Assign the value of key from the OS environment
