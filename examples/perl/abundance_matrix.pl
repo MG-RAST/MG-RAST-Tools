@@ -10,7 +10,7 @@ $ua->agent("abundance_matrix.pl ");
 
 # define the parameters
 my $metagenomes = ["mgm4447102.3","mgm4447943.3"];
-my $group_level = "domain"; # "family"; "species";
+my $group_level = "family"; # "family"; "species";
 my $result_type = "abundance";
 my $source = "SEED";
 
@@ -19,7 +19,9 @@ my $base_url = "http://api.metagenomics.anl.gov/1/matrix/organism";
 my $url = $base_url.uri_escape("?group_level=$group_level&result_type=$result_type&source=$source&evalue=15&".join("&", map{"id=".$_}@$metagenomes));
  
 print STDERR "Retrieving $url\n";
-my $content = $ua->get($url)->content;
+my $response = $ua->get($url);
+die "Error with HTTP request:  ". $response->status_line."\n".$content unless $response->is_success ;
+my $content = $response->content;
 
 # create a perl data structure from the returned JSON
 my $json = new JSON;
