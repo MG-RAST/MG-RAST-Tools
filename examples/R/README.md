@@ -1,1 +1,1 @@
-# examples for R usages of the API will go here
+### Examples for R usages of the MG-RAST API go here
