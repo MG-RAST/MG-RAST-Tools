@@ -1,0 +1,11 @@
+# git ignore file 
+
+# ignore files with # and ~
+*\#*
+*\~*
+
+# os x files
+*.DS_Store
+
+# Thumbnails
+._*
