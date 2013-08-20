@@ -7,6 +7,7 @@ use Data::Dumper;
 # get a user agent
 my $ua = LWP::UserAgent->new;
 $ua->agent("abundance_matrix.pl ");
+my $key = $ENV{"MGRKEY"};
 
 # define the parameters
 my $metagenomes = ["mgm4447102.3","mgm4447943.3"];
@@ -16,12 +17,12 @@ my $source = "SEED";
 
 # retrieve the data
 my $base_url = "http://api.metagenomics.anl.gov/1/matrix/organism";
-my $url = $base_url.uri_escape("?group_level=$group_level&result_type=$result_type&source=$source&evalue=8&".join("&", map{"id=".$_}@$metagenomes));
+my $url = $base_url.uri_escape("?group_level=$group_level&result_type=$result_type&source=$source&evalue=15&".join("&", map{"id=".$_}@$metagenomes)."&auth=$key");
  
 print STDERR "Retrieving $url\n";
 my $response = $ua->get($url);
-die "Error with HTTP request:  ". $response->status_line."\n".$content unless $response->is_success ;
 my $content = $response->content;
+die "Error with HTTP request:  ". $response->status_line."\n".$content unless $response->is_success ;
 
 # create a perl data structure from the returned JSON
 my $json = new JSON;
