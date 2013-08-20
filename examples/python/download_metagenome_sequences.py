@@ -5,28 +5,32 @@
 
 import sys, os, re
 from optparse import OptionParser
+import urllib2
 
 # MG-RAST API url
 API_URL = "http://api.metagenomics.anl.gov/1"
 
-def retrieveMGRbyaccession(accession):
+def retrieveMGRbyaccession(accessionno):
     '''Retrieve raw data from MG-RAST API using curl and dump result into file named <accession>.gz'''
     try:
-        a = re.search(r"(\d\d\d\d\d\d\d\.\d)$", accession).group(1)
+        a = re.search(r"(\d\d\d\d\d\d\d\.\d)$", accessionno).group(1)
     except IndexError:
-        sys.exit("Don't recognize accession number format %s" % accession) 
+        sys.exit("Don't recognize accession number format %s" % accessionno) 
     if key == "":
-        sys.stderr.write("Warning: MGR webkey not defined\n")
-        s1 = "curl '%s/download/mgm%s?file=050.2' > %s.gz"  % ( API_URL, a, a ) 
+        s1 = "%s/download/mgm%s?file=050.2"  % ( API_URL, a ) 
     else: 
-        sys.stderr.write("Using MGR webkey %s\n" % key)
-        s1 = "curl '%s/download/mgm%s?file=050.2&auth=%s' > %s.gz" % ( API_URL, a, key, a )
-    sys.stderr.write("Executing %s\n" % s1) 
-    os.popen(s1)
+        s1 = "%s/download/mgm%s?file=050.2&auth=%s" % ( API_URL, a, key )
+    sys.stderr.write("Retrieving %s\n" % s1) 
+    try:
+        opener = urllib2.urlopen(s1)
+        open("%s.gz" % a, "w").write(opener.read())
+    except urllib2.HTTPError, e:
+        print "Error with HTTP request: %d %s\n%s" % (e.code, e.reason, e.read())
+        sys.exit(255)
   
 if __name__ == '__main__':
-    usage  = '''usage: downloadMGR.py <accession number> 
-example: downloadMGR.py  MGR4440613.3'''
+    usage  = '''usage: download_metagenome_sequences.py <accession number> 
+example: download_metagenome_sequences.py  MGR4440613.3'''
     parser = OptionParser(usage)
     (opts, args) = parser.parse_args()
 # Assign the value of key from the OS environment
@@ -34,6 +38,10 @@ example: downloadMGR.py  MGR4440613.3'''
         key = os.environ["MGRKEY"]
     except KeyError:
         key = ""
+    if len(key) == 25 :
+        sys.stderr.write("Using MGR webkey %s\n" % key )
+    else:
+        sys.stderr.write("Warning: MGR webkey not defined\n")
 # test for correct number of arguments  
     try :
         accession = args[0]
