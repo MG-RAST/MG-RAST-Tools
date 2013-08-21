@@ -11,7 +11,7 @@ outputs	JSON structure that contains the result data
 example	-
 related	-
 authors	Jared Bishop, Travis Harrison, Tobias Paczian, Andreas Wilke
-host	http://api.metagenomics.anl.gov/api2.cgi
+host	http://api.metagenomics.anl.gov/1
 
 resource	mc_get_project.pl
 item	project
