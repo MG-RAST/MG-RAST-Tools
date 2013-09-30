@@ -158,8 +158,9 @@ def main(args):
         output_annotation(md5s, func_md5, func_acc, amatrix, ematrix, taxa)
     
     # get annotations for tail
-    func_md5, func_acc = annotations_for_taxa(opts, md5s, top_taxa, True)
-    output_annotation(md5s, func_md5, func_acc, amatrix, ematrix, 'tail')
+    if opts.rest:
+        func_md5, func_acc = annotations_for_taxa(opts, md5s, top_taxa, True)
+        output_annotation(md5s, func_md5, func_acc, amatrix, ematrix, 'tail')
     
     return 0
     
