@@ -104,12 +104,15 @@ def sparse_to_dense(sMatrix, rmax, cmax):
         dMatrix[r][c] = v
     return dMatrix
 
-# transform BIIOM format to tabbed table
-def biom_to_tab(biom, hdl):
+# transform BIOM format to tabbed table
+def biom_to_tab(biom, hdl, rows=None, use_id=True):
     matrix = sparse_to_dense(biom['data'], biom['shape'][0], biom['shape'][1])
     hdl.write( "\t%s\n" %"\t".join([c['id'] for c in biom['columns']]) )
     for i, row in enumerate(matrix):
-        hdl.write( "%s\t%s\n" %(biom['rows'][i]['id'], "\t".join([str(r) for r in row])) )
+        name = biom['rows'][i]['id'] if use_id else biom['rows'][i]['metadata']['ontology'][-1]
+        if rows and (name not in rows):
+            continue
+        hdl.write( "%s\t%s\n" %(name, "\t".join([str(r) for r in row])) )
 
 # return MG-RAST id for given KBase id
 def kbid_to_mgid(kbid):

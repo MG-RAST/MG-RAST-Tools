@@ -14,7 +14,7 @@ VERSION
     %s
 
 SYNOPSIS
-    mg-compare-taxa [ --help, --user <user>, --passwd <password>, --token <oAuth token>, --ids <metagenome ids>, --level <taxon level>, --source <datasource>, --evalue <evalue negative exponent>, --identity <percent identity>, --length <alignment length>, --format <cv: 'text' or 'biom'> ]
+    mg-compare-taxa [ --help, --user <user>, --passwd <password>, --token <oAuth token>, --ids <metagenome ids>, --level <taxon level>, --source <datasource>, --filter_name <taxon name>, --filter_level <taxon level>, --evalue <evalue negative exponent>, --identity <percent identity>, --length <alignment length>, --format <cv: 'text' or 'biom'> ]
 
 DESCRIPTION
     Retrieve matrix of taxanomic abundance profiles for multiple metagenomes.
@@ -46,6 +46,8 @@ def main(args):
     parser.add_option("", "--token", dest="token", default=None, help="OAuth token")
     parser.add_option("", "--level", dest="level", default='species', help="taxon level to retrieve abundances for, default is species")
     parser.add_option("", "--source", dest="source", default='SEED', help="datasource to filter results by, default is SEED")
+    parser.add_option("", "--filter_name", dest="filter_name", default=None, help="taxon name to filter by")
+    parser.add_option("", "--filter_level", dest="filter_level", default=None, help="taxon level to filter by")
     parser.add_option("", "--format", dest="format", default='text', help="output format: 'text' for tabbed table, 'biom' for BIOM format, default is text")
     parser.add_option("", "--evalue", dest="evalue", default=5, help="negative exponent value for maximum e-value cutoff, default is 5")
     parser.add_option("", "--identity", dest="identity", default=60, help="percent value for minimum % identity cutoff, default is 60")
@@ -77,11 +79,21 @@ def main(args):
     # retrieve data
     biom = async_rest_api(url, auth=token)
     
+    # get sub annotations
+    sub_ann = set()
+    if opts.filter_name and opts.filter_level:
+        params = [ ('filter', opts.filter_name),
+                   ('filter_level', opts.filter_level),
+                   ('min_level', opts.level) ]
+        url = opts.url+'/m5nr/taxonomy?'+urllib.urlencode(params, True)
+        data = obj_from_url(url)
+        sub_ann = set( map(lambda x: x[opts.level], data['data']) )
+    
     # output data
     if opts.format == 'biom':
         sys.stdout.write(json.dumps(biom)+"\n")
     elif opts.format == 'text':
-        biom_to_tab(biom, sys.stdout)
+        biom_to_tab(biom, sys.stdout, rows=sub_ann)
     else:
         sys.stderr.write("ERROR: invalid format type, use one of: text, biom\n")
         return 1
