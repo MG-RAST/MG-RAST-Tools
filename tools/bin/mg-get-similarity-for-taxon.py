@@ -8,13 +8,13 @@ from mglib import *
 
 prehelp = """
 NAME
-    mg-get-sequences-for-function
+    mg-get-similarity-for-taxon
 
 VERSION
     %s
 
 SYNOPSIS
-    mg-get-sequences-for-function [ --help, --user <user>, --passwd <password>, --token <oAuth token>, --id <metagenome id>, --name <function name>, --level <function level>, --source <datasource>, --evalue <evalue negative exponent>, --identity <percent identity>, --length <alignment length> ]
+    mg-get-similarity-for-taxon [ --help, --user <user>, --passwd <password>, --token <oAuth token>, --id <metagenome id>, --name <taxon name>, --level <taxon level>, --source <datasource>, --evalue <evalue negative exponent>, --identity <percent identity>, --length <alignment length> ]
 
 DESCRIPTION
     Retrieve taxa annotated sequences for a metagenome filtered by taxon containing inputted name.
@@ -22,10 +22,10 @@ DESCRIPTION
 
 posthelp = """
 Output
-    Tab-delimited list of: m5nr id, dna sequence, semicolon seperated list of annotations, sequence id
+    BLAST m8 format - tab-delimited list of: query sequence id, hit m5nr id, percentage identity, alignment length,	number of mismatches, number of gap openings, query start, query end, hit start, hit end, e-value, bit score, semicolon seperated list of annotations
 
 EXAMPLES
-    mg-get-sequences-for-function --id "kb|mg.287" --name "Central carbohydrate metabolism" --level level2 --source Subsystems --evalue 10
+    mg-get-similarity-for-taxon --id "kb|mg.287" --name Lachnospiraceae --level family --source RefSeq --evalue 8
 
 SEE ALSO
     -
@@ -43,9 +43,9 @@ def main(args):
     parser.add_option("", "--user", dest="user", default=None, help="OAuth username")
     parser.add_option("", "--passwd", dest="passwd", default=None, help="OAuth password")
     parser.add_option("", "--token", dest="token", default=None, help="OAuth token")
-    parser.add_option("", "--name", dest="name", default=None, help="function name to filter by")
-    parser.add_option("", "--level", dest="level", default=None, help="function level to filter by")
-    parser.add_option("", "--source", dest="source", default='Subsystems', help="datasource to filter results by, default is Subsystems")
+    parser.add_option("", "--name", dest="name", default=None, help="taxon name to filter by")
+    parser.add_option("", "--level", dest="level", default=None, help="taxon level to filter by")
+    parser.add_option("", "--source", dest="source", default='SEED', help="datasource to filter results by, default is SEED")
     parser.add_option("", "--evalue", dest="evalue", default=5, help="negative exponent value for maximum e-value cutoff, default is 5")
     parser.add_option("", "--identity", dest="identity", default=60, help="percent value for minimum % identity cutoff, default is 60")
     parser.add_option("", "--length", dest="length", default=15, help="value for minimum alignment length cutoff, default is 15")
@@ -65,16 +65,13 @@ def main(args):
     params = [ ('source', opts.source),
                ('evalue', opts.evalue),
                ('identity', opts.identity),
-               ('length', opts.length) ]
-    if (opts.source in ['Subsystems', 'KO', 'NOG', 'COG']) and (opts.level != 'function'):
-        params.append(('type', 'ontology'))
-    else:
-        params.append(('type', 'function'))
+               ('length', opts.length),
+               ('type', 'organism') ]
     if opts.name:
         params.append(('filter', opts.name))
         if opts.level:
             params.append(('filter_level', opts.level))
-    url = opts.url+'/annotation/sequence/'+opts.id+'?'+urllib.urlencode(params, True)
+    url = opts.url+'/annotation/similarity/'+opts.id+'?'+urllib.urlencode(params, True)
     
     # output data
     stout_from_url(url, auth=token)

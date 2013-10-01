@@ -14,7 +14,7 @@ VERSION
     %s
 
 SYNOPSIS
-    mg-abundant-functions [ --help, --user <user>, --passwd <password>, --token <oAuth token>, --id <metagenome id>, --level <functional level>, --source <datasource>, --top <N lines to return>, --evalue <evalue negative exponent>, --identity <percent identity>, --length <alignment length> ]
+    mg-abundant-functions [ --help, --user <user>, --passwd <password>, --token <oAuth token>, --id <metagenome id>, --level <functional level>, --source <datasource>, --filter_name <function name>, --filter_level <function level>, --top <N lines to return>, --evalue <evalue negative exponent>, --identity <percent identity>, --length <alignment length> ]
 
 DESCRIPTION
     Retrieve top abundant functions for metagenome.
@@ -45,6 +45,8 @@ def main(args):
     parser.add_option("", "--token", dest="token", default=None, help="OAuth token")
     parser.add_option("", "--level", dest="level", default='function', help="functional level to retrieve abundances for, default is function")
     parser.add_option("", "--source", dest="source", default='Subsystems', help="datasource to filter results by, default is Subsystems")
+    parser.add_option("", "--filter_name", dest="filter_name", default=None, help="function name to filter by")
+    parser.add_option("", "--filter_level", dest="filter_level", default=None, help="function level to filter by")
     parser.add_option("", "--top", dest="top", default=10, help="display only the top N taxa, default is 10")
     parser.add_option("", "--evalue", dest="evalue", default=5, help="negative exponent value for maximum e-value cutoff, default is 5")
     parser.add_option("", "--identity", dest="identity", default=60, help="percent value for minimum % identity cutoff, default is 60")
@@ -77,10 +79,26 @@ def main(args):
     # retrieve data
     top_ann = {}
     biom = async_rest_api(url, auth=token)
+    
+    # get sub annotations
+    sub_ann = set()
+    if opts.filter_name and opts.filter_level:
+        params = [ ('filter', opts.filter_name),
+                   ('filter_level', opts.filter_level),
+                   ('min_level', opts.level),
+                   ('source', opts.source) ]
+        url = opts.url+'/m5nr/ontology?'+urllib.urlencode(params, True)
+        data = obj_from_url(url)
+        level = 'level4' if opts.level == 'function' else opts.level
+        sub_ann = set( map(lambda x: x[level], data['data']) )
+        
+    # sort data
     for d in sorted(biom['data'], key=itemgetter(2), reverse=True):
         name = biom['rows'][d[0]]['id'] if opts.source != 'Subsystems' else biom['rows'][d[0]]['metadata']['ontology'][-1]
         if len(top_ann) >= opts.top:
             break
+        if sub_ann and (name not in sub_ann):
+            continue
         top_ann[name] = d[2]
     
     # output data
