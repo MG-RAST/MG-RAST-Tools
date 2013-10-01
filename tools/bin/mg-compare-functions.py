@@ -85,6 +85,7 @@ def main(args):
         params = [ ('filter', opts.filter_name),
                    ('filter_level', opts.filter_level),
                    ('min_level', opts.level),
+                   ('version', '1'),
                    ('source', opts.source) ]
         url = opts.url+'/m5nr/ontology?'+urllib.urlencode(params, True)
         data = obj_from_url(url)

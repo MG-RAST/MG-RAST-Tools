@@ -84,7 +84,8 @@ def main(args):
     if opts.filter_name and opts.filter_level:
         params = [ ('filter', opts.filter_name),
                    ('filter_level', opts.filter_level),
-                   ('min_level', opts.level) ]
+                   ('min_level', opts.level),
+                   ('version', '1') ]
         url = opts.url+'/m5nr/taxonomy?'+urllib.urlencode(params, True)
         data = obj_from_url(url)
         sub_ann = set( map(lambda x: x[opts.level], data['data']) )
