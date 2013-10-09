@@ -114,6 +114,11 @@ def biom_to_tab(biom, hdl, rows=None, use_id=True):
             continue
         hdl.write( "%s\t%s\n" %(name, "\t".join([str(r) for r in row])) )
 
+# return KBase id for MG-RAST id
+def mgid_to_kbid(mgid):
+    id_map = kbid_lookup([mgid], reverse=True)
+    return id_map[mgid] if mgid in id_map else None
+
 # return MG-RAST id for given KBase id
 def kbid_to_mgid(kbid):
     id_map = kbid_lookup([kbid])
@@ -135,9 +140,11 @@ def kbids_to_mgids(kbids):
     return mgids
 
 # return map (KBase id -> MG-RAST id) for given list of KBase ids
-def kbid_lookup(kbids):
-    post = json.dumps({'ids': kbids}, separators=(',',':'))
-    data = obj_from_url(API_URL+'/job/kb2mg', data=post)
+#  or reverse
+def kbid_lookup(ids, reverse=False):
+    request = 'mg2kb' if reverse else 'kb2mg'
+    post = json.dumps({'ids': ids}, separators=(',',':'))
+    data = obj_from_url(API_URL+'/job/'+request, data=post)
     return data['data']
 
 def get_auth_token(opts):
