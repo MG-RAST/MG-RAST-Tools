@@ -77,7 +77,7 @@ def main(args):
     url = opts.url+'/annotation/similarity/'+opts.id+'?'+urllib.urlencode(params, True)
     
     # output data
-    stout_from_url(url, auth=token)
+    stdout_from_url(url, auth=token)
     
     return 0
     

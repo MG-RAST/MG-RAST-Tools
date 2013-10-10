@@ -94,7 +94,7 @@ def main(args):
     
     # output data
     if opts.format == 'biom':
-        sys.stdout.write(json.dumps(biom)+"\n")
+        safe_print(json.dumps(biom)+"\n")
     elif opts.format == 'text':
         use_id = False if (opts.source == 'Subsystems') and (opts.level == 'function') else True
         biom_to_tab(biom, sys.stdout, rows=sub_ann, use_id=use_id)

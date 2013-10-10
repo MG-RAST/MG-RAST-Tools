@@ -61,7 +61,7 @@ def plot_histo(cols, data, height, width):
                 pass
     out = [''.join(row) for row in plot]
     out = scale_histo(out, height, width)
-    sys.stdout.write("\n".join(out)+"\n")
+    safe_print("\n".join(out)+"\n")
 
 def main(args):
     OptionParser.format_description = lambda self, formatter: self.description
@@ -94,7 +94,7 @@ def main(args):
     stats  = result['statistics']
     if opts.stat == 'sequence':
         for s in sorted(stats['sequence_stats'].iterkeys()):
-            sys.stdout.write("%s\t%s\n" %(s, stats['sequence_stats'][s]))
+            safe_print("%s\t%s\n" %(s, stats['sequence_stats'][s]))
     elif opts.stat == 'bp_profile':
         if not stats['qc']['bp_profile']['percents']['data']:
             sys.stderr.write("ERROR: %s has no bp_profile statistics\n"%opts.id)
@@ -104,9 +104,9 @@ def main(args):
             data = map(lambda x: x[1:5], stats['qc']['bp_profile']['percents']['data'])
             plot_histo(cols, data, 20, 80)
         else:
-            sys.stdout.write("\t".join(stats['qc']['bp_profile']['percents']['columns'])+"\n")
+            safe_print("\t".join(stats['qc']['bp_profile']['percents']['columns'])+"\n")
             for d in stats['qc']['bp_profile']['percents']['data']:
-                sys.stdout.write("\t".join(map(str, d))+"\n")
+                safe_print("\t".join(map(str, d))+"\n")
     elif opts.stat == 'drisee':
         if not stats['qc']['drisee']['percents']['data']:
             sys.stderr.write("ERROR: %s has no drisee statistics\n"%opts.id)
@@ -118,9 +118,9 @@ def main(args):
                 y.append(d[7])
             aplotter.plot(x, y, output=sys.stdout, draw_axes=True, plot_slope=True, min_x=0, min_y=0)
         else:
-            sys.stdout.write("\t".join(stats['qc']['drisee']['percents']['columns'])+"\n")                
+            safe_print("\t".join(stats['qc']['drisee']['percents']['columns'])+"\n")                
             for d in stats['qc']['drisee']['percents']['data']:
-                sys.stdout.write("\t".join(map(str, d))+"\n")
+                safe_print("\t".join(map(str, d))+"\n")
     elif opts.stat == 'kmer':
         if not stats['qc']['kmer']['15_mer']['data']:
             sys.stderr.write("ERROR: %s has no kmer statistics\n"%opts.id)
@@ -132,9 +132,9 @@ def main(args):
                 y.append( math.log(d[0], 10) )
             aplotter.plot(x, y, output=sys.stdout, draw_axes=True, plot_slope=True, min_x=0, min_y=0)
         else:
-            sys.stdout.write("\t".join(stats['qc']['kmer']['15_mer']['columns'])+"\n")
+            safe_print("\t".join(stats['qc']['kmer']['15_mer']['columns'])+"\n")
             for d in stats['qc']['kmer']['15_mer']['data']:
-                sys.stdout.write("\t".join(map(str, d))+"\n")
+                safe_print("\t".join(map(str, d))+"\n")
     elif opts.stat == 'rarefaction':
         if not stats['rarefaction']:
             sys.stderr.write("ERROR: %s has no rarefaction statistics\n"%opts.id)
@@ -146,9 +146,9 @@ def main(args):
                 y.append(float(r[1]))
             aplotter.plot(x, y, output=sys.stdout, draw_axes=True, plot_slope=True, min_x=0, min_y=0)
         else:
-            sys.stdout.write("x\ty\n")
+            safe_print("x\ty\n")
             for r in stats['rarefaction']:
-                sys.stdout.write("%s\t%s\n" %(str(r[0]), str(r[1])))
+                safe_print("%s\t%s\n" %(str(r[0]), str(r[1])))
     elif opts.stat in stats['taxonomy']:
         ranked = sorted(stats['taxonomy'][opts.stat], key=lambda x: (-int(x[1]), x[0]))
         if opts.plot:
@@ -156,7 +156,7 @@ def main(args):
             aplotter.plot(top, output=sys.stdout, draw_axes=True, plot_slope=False, min_x=0, min_y=0)
         else:
             for t in ranked:
-                sys.stdout.write("%s\t%s\n" %(t[0], str(t[1])))
+                safe_print("%s\t%s\n" %(t[0], str(t[1])))
     else:
         sys.stderr.write("ERROR: invalid stat type\n")
         return 1
