@@ -87,9 +87,9 @@ def main(args):
     pcoa = obj_from_url(purl, data=json.dumps(pdata, separators=(',',':')))
     
     # output data
-    sys.stdout.write("ID\tPC1\tPC2\tPC3\tPC4\n")
+    safe_print("ID\tPC1\tPC2\tPC3\tPC4\n")
     for d in pcoa['data']:
-        sys.stdout.write( "%s\t%s\n" %(d['id'], "\t".join(map(str, d['pco'][0:4]))) )
+        safe_print( "%s\t%s\n" %(d['id'], "\t".join(map(str, d['pco'][0:4]))) )
     
     return 0
     

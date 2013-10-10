@@ -65,7 +65,7 @@ def obj_from_url(url, auth=None, data=None, debug=False):
     return obj
 
 # print to stdout results of MG-RAST API
-def stout_from_url(url, auth=None, data=None, debug=False):
+def stdout_from_url(url, auth=None, data=None, debug=False):
     header = {'Accept': 'text/plain'}
     if auth:
         header['Auth'] = auth
@@ -94,7 +94,23 @@ def stout_from_url(url, auth=None, data=None, debug=False):
         chunk = res.read(8192)
         if not chunk:
             break
-        sys.stdout.write(chunk)
+        safe_print(chunk)
+
+# safe handeling of stdout for pipeing
+def safe_print(text):
+    try:
+        sys.stdout.write(text)
+    except IOError:
+        # stdout is closed, no point in continuing
+        # Attempt to close them explicitly to prevent cleanup problems:
+        try:
+            sys.stdout.close()
+        except IOError:
+            pass
+        try:
+            sys.stderr.close()
+        except IOError:
+            pass
 
 # transform sparse matrix to dense matrix (2D array)
 def sparse_to_dense(sMatrix, rmax, cmax):

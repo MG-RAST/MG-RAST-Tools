@@ -102,7 +102,7 @@ def main(args):
     
     # output data
     for k, v in sorted(top_ann.items(), key=itemgetter(1), reverse=True):
-        sys.stdout.write("%s\t%d\n" %(k, v))
+        safe_print("%s\t%d\n" %(k, v))
     
     return 0
     

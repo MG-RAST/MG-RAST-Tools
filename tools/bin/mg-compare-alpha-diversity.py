@@ -61,7 +61,7 @@ def main(args):
     for i in id_list:
         url  = opts.url+'/compute/alphadiversity/'+i+'?'+urllib.urlencode(params, True)
         data = obj_from_url(url, auth=token)
-        sys.stdout.write("%s\t%s\n" %(i, data['data']))
+        safe_print("%s\t%s\n" %(i, data['data']))
     
     return 0
     
