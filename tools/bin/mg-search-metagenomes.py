@@ -39,7 +39,7 @@ search_opts = " ".join( map(lambda x: "--%s <query text>"%x, SEARCH_FIELDS) )
 def display_search(data, fields):
     for d in data:
         row = map(lambda x: d[x], fields)
-        sys.stdout.write("\t".join(map(str, row))+"\n")
+        safe_print("\t".join(map(str, row))+"\n")
 
 def main(args):
     OptionParser.format_description = lambda self, formatter: self.description
@@ -84,7 +84,7 @@ def main(args):
     fields.append('status')
     
     # output header
-    sys.stdout.write("\t".join(fields)+"\n")
+    safe_print("\t".join(fields)+"\n")
     # output rows
     display_search(result['data'], fields)
     while result['next']:
