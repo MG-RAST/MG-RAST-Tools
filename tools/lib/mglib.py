@@ -5,6 +5,9 @@ import urllib2
 import base64
 import json
 
+# don't buffer stdout
+sys.stdout = os.fdopen(sys.stdout.fileno(), 'w', 0)
+
 VERSION = '1'
 API_URL = "http://api.metagenomics.anl.gov/"+VERSION
 AUTH_LIST = "Jared Bischof, Travis Harrison, Folker Meyer, Tobias Paczian, Andreas Wilke"
