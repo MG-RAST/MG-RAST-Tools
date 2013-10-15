@@ -76,8 +76,11 @@ def main(args):
     url = opts.url+'/metagenome?'+urllib.urlencode(params, True)
     
     # retrieve data
-    result = obj_from_url(url, auth=token)
     fields = ['id']
+    result = obj_from_url(url, auth=token)
+    if len(result['data']) == 0:
+        sys.stdout.write("No results found for the given search parameters\n")
+        return 0
     for sfield in SEARCH_FIELDS:
         if sfield in result['data'][0]:
             fields.append(sfield)
