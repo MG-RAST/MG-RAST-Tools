@@ -131,7 +131,13 @@ def biom_to_tab(biom, hdl, rows=None, use_id=True):
         name = biom['rows'][i]['id'] if use_id else biom['rows'][i]['metadata']['ontology'][-1]
         if rows and (name not in rows):
             continue
-        hdl.write( "%s\t%s\n" %(name, "\t".join([str(r) for r in row])) )
+        try:
+            hdl.write( "%s\t%s\n" %(name, "\t".join([str(r) for r in row])) )
+        except:
+            try:
+                hdl.close()
+            except:
+                pass
 
 # return KBase id for MG-RAST id
 def mgid_to_kbid(mgid):
