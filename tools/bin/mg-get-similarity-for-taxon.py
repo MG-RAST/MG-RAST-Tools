@@ -8,13 +8,13 @@ from mglib import *
 
 prehelp = """
 NAME
-    mg-get-sequences-for-taxon
+    mg-get-similarity-for-taxon
 
 VERSION
     %s
 
 SYNOPSIS
-    mg-get-sequences-for-taxon [ --help, --user <user>, --passwd <password>, --token <oAuth token>, --id <metagenome id>, --name <taxon name>, --level <taxon level>, --source <datasource>, --evalue <evalue negative exponent>, --identity <percent identity>, --length <alignment length> ]
+    mg-get-similarity-for-taxon [ --help, --user <user>, --passwd <password>, --token <oAuth token>, --id <metagenome id>, --name <taxon name>, --level <taxon level>, --source <datasource>, --evalue <evalue negative exponent>, --identity <percent identity>, --length <alignment length> ]
 
 DESCRIPTION
     Retrieve taxa annotated sequences for a metagenome filtered by taxon containing inputted name.
@@ -22,10 +22,10 @@ DESCRIPTION
 
 posthelp = """
 Output
-    Tab-delimited list of: m5nr id, dna sequence, semicolon seperated list of annotations, sequence id
+    BLAST m8 format - tab-delimited list of: query sequence id, hit m5nr id, percentage identity, alignment length,	number of mismatches, number of gap openings, query start, query end, hit start, hit end, e-value, bit score, semicolon seperated list of annotations
 
 EXAMPLES
-    mg-get-sequences-for-taxon --id "kb|mg.287" --name Lachnospiraceae --level family --source RefSeq --evalue 8
+    mg-get-similarity-for-taxon --id "kb|mg.287" --name Lachnospiraceae --level family --source RefSeq --evalue 8
 
 SEE ALSO
     -
@@ -71,7 +71,7 @@ def main(args):
         params.append(('filter', opts.name))
         if opts.level:
             params.append(('filter_level', opts.level))
-    url = opts.url+'/annotation/sequence/'+opts.id+'?'+urllib.urlencode(params, True)
+    url = opts.url+'/annotation/similarity/'+opts.id+'?'+urllib.urlencode(params, True)
     
     # output data
     stdout_from_url(url, auth=token)

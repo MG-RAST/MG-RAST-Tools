@@ -66,7 +66,7 @@ def main(args):
                ('evalue', opts.evalue),
                ('identity', opts.identity),
                ('length', opts.length) ]
-    if opts.source in ['Subsystems', 'KO', 'NOG', 'COG']:
+    if (opts.source in ['Subsystems', 'KO', 'NOG', 'COG']) and (opts.level != 'function'):
         params.append(('type', 'ontology'))
     else:
         params.append(('type', 'function'))
@@ -77,7 +77,7 @@ def main(args):
     url = opts.url+'/annotation/sequence/'+opts.id+'?'+urllib.urlencode(params, True)
     
     # output data
-    stout_from_url(url, auth=token)
+    stdout_from_url(url, auth=token)
     
     return 0
     

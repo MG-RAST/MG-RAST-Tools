@@ -39,7 +39,7 @@ search_opts = " ".join( map(lambda x: "--%s <query text>"%x, SEARCH_FIELDS) )
 def display_search(data, fields):
     for d in data:
         row = map(lambda x: d[x], fields)
-        sys.stdout.write("\t".join(map(str, row))+"\n")
+        safe_print("\t".join(map(str, row))+"\n")
 
 def main(args):
     OptionParser.format_description = lambda self, formatter: self.description
@@ -76,15 +76,18 @@ def main(args):
     url = opts.url+'/metagenome?'+urllib.urlencode(params, True)
     
     # retrieve data
-    result = obj_from_url(url, auth=token)
     fields = ['id']
+    result = obj_from_url(url, auth=token)
+    if len(result['data']) == 0:
+        sys.stdout.write("No results found for the given search parameters\n")
+        return 0
     for sfield in SEARCH_FIELDS:
         if sfield in result['data'][0]:
             fields.append(sfield)
     fields.append('status')
     
     # output header
-    sys.stdout.write("\t".join(fields)+"\n")
+    safe_print("\t".join(fields)+"\n")
     # output rows
     display_search(result['data'], fields)
     while result['next']:

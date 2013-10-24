@@ -45,7 +45,7 @@ def output_annotation(md5s, func_md5, func_acc, amatrix, ematrix, otu):
                 abund += amatrix[i][0]
                 evalue += ematrix[i][0]
         # output: feature list, function, abundance for function, avg evalue for function, organism
-        sys.stdout.write("%s\t%s\t%d\t%.2e\t%s\n" %(",".join(func_acc[f]), f, abund, 10**(evalue/len(func_md5[f])), otu))
+        safe_print("%s\t%s\t%d\t%.2e\t%s\n" %(",".join(func_acc[f]), f, abund, 10**(evalue/len(func_md5[f])), otu))
 
 # get annotations for taxa
 def annotations_for_taxa(opts, md5s, taxa, inverse=False):
@@ -158,8 +158,9 @@ def main(args):
         output_annotation(md5s, func_md5, func_acc, amatrix, ematrix, taxa)
     
     # get annotations for tail
-    func_md5, func_acc = annotations_for_taxa(opts, md5s, top_taxa, True)
-    output_annotation(md5s, func_md5, func_acc, amatrix, ematrix, 'tail')
+    if opts.rest:
+        func_md5, func_acc = annotations_for_taxa(opts, md5s, top_taxa, True)
+        output_annotation(md5s, func_md5, func_acc, amatrix, ematrix, 'tail')
     
     return 0
     

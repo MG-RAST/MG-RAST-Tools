@@ -5,6 +5,9 @@ import urllib2
 import base64
 import json
 
+# don't buffer stdout
+sys.stdout = os.fdopen(sys.stdout.fileno(), 'w', 0)
+
 VERSION = '1'
 API_URL = "http://api.metagenomics.anl.gov/"+VERSION
 AUTH_LIST = "Jared Bischof, Travis Harrison, Folker Meyer, Tobias Paczian, Andreas Wilke"
@@ -65,7 +68,7 @@ def obj_from_url(url, auth=None, data=None, debug=False):
     return obj
 
 # print to stdout results of MG-RAST API
-def stout_from_url(url, auth=None, data=None, debug=False):
+def stdout_from_url(url, auth=None, data=None, debug=False):
     header = {'Accept': 'text/plain'}
     if auth:
         header['Auth'] = auth
@@ -94,7 +97,23 @@ def stout_from_url(url, auth=None, data=None, debug=False):
         chunk = res.read(8192)
         if not chunk:
             break
-        sys.stdout.write(chunk)
+        safe_print(chunk)
+
+# safe handeling of stdout for pipeing
+def safe_print(text):
+    try:
+        sys.stdout.write(text)
+    except IOError:
+        # stdout is closed, no point in continuing
+        # Attempt to close them explicitly to prevent cleanup problems:
+        try:
+            sys.stdout.close()
+        except IOError:
+            pass
+        try:
+            sys.stderr.close()
+        except IOError:
+            pass
 
 # transform sparse matrix to dense matrix (2D array)
 def sparse_to_dense(sMatrix, rmax, cmax):
@@ -104,12 +123,26 @@ def sparse_to_dense(sMatrix, rmax, cmax):
         dMatrix[r][c] = v
     return dMatrix
 
-# transform BIIOM format to tabbed table
-def biom_to_tab(biom, hdl):
+# transform BIOM format to tabbed table
+def biom_to_tab(biom, hdl, rows=None, use_id=True):
     matrix = sparse_to_dense(biom['data'], biom['shape'][0], biom['shape'][1])
     hdl.write( "\t%s\n" %"\t".join([c['id'] for c in biom['columns']]) )
     for i, row in enumerate(matrix):
-        hdl.write( "%s\t%s\n" %(biom['rows'][i]['id'], "\t".join([str(r) for r in row])) )
+        name = biom['rows'][i]['id'] if use_id else biom['rows'][i]['metadata']['ontology'][-1]
+        if rows and (name not in rows):
+            continue
+        try:
+            hdl.write( "%s\t%s\n" %(name, "\t".join([str(r) for r in row])) )
+        except:
+            try:
+                hdl.close()
+            except:
+                pass
+
+# return KBase id for MG-RAST id
+def mgid_to_kbid(mgid):
+    id_map = kbid_lookup([mgid], reverse=True)
+    return id_map[mgid] if mgid in id_map else None
 
 # return MG-RAST id for given KBase id
 def kbid_to_mgid(kbid):
@@ -132,9 +165,11 @@ def kbids_to_mgids(kbids):
     return mgids
 
 # return map (KBase id -> MG-RAST id) for given list of KBase ids
-def kbid_lookup(kbids):
-    post = json.dumps({'ids': kbids}, separators=(',',':'))
-    data = obj_from_url(API_URL+'/job/kb2mg', data=post)
+#  or reverse
+def kbid_lookup(ids, reverse=False):
+    request = 'mg2kb' if reverse else 'kb2mg'
+    post = json.dumps({'ids': ids}, separators=(',',':'))
+    data = obj_from_url(API_URL+'/job/'+request, data=post)
     return data['data']
 
 def get_auth_token(opts):
