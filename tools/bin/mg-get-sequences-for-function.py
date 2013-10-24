@@ -44,7 +44,7 @@ def main(args):
     parser.add_option("", "--passwd", dest="passwd", default=None, help="OAuth password")
     parser.add_option("", "--token", dest="token", default=None, help="OAuth token")
     parser.add_option("", "--name", dest="name", default=None, help="function name to filter by")
-    parser.add_option("", "--level", dest="level", default=None, help="function level to filter by")
+    parser.add_option("", "--level", dest="level", default='function', help="function level to filter by")
     parser.add_option("", "--source", dest="source", default='Subsystems', help="datasource to filter results by, default is Subsystems")
     parser.add_option("", "--evalue", dest="evalue", default=5, help="negative exponent value for maximum e-value cutoff, default is 5")
     parser.add_option("", "--identity", dest="identity", default=60, help="percent value for minimum % identity cutoff, default is 60")
