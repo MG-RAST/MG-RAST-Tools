@@ -16,7 +16,7 @@ my $source = "SEED";
 
 # retrieve the data
 my $base_url = "http://api.metagenomics.anl.gov/1/matrix/organism";
-my $url = $base_url.uri_escape("?group_level=$group_level&result_type=$result_type&source=$source&evalue=15&".join("&", map{"id=".$_}@$metagenomes));
+my $url = $base_url.uri_escape("?group_level=$group_level&result_type=$result_type&source=$source&evalue=8&".join("&", map{"id=".$_}@$metagenomes));
  
 print STDERR "Retrieving $url\n";
 my $response = $ua->get($url);
