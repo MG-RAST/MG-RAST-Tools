@@ -23,6 +23,7 @@ my $verb = 0;
 my $batch = 100;
 my $options = {sequence => 1, annotation => 1};
 my $sources = {};
+my $verbose = 0 ;
 
 GetOptions( "verbose!"   => \$verb,
             "api=s"      => \$api,
@@ -47,7 +48,11 @@ $json = $json->utf8();
 $json->max_size(0);
 $json->allow_nonref;
 
-my $smap = get_data('GET', 'sources');
+my $smap = {} ;
+my $tmp = get_data('GET', 'sources');
+map { $smap->{ $_->{source} } = $_  } @$tmp ;
+ 
+print STDOUT Dumper $smap if ($verb) ;
 
 if ($help) {
     help($options, $smap);
@@ -217,6 +222,7 @@ sub get_data {
         my $res = undef;
         if ($method eq 'GET') {
             my $opts = ($params && (scalar(keys %$params) > 0)) ? '?'.join('&', map {$_.'='.$params->{$_}} keys %$params) : '';
+	    print STDOUT "Retrieving data from $api/m5nr/$resource$opts\n";
             $res = $agent->get($api.'/m5nr/'.$resource.$opts);
         }
         if ($method eq 'POST') {
