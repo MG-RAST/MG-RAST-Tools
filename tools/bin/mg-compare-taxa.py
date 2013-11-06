@@ -58,6 +58,9 @@ def main(args):
     if not opts.ids:
         sys.stderr.write("ERROR: one or more ids required\n")
         return 1
+    if (opts.filter_name and (not opts.filter_level)) or ((not opts.filter_name) and opts.filter_level):
+        sys.stderr.write("ERROR: both --filter_level and --filter_name need to be used together\n")
+        return 1
     
     # get auth
     token = get_auth_token(opts)
