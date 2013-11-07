@@ -22,12 +22,15 @@ die "Don't recognize format of $metagenome" unless $metagenome =~ m/\d\d\d\d\d\d
 
 # retrieve the data
 my $base_url = "http://api.metagenomics.anl.gov/1/matrix/organism";
-my $url=$base_url.uri_escape(defined($key)?"?auth=$key&":"?").uri_escape("id=$metagenome&source=$source");
-print "url: $url\n";
+my $url=$base_url.uri_escape((defined($key)?"?auth=$key&":"?")."id=$metagenome&source=$source");
+#print "url: $url\n";
 my $content = $ua->get($url)->content;
 
-# create perl data structure from json
-my $json = new JSON;
-my $biom = $json->decode( $content );
 
-print Dumper($biom)."\n";
+#pretty-print BIOM output
+my $json = new JSON;
+my $biom = $json->pretty->encode( $json->decode( $content ) );
+print $biom."\n";
+
+#creates hash and prints to terminal:
+#print Dumper($json->decode( $content ))."\n";
