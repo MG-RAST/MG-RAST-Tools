@@ -53,8 +53,6 @@ system(qq(echo '$r_cmd' | R --vanilla --slave --silent));
 
 sub usage {
     my ($err) = @_;
-    my $script_call = join('\t', @_);
-    my $num_args = scalar @_;
     print STDOUT ($err ? "ERROR: $err" : '') . qq(
 script: $0
 

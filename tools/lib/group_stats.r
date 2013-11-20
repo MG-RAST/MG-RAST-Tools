@@ -4,8 +4,8 @@ group_stats <- function(
                         stat_test = "Kruskal-Wallis", # (an matR stat test)
                         order_by = NULL, # column to order by - integer column index (1 based) or column header -- paste(stat_test, "::fdr", sep="") - NULL is the default behavior - to sort by the fdr.  If you don't know the number of the column you want to sort by - run with default settings first time, figure out the column number, then specify it the second time round. Columns are base 1 indexed.
                         order_decreasing = TRUE,
-                        group_lines = 1,           # if groupings are in the file
-                        group_line_to_process = 1, # if groupings are in the file
+                        group_lines = 0,           # if groupings are in the file
+                        group_line_to_process = 0, # if groupings are in the file
                         my_grouping = NA           # to supply groupings with a list                 
                         )
 {
