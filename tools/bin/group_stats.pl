@@ -36,7 +36,7 @@ unless ($file_in && $file_out) { &usage("missing file_in or file_out"); }
 
 # create and run R command that will be executed to perform the analysis
 $grouping = $grouping ? qq(c($grouping)) : "NA";
-my $r_cmd = qq(source("$script_path/group_stats.r")
+my $r_cmd = qq(source("$lib_path/group_stats.r")
 suppressMessages( group_stats(
     file_in="$file_in",
     file_out="$file_out",
