@@ -24,8 +24,8 @@ if ( ! GetOptions (
 		   "t|stat_test=s"          => \$stat_test,
 		   "b|order_by=s"           => \$order_by,
            "d|order_decreasing=s"   => \$order_decreasing,
-		   "c|group_lines_count=s"  => \$group_lines_count, 
-		   "p|group_line_process=s" => \$group_line_process,
+		   "c|group_lines_count=i"  => \$group_lines_count, 
+		   "p|group_line_process=i" => \$group_line_process,
 		   "g|grouping=s"           => \$grouping,
 		   "h|help!"                => \$help,
 		   "v|verbose!"             => \$verbose
@@ -48,13 +48,14 @@ suppressMessages( group_stats(
     my_grouping=$grouping
 ))
 );
-system(qq(echo "$r_cmd" | R --vanilla --slave --silent));
+print $r_cmd; exit 0;
+system(qq(echo '$r_cmd' | R --vanilla --slave --silent));
 
 sub usage {
-  my ($err) = @_;
-  my $script_call = join('\t', @_);
-  my $num_args = scalar @_;
-  print STDOUT ($err ? "ERROR: $err" : '') . qq(
+    my ($err) = @_;
+    my $script_call = join('\t', @_);
+    my $num_args = scalar @_;
+    print STDOUT ($err ? "ERROR: $err" : '') . qq(
 script: $0
 
 USAGE:
@@ -89,11 +90,11 @@ ________________________________________________________________________________
 
 NOTES:
 Supported statistical tests (-t|stat_test) include the following tests available in matR
-    Kruskal-Wallis 
-    t-test-paired 
-    Wilcoxon-paired 
-    t-test-unpaired 
-    Mann-Whitney-unpaired-Wilcoxon 
+    Kruskal-Wallis
+    t-test-paired
+    Wilcoxon-paired
+    t-test-unpaired
+    Mann-Whitney-unpaired-Wilcoxon
     ANOVA-one-way
 
 Groups can be entered in two ways, as a comma-seperated list list (e.g. '1,1,2,2' or '"grp1","grp1","grp2","grp2"')
@@ -102,5 +103,6 @@ with the -g|grouping option, or if grouping information is contained in the firs
 and the group line that should be used respectively.
 
 );
-  exit $err ? 1 : 0;
+    my $status = $err ? 1 : 0
+    exit $status;
 }
