@@ -11,7 +11,7 @@ sys.stdout = os.fdopen(sys.stdout.fileno(), 'w', 0)
 VERSION = '1'
 API_URL = "http://api.metagenomics.anl.gov/"+VERSION
 AUTH_LIST = "Jared Bischof, Travis Harrison, Folker Meyer, Tobias Paczian, Andreas Wilke"
-SEARCH_FIELDS = ["function", "organism", "name", "biome", "feature", "material", "country", "location", "longitude", "latitude", "created", "env_package_type", "project_id", "project_name", "PI_firstname", "PI_lastname", "sequence_type", "seq_method", "collection_date"]
+SEARCH_FIELDS = ["function", "organism", "md5", "name", "biome", "feature", "material", "country", "location", "longitude", "latitude", "created", "env_package_type", "project_id", "project_name", "PI_firstname", "PI_lastname", "sequence_type", "seq_method", "collection_date"]
 
 # return python struct from JSON output of asynchronous MG-RAST API
 def async_rest_api(url, auth=None, data=None, debug=False, delay=15):
