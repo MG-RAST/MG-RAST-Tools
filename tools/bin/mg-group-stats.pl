@@ -48,7 +48,6 @@ suppressMessages( group_stats(
     my_grouping=$grouping
 ))
 );
-print $r_cmd; exit 0;
 system(qq(echo '$r_cmd' | R --vanilla --slave --silent));
 
 sub usage {
