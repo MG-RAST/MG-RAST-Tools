@@ -107,6 +107,6 @@ with the -g|grouping option, or if grouping information is contained in the firs
 -c|group_lines_count and -p|group_line_process arguments to sepcify the number of lines that contain group information 
 and the group line that should be used respectively.
 );
-    my $status = $err ? 1 : 0
+    my $status = $err ? 1 : 0;
     exit $status;
 }

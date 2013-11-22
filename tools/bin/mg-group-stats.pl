@@ -100,6 +100,6 @@ with the -g|grouping option, or if grouping information is contained in the firs
 and the group line that should be used respectively.
 
 );
-    my $status = $err ? 1 : 0
+    my $status = $err ? 1 : 0;
     exit $status;
 }
