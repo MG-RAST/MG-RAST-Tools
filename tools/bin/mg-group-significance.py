@@ -15,7 +15,7 @@ VERSION
     %s
 
 SYNOPSIS
-    mg-group-significance [ --help, --user <user>, --passwd <password>, --token <oAuth token>, --input <input file or stdin>, --format <cv: 'text' or 'biom'>, --grouping <json string or filepath>, --plot <filename for pdf>, --rlib <R lib path>, --stat_test <cv: Kruskal-Wallis, t-test-paired, Wilcoxon-paired, t-test-unpaired, Mann-Whitney-unpaired-Wilcoxon, ANOVA-one-way>, --order <column number>, --direction <cv: 'asc', 'desc'> ]
+    mg-group-significance [ --help, --user <user>, --passwd <password>, --token <oAuth token>, --input <input file or stdin>, --format <cv: 'text' or 'biom'>, --groups <json string or filepath>, --plot <filename for pdf>, --rlib <R lib path>, --stat_test <cv: Kruskal-Wallis, t-test-paired, Wilcoxon-paired, t-test-unpaired, Mann-Whitney-unpaired-Wilcoxon, ANOVA-one-way>, --order <column number>, --direction <cv: 'asc', 'desc'> ]
 
 DESCRIPTION
     Tool to apply matR-based statistical tests to grouped metagenomic abundace profiles.
@@ -26,14 +26,14 @@ Input
     1. Tab-delimited table of abundance profiles, metagenomes in columns and annotation in rows.
        OR
        BIOM format of abundance profiles.
-    2. Groupings in JSON format - either as input string or filename:
+    2. Groups in JSON format - either as input string or filename:
        ie. {"group1": ["mg_id_1", "mg_id_3"], "group2": ["mg_id_2", "mg_id_4"], "group3": ["mg_id_5", "mg_id_6", "mg_id_7"]}
 
 Output
-    Tab-delimited table of input abundance profiles with significance statistics based on input groupings.
+    Tab-delimited table of input abundance profiles with significance statistics based on input groups.
 
 EXAMPLES
-    mg-group-significance --input input.test --format text --stat_test Wilcoxon-paired --direction asc
+    mg-compare-taxa --ids 'mgm4441679.3,mgm4441680.3,mgm4441681.3,mgm4441682.3' --level class --source RefSeq --format text | mg-group-significance --input - --format text --groups '{"group1":["mgm4441679.3","mgm4441680.3"],"group2":["mgm4441681.3","mgm4441682.3"]}' --direction asc
 
 SEE ALSO
     -
@@ -51,7 +51,7 @@ def main(args):
     parser.add_option("", "--token", dest="token", default=None, help="OAuth token")
     parser.add_option("", "--input", dest="input", default='-', help="input: filename or stdin (-), default is stdin")
     parser.add_option("", "--format", dest="format", default='text', help="input format: 'text' for tabbed table, 'biom' for BIOM format, default is text")
-    parser.add_option("", "--grouping", dest="grouping", default=None, help="groupings in JSON format - either as input string or filename")
+    parser.add_option("", "--groups", dest="groups", default=None, help="groups in JSON format - either as input string or filename")
     parser.add_option("", "--plot", dest="plot", default=None, help="filename for output plot, optional")
     parser.add_option("", "--rlib", dest="rlib", default=None, help="R lib path")
     parser.add_option("", "--stat_test", dest="stat_test", default='Kruskal-Wallis', help="supported statistical tests, one of: Kruskal-Wallis, t-test-paired, Wilcoxon-paired, t-test-unpaired, Mann-Whitney-unpaired-Wilcoxon, ANOVA-one-way, default is Kruskal-Wallis")
@@ -103,12 +103,12 @@ def main(args):
         sys.stderr.write("ERROR: unable to load input data\n")
         return 1
     
-    # get groupings if not in BIOM
+    # get groups if not in BIOM
     if not groups:
         try:
-            grdata = json.load(open(opts.grouping, 'r')) if os.path.isfile(opts.grouping) else json.loads(opts.grouping)
+            grdata = json.load(open(opts.groups, 'r')) if os.path.isfile(opts.groups) else json.loads(opts.groups)
         except:
-            sys.stderr.write("ERROR: unable to parse groupings JSON\n")
+            sys.stderr.write("ERROR: unable to parse groups JSON\n")
             return 1
         for mg in mg_list:
             found_gr = None
