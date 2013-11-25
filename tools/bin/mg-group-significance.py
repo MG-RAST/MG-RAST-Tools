@@ -141,7 +141,7 @@ suppressMessages( group_stats_plot(
     
     # output results
     results = open(tmp_out, 'r')
-    safe_print(results)
+    safe_print(results.read())
     results.close()
     
     # cleanup
