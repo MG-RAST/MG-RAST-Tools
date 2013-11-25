@@ -140,13 +140,10 @@ suppressMessages( group_stats_plot(
     execute_r(r_cmd)
     
     # output results
-    results = open(tmp_out, 'r')
-    safe_print(results.read())
-    results.close()
-    
-    # cleanup
+    results = open(tmp_out, 'r').read()
     os.remove(tmp_in)
     os.remove(tmp_out)
+    safe_print(results)
     
     return 0
     
