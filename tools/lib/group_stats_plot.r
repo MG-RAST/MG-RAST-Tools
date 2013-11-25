@@ -1,4 +1,4 @@
-barplot_tool <- function(
+group_stats_plot <- function(
                          file_in = "",
                          file_out = "",
                          figure_out = NULL, # give a name and it will produce a file
@@ -13,12 +13,7 @@ barplot_tool <- function(
 {
 
 # Check to make sure either that groupings are in the data file, or that a groupings argument
-# has been specified
-
-
-#stop("entry for groupings is not valid - you need group_lines and group_line_to_proces or my_grouping")
-
-  
+# has been specified  
 # Make sure the required pacakges are loaded
   require(matR)
   require(matlab)
@@ -95,8 +90,6 @@ barplot_tool <- function(
   my_data.mean <- as.matrix(rowMeans(my_data))
   colnames(my_data.mean) <- "mean_all_samples"
 
-# create a groups vector for the data
-  #my_groups <- c(rep("group1", 2), rep("group2", 3), rep("group3", 4))
 # name the groups vector with sample ids from the imported data
   names(my_groups) <- colnames(my_data)
 
@@ -135,14 +128,7 @@ barplot_tool <- function(
 # generate a summary object - used to generate the plots, and can be used to create a flat file output
   my_stats.summary <- cbind(my_data, my_data.mean, my_stats$mean, my_stats$sd, my_stats.statistic, my_stats.p, my_stats.fdr)
 
-# selection column to order the data by
-#  order_by = "mean_all_samples" 
-## or order by mean values in a single group
-# order_by = paste("group1", "::group_mean", sep="")
-## or order by FDR
-# order_by = paste(my_stat, "::fdr", sep="")
-
-  # make sure that order_by value, if other than NULL is supplied, is valid
+# make sure that order_by value, if other than NULL is supplied, is valid
   if (is.null(order_by)){ # use last column by default, or specified column otherwise
     order_by <- ( ncol(my_stats.summary) )
   } else {
@@ -172,9 +158,6 @@ barplot_tool <- function(
 
 # flat file output of the summary file
   write.table(my_stats.summary.ordered, file = file_out, col.names=NA, row.names = rownames(my_stats.summary), sep="\t", quote=FALSE)
-
-# select number of categories (taxa or functions) to plot in the barplot
-# my_n = 5 
 
 # create a subselection of the data above based on selected number of categories
   my_stats.summary.ordered.subset <- as.matrix(my_stats.summary.ordered[1:my_n,])
