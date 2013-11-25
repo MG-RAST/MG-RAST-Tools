@@ -206,4 +206,8 @@ def execute_r(cmd, debug=False):
     if debug:
         print r_cmd
     else:
-        subprocess.call(r_cmd, shell=True)
+        process = subprocess.Popen(r_cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
+        output, error = process.communicate()
+        if error:
+            sys.stderr.write(error)
+            sys.exit(1)
