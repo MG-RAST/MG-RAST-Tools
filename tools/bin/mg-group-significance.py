@@ -106,7 +106,7 @@ def main(args):
     # get groupings if not in BIOM
     if not groups:
         try:
-            grdata = json.load(opts.grouping) if os.path.isfile(opts.grouping) else json.loads(opts.grouping)
+            grdata = json.load(open(opts.grouping, 'r')) if os.path.isfile(opts.grouping) else json.loads(opts.grouping)
         except:
             sys.stderr.write("ERROR: unable to parse groupings JSON\n")
             return 1
