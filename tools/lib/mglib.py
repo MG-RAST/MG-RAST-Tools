@@ -4,6 +4,9 @@ import time
 import urllib2
 import base64
 import json
+import string
+import random
+import subprocess
 
 # don't buffer stdout
 sys.stdout = os.fdopen(sys.stdout.fileno(), 'w', 0)
@@ -125,7 +128,10 @@ def sparse_to_dense(sMatrix, rmax, cmax):
 
 # transform BIOM format to tabbed table
 def biom_to_tab(biom, hdl, rows=None, use_id=True):
-    matrix = sparse_to_dense(biom['data'], biom['shape'][0], biom['shape'][1])
+    if biom['matrix_type'] == 'sparse':
+        matrix = sparse_to_dense(biom['data'], biom['shape'][0], biom['shape'][1])
+    else:
+        matrix = biom['data']
     hdl.write( "\t%s\n" %"\t".join([c['id'] for c in biom['columns']]) )
     for i, row in enumerate(matrix):
         name = biom['rows'][i]['id'] if use_id else biom['rows'][i]['metadata']['ontology'][-1]
@@ -190,3 +196,18 @@ def token_from_login(user, passwd):
     auth = 'kbgo4711'+base64.b64encode('%s:%s' %(user, passwd)).replace('\n', '')
     data = obj_from_url(API_URL, auth=auth)
     return data['token']
+
+def random_str(size=8):
+    chars = string.ascii_letters + string.digits
+    return ''.join(random.choice(chars) for x in range(size))
+
+def execute_r(cmd, debug=False):
+    r_cmd = "echo '%s' | R --vanilla --slave --silent"%cmd
+    if debug:
+        print r_cmd
+    else:
+        process = subprocess.Popen(r_cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
+        output, error = process.communicate()
+        if error:
+            sys.stderr.write(error)
+            sys.exit(1)
