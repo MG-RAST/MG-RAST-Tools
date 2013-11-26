@@ -201,6 +201,7 @@ def random_str(size=8):
     chars = string.ascii_letters + string.digits
     return ''.join(random.choice(chars) for x in range(size))
 
+# this is a bit of a hack, need to redo using rpy2
 def execute_r(cmd, debug=False):
     r_cmd = "echo '%s' | R --vanilla --slave --silent"%cmd
     if debug:
