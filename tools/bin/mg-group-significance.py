@@ -15,7 +15,7 @@ VERSION
     %s
 
 SYNOPSIS
-    mg-group-significance [ --help, --user <user>, --passwd <password>, --token <oAuth token>, --input <input file or stdin>, --format <cv: 'text' or 'biom'>, --groups <json string or filepath>, --plot <filename for pdf>, --rlib <R lib path>, --stat_test <cv: Kruskal-Wallis, t-test-paired, Wilcoxon-paired, t-test-unpaired, Mann-Whitney-unpaired-Wilcoxon, ANOVA-one-way>, --order <column number>, --direction <cv: 'asc', 'desc'> ]
+    mg-group-significance [ --help, --input <input file or stdin>, --format <cv: 'text' or 'biom'>, --groups <json string or filepath>, --plot <filename for pdf>, --rlib <R lib path>, --stat_test <cv: Kruskal-Wallis, t-test-paired, Wilcoxon-paired, t-test-unpaired, Mann-Whitney-unpaired-Wilcoxon, ANOVA-one-way>, --order <column number>, --direction <cv: 'asc', 'desc'> ]
 
 DESCRIPTION
     Tool to apply matR-based statistical tests to grouped metagenomic abundace profiles.
@@ -46,9 +46,6 @@ def main(args):
     OptionParser.format_description = lambda self, formatter: self.description
     OptionParser.format_epilog = lambda self, formatter: self.epilog
     parser = OptionParser(usage='', description=prehelp%VERSION, epilog=posthelp%AUTH_LIST)
-    parser.add_option("", "--user", dest="user", default=None, help="OAuth username")
-    parser.add_option("", "--passwd", dest="passwd", default=None, help="OAuth password")
-    parser.add_option("", "--token", dest="token", default=None, help="OAuth token")
     parser.add_option("", "--input", dest="input", default='-', help="input: filename or stdin (-), default is stdin")
     parser.add_option("", "--format", dest="format", default='text', help="input format: 'text' for tabbed table, 'biom' for BIOM format, default is text")
     parser.add_option("", "--groups", dest="groups", default=None, help="groups in JSON format - either as input string or filename")
@@ -66,14 +63,14 @@ def main(args):
     if opts.format not in ['text', 'biom']:
         sys.stderr.write("ERROR: invalid input format\n")
         return 1
-    if (not opts.rlib) and ('R_LIBS' in os.environ):
-        opts.rlib = os.environ['R_LIBS']
+    if (not opts.rlib) and ('KB_PERL_PATH' in os.environ):
+        opts.rlib = os.environ['KB_PERL_PATH']
+    if not opts.rlib:
+        sys.stderr.write("ERROR: missing path to R libs\n")
+        return 1
     if opts.direction not in ['asc', 'desc']:
         sys.stderr.write("ERROR: invalid sort direction\n")
         return 1
-    
-    # get auth
-    token = get_auth_token(opts)
     
     # get inputs
     tmp_in  = 'tmp_'+random_str()+'.txt'
