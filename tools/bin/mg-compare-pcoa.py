@@ -14,10 +14,10 @@ VERSION
     %s
 
 SYNOPSIS
-    mg-compare-pcoa [ --help, --input <input file or stdin>, --format <cv: 'text' or 'biom'>, --distance <cv: bray-curtis, euclidean, maximum, manhattan, canberra, minkowski, difference>, --output <cv: 'text' or 'json'> ]
+    mg-compare-pcoa [ --help, --input <input file or stdin>, --format <cv: 'text' or 'biom'>, --distance <cv: bray-curtis, euclidean, maximum, manhattan, canberra, minkowski, difference>, --normalize <boolean>, --output <cv: 'text' or 'json'> ]
 
 DESCRIPTION
-    Retrieve PCoA (Principal Coordinate Analysis) from taxanomic abundance profiles for multiple metagenomes.
+    Retrieve PCoA (Principal Coordinate Analysis) from abundance profiles for multiple metagenomes.
 """
 
 posthelp = """
@@ -48,6 +48,7 @@ def main(args):
     parser.add_option("", "--format", dest="format", default='text', help="input format: 'text' for tabbed table, 'biom' for BIOM format, default is text")
     parser.add_option("", "--output", dest="output", default='text', help="output format: 'text' for tabbed table, 'json' for JSON format, default is text")
     parser.add_option("", "--distance", dest="distance", default='bray-curtis', help="distance function, one of: bray-curtis, euclidean, maximum, manhattan, canberra, minkowski, difference, default is bray-curtis")
+    parser.add_option("", "--normalize", dest="normalize", action="store_true", default=False, help="normalize the input data, default is off")
     
     # get inputs
     (opts, args) = parser.parse_args()
@@ -69,7 +70,7 @@ def main(args):
                 biom = json.loads(indata)
                 rows = [r['id'] for r in biom['rows']]
                 cols = [c['id'] for c in biom['columns']]
-                data = sparse_to_dense(biom['data'], len(rows), len(cols))
+                data = sparse_to_dense(biom['data'], len(rows), len(cols)) if biom['matrix_type'] == 'sparse' else biom['data']
             except:
                 sys.stderr.write("ERROR: input BIOM data not correct format\n")
                 return 1
@@ -87,7 +88,8 @@ def main(args):
         return 1
     
     # retrieve data
-    post = {"distance": opts.distance, "columns": cols, "rows": rows, "data": data}
+    raw  = '0' if opts.normalize else '1'
+    post = {"raw": raw, "distance": opts.distance, "columns": cols, "rows": rows, "data": data}
     pcoa = obj_from_url(opts.url+'/compute/pcoa', data=json.dumps(post, separators=(',',':')))
     
     # output data

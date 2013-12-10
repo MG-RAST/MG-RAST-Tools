@@ -8,16 +8,16 @@ from mglib import *
 
 prehelp = """
 NAME
-    mg-compare-heatmap
+    mg-compare-normalize
 
 VERSION
     %s
 
 SYNOPSIS
-    mg-compare-heatmap [ --help, --input <input file or stdin>, --format <cv: 'text' or 'biom'>, --cluster <cv: ward, single, complete, mcquitty, median, centroid>, --distance <cv: bray-curtis, euclidean, maximum, manhattan, canberra, minkowski, difference>, --normalize <boolean> ]
+    mg-compare-normalize [ --help, --input <input file or stdin>, --format <cv: 'text' or 'biom'>, --output <cv: 'text' or 'json'> ]
 
 DESCRIPTION
-    Retrieve Dendogram Heatmap from abundance profiles for multiple metagenomes.
+    Calculate normalized values from abundance profiles for multiple metagenomes.
 """
 
 posthelp = """
@@ -27,10 +27,10 @@ Input
     BIOM format of abundance profiles.
 
 Output
-    JSON struct containing ordered distances for metagenomes and annotations, along with dendogram data
+    Tab-delimited table of abundance profiles, metagenomes in columns and annotation in rows.
 
 EXAMPLES
-    mg-compare-taxa --ids "kb|mg.286,kb|mg.287,kb|mg.288,kb|mg.289" --level class --source RefSeq --format text | mg-compare-heatmap --input - --format text --cluster median --distance manhattan
+    mg-compare-taxa --ids "kb|mg.286,kb|mg.287,kb|mg.288,kb|mg.289" --level class --source RefSeq --format text | mg-compare-normalize --input - --format text
 
 SEE ALSO
     -
@@ -46,10 +46,8 @@ def main(args):
     parser.add_option("", "--url", dest="url", default=API_URL, help="communities API url")
     parser.add_option("", "--input", dest="input", default='-', help="input: filename or stdin (-), default is stdin")
     parser.add_option("", "--format", dest="format", default='text', help="input format: 'text' for tabbed table, 'biom' for BIOM format, default is text")
-    parser.add_option("", "--cluster", dest="cluster", default='ward', help="cluster function, one of: ward, single, complete, mcquitty, median, centroid, default is ward")
-    parser.add_option("", "--distance", dest="distance", default='bray-curtis', help="distance function, one of: bray-curtis, euclidean, maximum, manhattan, canberra, minkowski, difference, default is bray-curtis")
-    parser.add_option("", "--normalize", dest="normalize", action="store_true", default=False, help="normalize the input data, default is off")
-
+    parser.add_option("", "--output", dest="output", default='text', help="output format: 'text' for tabbed table, 'json' for JSON format, default is text")
+    
     # get inputs
     (opts, args) = parser.parse_args()
     if (opts.input != '-') and (not os.path.isfile(opts.input)):
@@ -60,6 +58,7 @@ def main(args):
         return 1
     
     # parse inputs
+    biom = None
     rows = []
     cols = []
     data = []
@@ -86,15 +85,24 @@ def main(args):
     except:
         sys.stderr.write("ERROR: unable to load input data\n")
         return 1
-
+    
     # retrieve data
-    raw  = '0' if opts.normalize else '1'
-    post = {"raw": raw, "cluster": opts.cluster, "distance": opts.distance, "columns": cols, "rows": rows, "data": data}
-    hmap = obj_from_url(opts.url+'/compute/heatmap', data=json.dumps(post, separators=(',',':')))
+    post = {"columns": cols, "rows": rows, "data": data}
+    norm = obj_from_url(opts.url+'/compute/normalize', data=json.dumps(post, separators=(',',':')))
     
     # output data
-    safe_print(json.dumps(hmap, separators=(', ',': '), indent=4)+'\n')
+    if biom and (opts.output == 'json'):
+        biom['id'] = biom['id']+'_normalized'
+        biom['matrix_type'] = 'dense'
+        biom['matrix_element_type'] = 'float'
+        biom['data'] = norm['data']
+        safe_print(json.dumps(biom, separators=(', ',': '), indent=4)+'\n')
+    else:
+        safe_print( "\t%s\n" %"\t".join(norm['columns']) )
+        for i, d in enumerate(norm['data']):
+            safe_print( "%s\t%s\n" %(norm['rows'][i], "\t".join(map(str, d))) )
     return 0
+    
 
 if __name__ == "__main__":
     sys.exit( main(sys.argv) )
