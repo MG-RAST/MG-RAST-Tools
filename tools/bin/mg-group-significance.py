@@ -66,8 +66,11 @@ def main(args):
     if opts.format not in ['text', 'biom']:
         sys.stderr.write("ERROR: invalid input format\n")
         return 1
-    if (not opts.rlib) and ('R_LIBS' in os.environ):
-        opts.rlib = os.environ['R_LIBS']
+    if (not opts.rlib) and ('KB_PERL_PATH' in os.environ):
+        opts.rlib = os.environ['KB_PERL_PATH']
+    if not opts.rlib:
+        sys.stderr.write("ERROR: missing path to R libs\n")
+        return 1
     if opts.direction not in ['asc', 'desc']:
         sys.stderr.write("ERROR: invalid sort direction\n")
         return 1
