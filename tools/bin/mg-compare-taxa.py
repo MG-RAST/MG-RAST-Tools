@@ -73,8 +73,7 @@ def main(args):
                ('identity', opts.identity),
                ('length', opts.length),
                ('result_type', 'abundance'),
-               ('asynchronous', '1'),
-               ('hide_metadata', '1') ]
+               ('asynchronous', '1') ]
     for i in id_list:
         params.append(('id', i))
     url = opts.url+'/matrix/organism?'+urllib.urlencode(params, True)
