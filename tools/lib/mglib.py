@@ -9,7 +9,7 @@ import random
 import subprocess
 
 # don't buffer stdout
-sys.stdout = os.fdopen(sys.stdout.fileno(), 'w', 0)
+#sys.stdout = os.fdopen(sys.stdout.fileno(), 'w', 0)
 
 VERSION = '1'
 API_URL = "http://api.metagenomics.anl.gov/"+VERSION
@@ -144,6 +144,37 @@ def biom_to_tab(biom, hdl, rows=None, use_id=True):
                 hdl.close()
             except:
                 pass
+
+# transform BIOM format to matrix in json format
+def biom_to_matrix(biom):
+    rows = [r['id'] for r in biom['rows']]
+    cols = [c['id'] for c in biom['columns']]
+    if biom['matrix_type'] == 'sparse':
+        data = sparse_to_dense(biom['data'], len(rows), len(cols))
+    else:
+        data = biom['data']
+    return rows, cols, data
+
+# transform tabbed table to matrix in json format
+def tab_to_matrix(indata):
+    lines = indata.split('\n')
+    data = []
+    rows = []
+    cols = lines[0].strip().split('\t')
+    for line in lines[1:]:
+        parts = line.strip().split('\t')
+        first = parts.pop(0)
+        if len(cols) == len(parts):
+            rows.append(first)
+            data.append(parts)
+    return rows, cols, data
+
+# return a subselection of matrix columns
+def sub_matrix(matrix, ncols):
+    sub = []
+    for row in matrix:
+        sub.append( row[:ncols] )
+    return sub
 
 # return KBase id for MG-RAST id
 def mgid_to_kbid(mgid):

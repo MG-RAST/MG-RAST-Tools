@@ -1,7 +1,6 @@
 #!/usr/bin/env python
 
 import sys
-import urllib
 from operator import itemgetter
 from optparse import OptionParser
 from mglib import *

@@ -1,7 +1,6 @@
 #!/usr/bin/env python
 
 import sys
-import urllib
 import math
 from operator import itemgetter
 from optparse import OptionParser
@@ -36,7 +35,7 @@ AUTHORS
     %s
 """
 
-def scale_histo(plot, height, width):
+def scale_histo(plot, width):
     axis = '|'+''.join([' ' for i in range(width-2)])+'|'
     buff = [' ' for i in range((width-6)/2)]
     scale = '0'+''.join(buff)+'bp'+''.join(buff)+str(width)
@@ -60,7 +59,7 @@ def plot_histo(cols, data, height, width):
             except:
                 pass
     out = [''.join(row) for row in plot]
-    out = scale_histo(out, height, width)
+    out = scale_histo(out, width)
     safe_print("\n".join(out)+"\n")
 
 def main(args):
