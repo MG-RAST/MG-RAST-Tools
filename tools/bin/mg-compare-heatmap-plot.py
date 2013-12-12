@@ -47,8 +47,8 @@ def main(args):
     parser.add_option("", "--format", dest="format", default='text', help="input format: 'text' for tabbed table, 'biom' for BIOM format, default is text")
     parser.add_option("", "--plot", dest="plot", default=None, help="filename for output plot")
     parser.add_option("", "--rlib", dest="rlib", default=None, help="R lib path")
-    parser.add_option("", "--height", dest="height", type="float", default=8, help="image height in inches, default is 8")
-    parser.add_option("", "--width", dest="width", type="float", default=6, help="image width in inches, default is 6")
+    parser.add_option("", "--height", dest="height", type="float", default=5, help="image height in inches, default is 5")
+    parser.add_option("", "--width", dest="width", type="float", default=4, help="image width in inches, default is 4")
     parser.add_option("", "--dpi", dest="dpi", type="int", default=300, help="image DPI, default is 300")
     parser.add_option("", "--label", dest="label", action="store_true", default=False, help="label image rows, default is off")
     
@@ -89,7 +89,7 @@ def main(args):
     tmp_hdl.close()
     
     # build R cmd
-    label = 'True' if opts.label else 'FALSE'
+    label = 'TRUE' if opts.label else 'FALSE'
     r_cmd = """source("%s/plot_mg_heatdend.r")
 suppressMessages( plot_mg_heatdend(
     table_in="%s",

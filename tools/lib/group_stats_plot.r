@@ -142,14 +142,6 @@ group_stats_plot <- function(
                     collaps=""
                     ) )
       }
-    }else{
-      stop( paste(
-                  "\n\norder_by (", order_by,") must be an integer between 1 and ",
-                  ncol(my_stats.summary),
-                  " (max number of columns in the output)\n\n",
-                  sep="",
-                  collaps=""
-                  ) )
     }
   }
 
@@ -171,7 +163,14 @@ group_stats_plot <- function(
 
 # create the barplot if that option is chossen- as pdf - legend on left, barplot on right
   if ( identical( is.null(figure_out), NULL ) == FALSE){
-    pdf ( file=figure_out, width=8.5, height=4 )
+    png(
+        filename = figure_out,
+        width = 6,
+        height = 4,
+        res = 300,
+        units = 'in'
+    )
+    #pdf ( file=figure_out, width=8.5, height=4 )
     split.screen(c(1,2))
     screen(1)
     text( x=0.5, y=0.9 ,labels=paste(
