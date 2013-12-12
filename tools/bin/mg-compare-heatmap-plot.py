@@ -14,7 +14,7 @@ VERSION
     %s
 
 SYNOPSIS
-    mg-compare-heatmap-plot [ --help, --input <input file or stdin>, --format <cv: 'text' or 'biom'>, --plot <filename for png>, --rlib <R lib path>, --height <image height in inches> --width <image width in inches> --dpi <image DPI> --label <boolean> ]
+    mg-compare-heatmap-plot [ --help, --input <input file or stdin>, --format <cv: 'text' or 'biom'>, --plot <filename for png>, --rlib <R lib path>, --height <image height in inches> --width <image width in inches> --dpi <image DPI> --order <boolean>, --label <boolean> ]
 
 DESCRIPTION
     Tool to generate heatmap-dendrogram vizualizations from metagenome abundance profiles.
@@ -50,6 +50,7 @@ def main(args):
     parser.add_option("", "--height", dest="height", type="float", default=5, help="image height in inches, default is 5")
     parser.add_option("", "--width", dest="width", type="float", default=4, help="image width in inches, default is 4")
     parser.add_option("", "--dpi", dest="dpi", type="int", default=300, help="image DPI, default is 300")
+    parser.add_option("", "--order", dest="order", action="store_true", default=False, help="order columns, default is off")
     parser.add_option("", "--label", dest="label", action="store_true", default=False, help="label image rows, default is off")
     
     # get inputs
@@ -89,16 +90,18 @@ def main(args):
     tmp_hdl.close()
     
     # build R cmd
+    order = 'TRUE' if opts.order else 'FALSE'
     label = 'TRUE' if opts.label else 'FALSE'
     r_cmd = """source("%s/plot_mg_heatdend.r")
 suppressMessages( plot_mg_heatdend(
     table_in="%s",
     image_out="%s",
+    order_columns=%s,
     label_rows=%s,
     image_height_in=%.1f,
     image_width_in=%.1f,
     image_res_dpi=%d
-))"""%(opts.rlib, tmp_in, opts.plot, label, opts.height, opts.width, opts.dpi)
+))"""%(opts.rlib, tmp_in, opts.plot, order, label, opts.height, opts.width, opts.dpi)
     execute_r(r_cmd)
     
     # cleanup
