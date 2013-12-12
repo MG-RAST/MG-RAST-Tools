@@ -96,12 +96,12 @@ def main(args):
     parser.add_option("", "--passwd", dest="passwd", default=None, help="OAuth password")
     parser.add_option("", "--token", dest="token", default=None, help="OAuth token")
     parser.add_option("", "--level", dest="level", default='species', help="taxon level to group annotations by, default is species")
-    parser.add_option("", "--top", dest="top", default=10, help="produce annotations for top N abundant organisms, default is 10")
+    parser.add_option("", "--top", type="int", dest="top", default=10, help="produce annotations for top N abundant organisms, default is 10")
     parser.add_option("", "--rest", dest="rest", action="store_true", default=False, help="lump together remaining organisms after top N, default is off")
     parser.add_option("", "--source", dest="source", default='SEED', help="datasource to filter results by, default is SEED")
-    parser.add_option("", "--evalue", dest="evalue", default=5, help="negative exponent value for maximum e-value cutoff, default is 5")
-    parser.add_option("", "--identity", dest="identity", default=60, help="percent value for minimum % identity cutoff, default is 60")
-    parser.add_option("", "--length", dest="length", default=15, help="value for minimum alignment length cutoff, default is 15")
+    parser.add_option("", "--evalue", type="int", dest="evalue", default=5, help="negative exponent value for maximum e-value cutoff, default is 5")
+    parser.add_option("", "--identity", type="int", dest="identity", default=60, help="percent value for minimum % identity cutoff, default is 60")
+    parser.add_option("", "--length", type="int", dest="length", default=15, help="value for minimum alignment length cutoff, default is 15")
     
     # get inputs
     (opts, args) = parser.parse_args()

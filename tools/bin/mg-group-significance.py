@@ -3,7 +3,6 @@
 import os
 import sys
 import json
-from operator import itemgetter
 from optparse import OptionParser
 from mglib import *
 
@@ -53,7 +52,7 @@ def main(args):
     parser.add_option("", "--rlib", dest="rlib", default=None, help="R lib path")
     parser.add_option("", "--stat_test", dest="stat_test", default='Kruskal-Wallis', help="supported statistical tests, one of: Kruskal-Wallis, t-test-paired, Wilcoxon-paired, t-test-unpaired, Mann-Whitney-unpaired-Wilcoxon, ANOVA-one-way, default is Kruskal-Wallis")
     parser.add_option("", "--order", dest="order", default=None, help="column number to order output by, default is last column")
-    parser.add_option("", "--direction", dest="direction", default="asc", help="direction of order. 'asc' for ascending order, 'desc' for descending order, default is asc")
+    parser.add_option("", "--direction", dest="direction", default="desc", help="direction of order. 'asc' for ascending order, 'desc' for descending order, default is desc")
     
     # get inputs
     (opts, args) = parser.parse_args()
@@ -69,10 +68,10 @@ def main(args):
         sys.stderr.write("ERROR: missing path to R libs\n")
         return 1
     if opts.direction not in ['asc', 'desc']:
-        sys.stderr.write("ERROR: invalid sort direction\n")
+        sys.stderr.write("ERROR: invalid order direction\n")
         return 1
     
-    # get inputs
+    # parse inputs
     tmp_in  = 'tmp_'+random_str()+'.txt'
     tmp_out = 'tmp_'+random_str()+'.txt'
     tmp_hdl = open(tmp_in, 'w')

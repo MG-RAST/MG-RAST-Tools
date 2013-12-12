@@ -50,7 +50,7 @@ def main(args):
     parser.add_option("", "--format", dest="format", default='text', help="input format: 'text' for tabbed table, 'biom' for BIOM format, default is text")
     parser.add_option("", "--groups", dest="groups", default=None, help="groups in JSON format - either as input string or filename")
     parser.add_option("", "--rlib", dest="rlib", default=None, help="R lib path")
-    parser.add_option("", "--top", dest="top", default=10, help="display only the top N most changing groups, default is 10")
+    parser.add_option("", "--top", dest="top", type="int", default=10, help="display only the top N most changing groups, default is 10")
     parser.add_option("", "--stat_test", dest="stat_test", default='Kruskal-Wallis', help="supported statistical tests, one of: Kruskal-Wallis, t-test-paired, Wilcoxon-paired, t-test-unpaired, Mann-Whitney-unpaired-Wilcoxon, ANOVA-one-way, default is Kruskal-Wallis")
     
     # get inputs

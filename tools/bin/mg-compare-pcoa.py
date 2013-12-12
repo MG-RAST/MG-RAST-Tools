@@ -1,8 +1,8 @@
 #!/usr/bin/env python
 
+import os
 import sys
-import urllib
-from operator import itemgetter
+import json
 from optparse import OptionParser
 from mglib import *
 
@@ -68,21 +68,12 @@ def main(args):
         if opts.format == 'biom':
             try:
                 biom = json.loads(indata)
-                rows = [r['id'] for r in biom['rows']]
-                cols = [c['id'] for c in biom['columns']]
-                data = sparse_to_dense(biom['data'], len(rows), len(cols)) if biom['matrix_type'] == 'sparse' else biom['data']
+                rows, cols, data = biom_to_matrix(biom)
             except:
                 sys.stderr.write("ERROR: input BIOM data not correct format\n")
                 return 1
         else:
-            lines = indata.split('\n')
-            cols = lines[0].strip().split('\t')
-            for line in lines[1:]:
-                parts = line.strip().split('\t')
-                first = parts.pop(0)
-                if len(cols) == len(parts):
-                    rows.append(first)
-                    data.append(parts)
+            rows, cols, data = tab_to_matrix(indata)
     except:
         sys.stderr.write("ERROR: unable to load input data\n")
         return 1

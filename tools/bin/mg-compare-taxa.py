@@ -49,9 +49,9 @@ def main(args):
     parser.add_option("", "--filter_name", dest="filter_name", default=None, help="taxon name to filter by")
     parser.add_option("", "--filter_level", dest="filter_level", default=None, help="taxon level to filter by")
     parser.add_option("", "--format", dest="format", default='text', help="output format: 'text' for tabbed table, 'biom' for BIOM format, default is text")
-    parser.add_option("", "--evalue", dest="evalue", default=5, help="negative exponent value for maximum e-value cutoff, default is 5")
-    parser.add_option("", "--identity", dest="identity", default=60, help="percent value for minimum % identity cutoff, default is 60")
-    parser.add_option("", "--length", dest="length", default=15, help="value for minimum alignment length cutoff, default is 15")
+    parser.add_option("", "--evalue", type="int", dest="evalue", default=5, help="negative exponent value for maximum e-value cutoff, default is 5")
+    parser.add_option("", "--identity", type="int", dest="identity", default=60, help="percent value for minimum % identity cutoff, default is 60")
+    parser.add_option("", "--length", type="int", dest="length", default=15, help="value for minimum alignment length cutoff, default is 15")
     
     # get inputs
     (opts, args) = parser.parse_args()
