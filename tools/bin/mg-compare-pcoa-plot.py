@@ -175,7 +175,8 @@ suppressMessages( plot_mg_pcoa(
     
     # cleanup
     os.remove(tmp_in)
-    os.remove(tmp_clr)
+    if tmp_clr:
+        os.remove(tmp_clr)
     
     return 0
     
