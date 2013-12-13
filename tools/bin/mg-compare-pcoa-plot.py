@@ -74,6 +74,7 @@ def main(args):
         sys.stderr.write("ERROR: missing path to R libs\n")
         return 1
     if opts.metadata:
+        opts.color_pos = 1
         opts.color_auto = True
     
     # parse input for R
@@ -158,6 +159,7 @@ def main(args):
     three = 'c(1,2,3)' if opts.three else 'c(1,2)'
     label = 'TRUE' if opts.label else 'FALSE'
     table = '"%s"'%tmp_clr if tmp_clr else 'NA'
+    color = 'TRUE' if opts.color_auto else 'FALSE'
     r_cmd = """source("%s/plot_mg_pcoa.r")
 suppressMessages( plot_mg_pcoa(
     table_in="%s",
@@ -170,7 +172,7 @@ suppressMessages( plot_mg_pcoa(
     image_height_in=%.1f,
     image_width_in=%.1f,
     image_res_dpi=%d
-))"""%(opts.rlib, tmp_in, opts.plot, three, label, table, opts.color_pos, opts.color_auto, opts.height, opts.width, opts.dpi)
+))"""%(opts.rlib, tmp_in, opts.plot, three, label, table, opts.color_pos, color, opts.height, opts.width, opts.dpi)
     execute_r(r_cmd)
     
     # cleanup
