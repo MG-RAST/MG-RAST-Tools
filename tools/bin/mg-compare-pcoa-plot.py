@@ -109,8 +109,8 @@ def main(args):
         return 1
     tmp_hdl.close()
     
-    # get color groups if not in BIOM metadata    
-    if not gcolors:
+    # get color groups if not in BIOM metadata and option used
+    if (not gcolors) and opts.color_group:
         # is it json ?
         try:
             cdata = json.load(open(opts.color_group, 'r')) if os.path.isfile(opts.color_group) else json.loads(opts.color_group)
@@ -143,19 +143,21 @@ def main(args):
                     return 1
 
     # print color groups to file for R input
-    tmp_clr = 'tmp_'+random_str()+'.txt'
-    clr_hdl = open(tmp_clr, 'w')
-    for i in range(len(gcolors[0])):
-        clr_hdl.write("\t%d"%i)
-    clr_hdl.write("\n")
-    for i, mg in enumerate(mg_list):
-        clr_hdl.write( "%s\t%s\n"%(mg, "\t".join(gcolors[i])) )
-    clr_hdl.close()
+    tmp_clr = None
+    if gcolors:
+        tmp_clr = 'tmp_'+random_str()+'.txt'
+        clr_hdl = open(tmp_clr, 'w')
+        for i in range(len(gcolors[0])):
+            clr_hdl.write("\t%d"%i)
+        clr_hdl.write("\n")
+        for i, mg in enumerate(mg_list):
+            clr_hdl.write( "%s\t%s\n"%(mg, "\t".join(gcolors[i])) )
+        clr_hdl.close()
     
     # build R cmd
     three = 'c(1,2,3)' if opts.three else 'c(1,2)'
     label = 'TRUE' if opts.label else 'FALSE'
-    color = 'TRUE' if opts.color else 'FALSE'
+    table = '"%s"'%tmp_clr if tmp_clr else 'NA'
     r_cmd = """source("%s/plot_mg_pcoa.r")
 suppressMessages( plot_mg_pcoa(
     table_in="%s",
@@ -168,7 +170,7 @@ suppressMessages( plot_mg_pcoa(
     image_height_in=%.1f,
     image_width_in=%.1f,
     image_res_dpi=%d
-))"""%(opts.rlib, tmp_in, opts.plot, three, label, tmp_clr, opts.color_pos, opts.color_auto, opts.height, opts.width, opts.dpi)
+))"""%(opts.rlib, tmp_in, opts.plot, three, label, table, opts.color_pos, opts.color_auto, opts.height, opts.width, opts.dpi)
     execute_r(r_cmd)
     
     # cleanup
