@@ -162,7 +162,7 @@ group_stats_plot <- function(
   my_data.color <- col.wheel(num_groups)
 
 # create the barplot if that option is chossen- as pdf - legend on left, barplot on right
-  if ( identical( is.null(figure_out), NULL ) == FALSE){
+  if ( identical( is.null(figure_out), FALSE ) ){
     png(
         filename = figure_out,
         width = 6,
