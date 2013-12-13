@@ -133,7 +133,7 @@ def main(args):
         except:
             ctext = open(opts.color_group, 'r').read() if os.path.isfile(opts.color_group) else opts.color_group
             cdata = {}
-            for line in cdata.strip().split("\n")[1:]:
+            for line in ctext.strip().split("\n")[1:]:
                 parts = line.strip().split("\t")
                 cdata[parts[0]] = parts[1:]
             for mg in mg_list:
