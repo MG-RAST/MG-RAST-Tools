@@ -2,6 +2,9 @@ group_stats_plot <- function(
                          file_in = "",
                          file_out = "",
                          figure_out = NULL, # give a name and it will produce a file
+                         figure_width_in=6,
+                         figure_height_in=6,
+                         figure_res_dpi=300,
                          stat_test = "Kruskal-Wallis", # (an matR stat test)
                          order_by = NULL, # column to order by - can be integer column index (1 based) or column header -- paste(stat_test, "::fdr", sep="")
                          order_decreasing = TRUE,
@@ -165,9 +168,9 @@ group_stats_plot <- function(
   if ( identical( is.null(figure_out), FALSE ) ){
     png(
         filename = figure_out,
-        width = 6,
-        height = 4,
-        res = 300,
+        width = figure_width_in,
+        height = figure_height_in,
+        res = figure_res_dpi,
         units = 'in'
     )
     #pdf ( file=figure_out, width=8.5, height=4 )
