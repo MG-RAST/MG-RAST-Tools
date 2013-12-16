@@ -14,7 +14,7 @@ VERSION
     %s
 
 SYNOPSIS
-    mg-group-significance [ --help, --input <input file or stdin>, --format <cv: 'text' or 'biom'>, --groups <json string or filepath>, --plot <filename for pdf>, --rlib <R lib path>, --stat_test <cv: Kruskal-Wallis, t-test-paired, Wilcoxon-paired, t-test-unpaired, Mann-Whitney-unpaired-Wilcoxon, ANOVA-one-way>, --order <column number>, --direction <cv: 'asc', 'desc'> ]
+    mg-group-significance [ --help, --input <input file or stdin>, --format <cv: 'text' or 'biom'>, --groups <json string or filepath>, --plot <filename for pdf>, --rlib <R lib path>, --stat_test <cv: Kruskal-Wallis, t-test-paired, Wilcoxon-paired, t-test-unpaired, Mann-Whitney-unpaired-Wilcoxon, ANOVA-one-way>, --order <column number>, --direction <cv: 'asc', 'desc'>, --height <image height in inches>, --width <image width in inches>, --dpi <image DPI> ]
 
 DESCRIPTION
     Tool to apply matR-based statistical tests to grouped metagenomic abundace profiles.
@@ -53,6 +53,9 @@ def main(args):
     parser.add_option("", "--stat_test", dest="stat_test", default='Kruskal-Wallis', help="supported statistical tests, one of: Kruskal-Wallis, t-test-paired, Wilcoxon-paired, t-test-unpaired, Mann-Whitney-unpaired-Wilcoxon, ANOVA-one-way, default is Kruskal-Wallis")
     parser.add_option("", "--order", dest="order", default=None, help="column number to order output by, default is last column")
     parser.add_option("", "--direction", dest="direction", default="desc", help="direction of order. 'asc' for ascending order, 'desc' for descending order, default is desc")
+    parser.add_option("", "--height", dest="height", type="float", default=6, help="image height in inches, default is 6")
+    parser.add_option("", "--width", dest="width", type="float", default=6, help="image width in inches, default is 6")
+    parser.add_option("", "--dpi", dest="dpi", type="int", default=300, help="image DPI, default is 300")
     
     # get inputs
     (opts, args) = parser.parse_args()
@@ -128,11 +131,14 @@ suppressMessages( group_stats_plot(
     file_in="%s",
     file_out="%s",
     figure_out=%s,
+    figure_width_in=%.1f,
+    figure_height_in=%.1f,
+    figure_res_dpi=%d,
     stat_test="%s",
     order_by=%s,
     order_decreasing=%s,
     my_grouping=%s
-))"""%(opts.rlib, tmp_in, tmp_out, fig_out, opts.stat_test, order_by, order_desc, group_str)
+))"""%(opts.rlib, tmp_in, tmp_out, fig_out, opts.height, opts.width, opts.dpi, opts.stat_test, order_by, order_desc, group_str)
     execute_r(r_cmd)
     
     # output results
