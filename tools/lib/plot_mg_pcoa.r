@@ -57,6 +57,11 @@ plot_mg_pcoa <<- function(
   
   require(matR)
 
+
+      
+  
+  ###################################################################################################################################  
+  # MAIN
   ###################################################################################################################################
   # generate filename for the image output
   if ( identical(image_out, "default") ){
@@ -82,10 +87,31 @@ plot_mg_pcoa <<- function(
     # this needs more work -- to get legend that maps colors to groups
     if ( identical(auto_colors, TRUE) ){
       pcoa_colors <- create_colors(color_matrix, color_mode="auto")
+
+      # generate figure legend (for auto-coloring only)
+      png(
+          filename = paste(image_out, ".legend.png", sep="", collapse=""),
+          width = 3,
+          height = 8,
+          res = 300,
+          units = 'in'
+          )
+      
+      # this bit is a repeat of the code in the sub below - clean up later
+      column_factors <- as.factor(color_matrix[,color_column])
+      column_levels <- levels(as.factor(color_matrix[,color_column]))
+      num_levels <- length(column_levels)
+      color_levels <- col.wheel(num_levels)
+      #levels(column_factors) <- color_levels
+      #my_data.color[,color_column]<-as.character(column_factors)
+      plot.new()
+      legend( x="center", legend=column_levels, pch=15, col=color_levels )
+      
+      dev.off()
     }else{
       pcoa_colors <- color_matrix
     }
-    plot_colors <- pcoa_colors[,color_column]
+    plot_colors <- pcoa_colors[,color_column]    
   }else{
     # use color list if the option is selected
     if ( identical( is.na(color_list), FALSE ) ){
@@ -111,7 +137,7 @@ plot_mg_pcoa <<- function(
   ###################################################################################################################################
 
   ###################################################################################################################################
-  # Generate the plot
+  # GENERATE THE PLOT - A SCOND LEGEND FIGURE IS PRODUCED IF AU
   # Have matR calculate the pco and generate an image generate the image (2d)
   png(
       filename = image_out,
@@ -143,45 +169,51 @@ plot_mg_pcoa <<- function(
     }
   }
 
-  dev.off()
+ dev.off()
 
+  
+  
 }
 ###################################################################################################################################
 
 ###################################################################################################################################
+
+
+###################################################################################################################################
 ######## SUBS
-   
-create_colors <- function(color_matrix, color_mode = "auto"){ # function to automtically generate colors from metadata with identical text or values
+
 ############################################################################
-# Color methods adapted from https://stat.ethz.ch/pipermail/r-help/2002-May/022037.html
+# $ # Color methods adapted from https://stat.ethz.ch/pipermail/r-help/2002-May/022037.html
 ############################################################################
 
-  # create optimal contrast color selection using a color wheel
-  col.wheel <- function(num_col, my_cex=0.75) {
-    cols <- rainbow(num_col)
-    col_names <- vector(mode="list", length=num_col)
-    for (i in 1:num_col){
-      col_names[i] <- getColorTable(cols[i])
-    }
-    cols
+# $ # create optimal contrast color selection using a color wheel
+col.wheel <- function(num_col, my_cex=0.75) {
+  cols <- rainbow(num_col)
+  col_names <- vector(mode="list", length=num_col)
+  for (i in 1:num_col){
+    col_names[i] <- getColorTable(cols[i])
   }
+  cols
+}
 
-  # The inverse function to col2rgb()
-  rgb2col <- function(rgb) {
-    rgb <- as.integer(rgb)
-    class(rgb) <- "hexmode"
-    rgb <- as.character(rgb)
-    rgb <- matrix(rgb, nrow=3)
-    paste("#", apply(rgb, MARGIN=2, FUN=paste, collapse=""), sep="")
-  }
+# $ # The inverse function to col2rgb()
+rgb2col <<- function(rgb) {
+  rgb <- as.integer(rgb)
+  class(rgb) <- "hexmode"
+  rgb <- as.character(rgb)
+  rgb <- matrix(rgb, nrow=3)
+  paste("#", apply(rgb, MARGIN=2, FUN=paste, collapse=""), sep="")
+}
 
-  # Convert all colors into format "#rrggbb"
-  getColorTable <- function(col) {
-    rgb <- col2rgb(col);
-    col <- rgb2col(rgb);
-    sort(unique(col))
-  }
-        
+# $ # Convert all colors into format "#rrggbb"
+getColorTable <- function(col) {
+  rgb <- col2rgb(col);
+  col <- rgb2col(rgb);
+  sort(unique(col))
+}
+############################################################################
+
+create_colors <- function(color_matrix, color_mode = "auto"){ # function to automtically generate colors from metadata with identical text or values    
   my_data.color <- data.frame(color_matrix)
   ids <- rownames(color_matrix)
   color_categories <- colnames(color_matrix)
@@ -195,3 +227,4 @@ create_colors <- function(color_matrix, color_mode = "auto"){ # function to auto
   }
   return(my_data.color)
 }
+
