@@ -8,6 +8,7 @@ use File::Basename;
 use Data::Dumper;
 use JSON;
 use LWP::UserAgent;
+use URI::Escape;
 
 1;
 
@@ -52,20 +53,22 @@ sub token {
 }
 
 
-
+#multiple values for the same key can given as array ref: "key => [value1, value2]"
+#example: (1, 'matrix/function', 'id' =>['mgm4447943.3', 'mgm4447192.3'])
 sub create_url {
-	my ($self, $version, $resource, $request, %hash) = @_;
+	my ($self, $version, $resource, %query) = @_;
 	
-	my $api_url = $self->api_server . "/$version/$resource/$request";
+	my $api_url = $self->api_server . "/$version/$resource";
 	
 	if (defined $self->token) {
-		$hash{'auth'}=$self->token;
+		$query{'auth'}=$self->token;
 	}
 	
+	#build query string:
+	my $query_string = "";
 	
-	my $first=1;
-	foreach my $key (keys %hash) {
-		my $value = $hash{$key};
+	foreach my $key (keys %query) {
+		my $value = $query{$key};
 		
 		my @values=();
 		if (ref($value) eq 'ARRAY') {
@@ -75,22 +78,25 @@ sub create_url {
 		}
 		
 		foreach my $value (@values) {
-			if ($first==1) {
-				$api_url .= '?';
-				$first=0;
-			} else {
-				$api_url .= '&';
+			if ((length($query_string) != 0)) {
+				$query_string .= '&';
 			}
-			$api_url .= $key.'='.$value;
+			$query_string .= $key.'='.$value;
 		}
 	}
+	
+	
+	if (length($query_string) != 0) {
+		$api_url .= uri_escape('?'.$query_string);
+	}
+	
 	
 	return $api_url;
 }
 
 
 #get_hash example:
-#my $biom = $mg->get_hash(1, 'matrix', 'function' ,
+#my $biom = $mg->get_hash(1, 'matrix/function' ,
 #'id' =>['mgm4447943.3', 'mgm4447192.3', 'mgm4447103.3', 'mgm4447102.3', 'mgm4447101.3', 'mgm4447971.3', 'mgm4447970.3', 'mgm4447903.3'],
 #'result_type'=>'abundance',
 #'source'=> 'COG',
@@ -107,7 +113,7 @@ sub get_hash {
 }
 
 sub get {
-	my ($self, $version, $resource, $request, %hash) = @_;
+	my ($self, $version, $resource, %hash) = @_;
 	
 	my $api_url = create_url(@_);
 	
@@ -137,9 +143,9 @@ sub get {
 }
 
 sub download {
-	my ($self, $path, $request, %hash) = @_;
+	my ($self, $path, $mg_id, %hash) = @_;
 	
-	my $api_url = create_url($self, 1, 'download', $request, %hash);
+	my $api_url = create_url($self, 1, 'download/'.$mg_id, %hash);
 		
 	print "$api_url\n";
 	
