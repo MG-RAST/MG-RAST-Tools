@@ -91,8 +91,8 @@ plot_mg_pcoa <<- function(
       # generate figure legend (for auto-coloring only)
       png(
           filename = paste(image_out, ".legend.png", sep="", collapse=""),
-          width = 6,
-          height = 2,
+          width = 3,
+          height = 8,
           res = 300,
           units = 'in'
           )
