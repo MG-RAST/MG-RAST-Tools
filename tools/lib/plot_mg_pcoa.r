@@ -77,7 +77,7 @@ plot_mg_pcoa <<- function(
   # import colors if the option is selected - generate colors from metadata table if that option is selected
   if ( identical( is.na(color_table), FALSE ) ){
     #color_matrix <- matrix(read.table(color_table, row.names=1, header=TRUE, sep="\t", comment.char="", quote="", check.names=FALSE))
-    color_matrix <- as.matrix(read.table(file=color_table, sep="\t", colClasses = "character", check.names=FALSE, comment.char = ""))
+    color_matrix <- as.matrix(read.table(file=color_table, row.names=1, header=TRUE, sep="\t", colClasses = "character", check.names=FALSE, comment.char = ""))
     # generate auto colors if the color matrix contains metadata and not colors
     # this needs more work -- to get legend that maps colors to groups
     if ( identical(auto_colors, TRUE) ){
@@ -97,7 +97,7 @@ plot_mg_pcoa <<- function(
 
   # load pch matrix if one is specified
   if ( identical( is.na(pch_table), FALSE ) ){
-    pch_matrix <- data.matrix(read.table(pch_table, row.names=1, header=TRUE, sep="\t", comment.char="", quote="", check.names=FALSE))
+    pch_matrix <- data.matrix(read.table(file=pch_table, row.names=1, header=TRUE, sep="\t", comment.char="", quote="", check.names=FALSE))
     plot_pch <- pch_matrix[,pch_column]
   }else{
     # use pch list if the option is selected
