@@ -82,10 +82,31 @@ plot_mg_pcoa <<- function(
     # this needs more work -- to get legend that maps colors to groups
     if ( identical(auto_colors, TRUE) ){
       pcoa_colors <- create_colors(color_matrix, color_mode="auto")
+
+      # generate figure legend (for auto-coloring only)
+      png(
+          filename = paste(image_out, ".legend.png", sep="", collapse=""),
+          width = 3,
+          height = 1,
+          res = 300,
+          units = 'in'
+          )
+      
+      # this bit is a repeat of the code in the sub below - clean up later
+      column_factors <- as.factor(color_matrix[,color_column])
+      column_levels <- levels(as.factor(color_matrix[,color_column]))
+      num_levels <- length(column_levels)
+      color_levels <- col.wheel(num_levels)
+      #levels(column_factors) <- color_levels
+      #my_data.color[,color_column]<-as.character(column_factors)
+      plot.new()
+      legend( x="center", legend=column_levels, pch=15, col=color_levels )
+      
+      dev.off()
     }else{
       pcoa_colors <- color_matrix
     }
-    plot_colors <- pcoa_colors[,color_column]
+    plot_colors <- pcoa_colors[,color_column]    
   }else{
     # use color list if the option is selected
     if ( identical( is.na(color_list), FALSE ) ){
@@ -111,7 +132,7 @@ plot_mg_pcoa <<- function(
   ###################################################################################################################################
 
   ###################################################################################################################################
-  # Generate the plot
+  # GENERATE THE PLOT - A SCOND LEGEND FIGURE IS PRODUCED IF AU
   # Have matR calculate the pco and generate an image generate the image (2d)
   png(
       filename = image_out,
@@ -143,8 +164,10 @@ plot_mg_pcoa <<- function(
     }
   }
 
-  dev.off()
+ dev.off()
 
+  
+  
 }
 ###################################################################################################################################
 
