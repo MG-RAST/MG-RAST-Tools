@@ -1,4 +1,4 @@
-package MGRASTAPI;
+package mglib;
 
 use strict;
 use warnings;
@@ -11,8 +11,9 @@ use LWP::UserAgent;
 
 1;
 
+
 sub new {
-    my ($class, $api_server, $token) = @_;
+    my ($class, %h) = @_;
     
 	
     my $agent = LWP::UserAgent->new;
@@ -24,8 +25,8 @@ sub new {
     my $self = {
         json => $json,
         agent => $agent,
-        api_server => $api_server || '',
-        token => $token || ''
+        api_server => $h{api_server} || 'http://api.metagenomics.anl.gov',
+        token => $h{token} || ''
     };
    
 
