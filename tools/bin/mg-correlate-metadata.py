@@ -105,7 +105,8 @@ def main(args):
     # check correlation
     annotation = [r['id'] for r in biom['rows']]
     annotation.sort()
-    safe_print("# metagenomes skipped: %s\n"%",".join(skip))
+    if len(skip) > 0:
+        safe_print("# metagenomes skipped: %s\n"%",".join(skip))
     safe_print("\t%s\tr-value\tp-value\n"%"\t".join(keep))
     for a in annotation:
         l_meta = []
