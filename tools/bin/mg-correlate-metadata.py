@@ -115,7 +115,7 @@ def main(args):
             l_anno.append(float(abund[m][a]))
         gradient, intercept, r_value, p_value, std_err = stats.linregress(l_meta, l_anno)
         oline = "%s\t%s\t%.5f\t%.5f\n"%(a, "\t".join([str(abund[m][a]) for m in keep]), r_value, p_value)
-        if opts.cutoff
+        if opts.cutoff:
             if p_value < opts.cutoff:
                 safe_print(oline)
         else:
