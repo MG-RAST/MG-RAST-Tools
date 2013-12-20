@@ -99,6 +99,7 @@ def main(args):
     annotation.sort()
     safe_print("# metagenomes used: %s\n"%",".join(meta.keys()))
     safe_print("# metadata field: %s\n"%opts.metadata)
+    safe_print("\t".join(['', 'r-value', 'p-value'])+"\n")
     for a in annotation:
         l_meta = []
         l_anno = []
@@ -107,7 +108,7 @@ def main(args):
             l_anno.append(float(abund[m][a]))
         gradient, intercept, r_value, p_value, std_err = stats.linregress(l_meta, l_anno)
         if p_value < 0.05:
-            safe_print("%s\t%.5f\n"%(a, p_value))
+            safe_print("%s\t%.5f\n"%(a, p_value, r_value))
     
     return 0
     
