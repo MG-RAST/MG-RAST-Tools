@@ -67,17 +67,17 @@ def main(args):
     meta = {}
     skip = []
     try:
-        for c in biom['columns']:
+        for col in biom['columns']:
             value = None
             # find metadata value
-            for v in c['metadata'].itervalues():
+            for v in col['metadata'].itervalues():
                 if ('data' in v) and (opts.metadata in v['data']):
                     value = v['data'][opts.metadata]
             # only accept numeric
             try:
-                meta[c['id']] = float(value)
+                meta[col['id']] = float(value)
             except:
-                skip.append(c['id'])
+                skip.append(col['id'])
     except:
         sys.stderr.write("ERROR: input BIOM data missing metadata\n")
         return 1
@@ -88,11 +88,11 @@ def main(args):
         matrix = sparse_to_dense(biom['data'], biom['shape'][0], biom['shape'][1])
     else:
         matrix = biom['data']
-    for c in biom['columns']:
+    for c, col in enumerate(biom['columns']):
         # only use valid metagenomes
-        if c['id'] in meta:
-            for r in biom['rows']:
-                abund[c['id']][r['id']] = matrix[r][c]
+        if col['id'] in meta:
+            for r, row in enumerate(biom['rows']):
+                abund[col['id']][row['id']] = matrix[r][c]
     
     # check correlation
     annotation = [r['id'] for r in biom['rows']]
