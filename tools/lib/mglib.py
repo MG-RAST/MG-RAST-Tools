@@ -104,6 +104,7 @@ def stdout_from_url(url, auth=None, data=None, debug=False):
 
 # safe handeling of stdout for pipeing
 def safe_print(text):
+    text = "".join([x if ord(x) < 128 else '?' for x in text])
     try:
         sys.stdout.write(text)
     except IOError:
