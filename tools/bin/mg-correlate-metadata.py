@@ -48,6 +48,7 @@ def main(args):
     parser.add_option("", "--metadata", dest="metadata", default=None, help="metadata field to correlate")
     parser.add_option("", "--groups", dest="groups", default=None, help="list of metadata groups in JSON or tabbed format - either as input string or filename")
     parser.add_option("", "--group_pos", dest="group_pos", type="int", default=1, help="position of metadata group to use, default is 1 (first)")
+    parser.add_option("", "--output", dest="output", default='full', help="output format: 'full' for abundances and significance, 'minimum' for significance only, default is full")
     parser.add_option("", "--cutoff", dest="cutoff", default=None, help="only show p-value less than this, default show all")
     
     # get inputs
@@ -61,53 +62,74 @@ def main(args):
     if opts.metadata:
         opts.group_pos = 1
     
-    # load input
+    # load input / get metadata
+    meta = {}
+    keep = []
+    rows = []
+    cols = []
+    data = []
     try:
-        data = sys.stdin.read() if opts.input == '-' else open(opts.input, 'r').read()
-        biom = json.loads(data)
+        indata = sys.stdin.read() if opts.input == '-' else open(opts.input, 'r').read()
+        if opts.format == 'biom':
+            try:
+                biom = json.loads(indata)
+                rows, cols, data = biom_to_matrix(biom)
+                if opts.metadata:
+                    for c in biom['columns']:
+                        value = None
+                        for v in c['metadata'].itervalues():
+                            if ('data' in v) and (opts.metadata in v['data']):
+                                value = v['data'][opts.metadata]
+                        try:
+                            meta[c['id']] = float(value)
+                            keep.append(c['id'])
+                        except:
+                            pass
+            except:
+                sys.stderr.write("ERROR: input BIOM data not correct format\n")
+                return 1
+        else:
+            rows, cols, data = tab_to_matrix(indata)
     except:
         sys.stderr.write("ERROR: unable to load input data\n")
         return 1
-            
-    # get metadata
-    meta = {}
-    keep = []
-    skip = []
-    try:
-        for col in biom['columns']:
-            value = None
-            # find metadata value
-            for v in col['metadata'].itervalues():
-                if ('data' in v) and (opts.metadata in v['data']):
-                    value = v['data'][opts.metadata]
-            # only accept numeric
-            try:
-                meta[col['id']] = float(value)
-                keep.append(col['id'])
-            except:
-                skip.append(col['id'])
-    except:
-        sys.stderr.write("ERROR: input BIOM data missing metadata\n")
-        return 1
-        
+    
+    # get groups if not in BIOM metadata and option used
+    if (not meta) and opts.groups:
+        gindx = opts.group_pos - 1
+        # is it json ?
+        try:
+            gdata = json.load(open(opts.groups, 'r')) if os.path.isfile(opts.groups) else json.loads(opts.groups)
+            if opts.group_pos > len(gdata):
+                sys.stderr.write("ERROR: group pos (%d) is greater than group size (%d)\n"%(opts.group_pos, len(gdata)))
+                return 1
+            for mg in cols:
+                for g in gdata[gindx].iterkeys():
+                    if mg in gdata[gindx][g]:
+                        meta[mg] = g
+        # no - its tabbed
+        except:
+            gtext = open(opts.groups, 'r').read() if os.path.isfile(opts.groups) else opts.groups
+            for line in ctext.strip().split("\n")[1:]:
+                parts = line.strip().split("\t")
+                mgid  = parts.pop(0)
+                keep.append(mgid)
+                meta[mgid] = parts[gindx]
+    
     # get annotations
     abund = defaultdict(dict)
-    if biom['matrix_type'] == 'sparse':
-        matrix = sparse_to_dense(biom['data'], biom['shape'][0], biom['shape'][1])
-    else:
-        matrix = biom['data']
-    for c, col in enumerate(biom['columns']):
+    for i, c in enumerate(cols):
         # only use valid metagenomes
-        if col['id'] in meta:
-            for r, row in enumerate(biom['rows']):
-                abund[col['id']][row['id']] = matrix[r][c]
+        if c in meta:
+            for j, r in enumerate(rows):
+                abund[c][r] = data[j][i]
     
-    # check correlation
-    annotation = [r['id'] for r in biom['rows']]
-    annotation.sort()
-    if len(skip) > 0:
-        safe_print("# metagenomes skipped: %s\n"%",".join(skip))
-    safe_print("\t%s\tr-value\tp-value\n"%"\t".join(keep))
+    # check correlation and output
+    annotation = sorted(rows)
+    if opts.output == 'full':
+        safe_print("\t%s\tr-value\tp-value\n"%"\t".join(keep))
+    else:
+        safe_print("\tr-value\tp-value\n")
     for a in annotation:
         l_meta = []
         l_anno = []
@@ -115,7 +137,10 @@ def main(args):
             l_meta.append(meta[m])
             l_anno.append(float(abund[m][a]))
         gradient, intercept, r_value, p_value, std_err = stats.linregress(l_meta, l_anno)
-        oline = "%s\t%s\t%.5f\t%.5f\n"%(a, "\t".join([str(abund[m][a]) for m in keep]), r_value, p_value)
+        if opts.output == 'full':
+            oline = "%s\t%s\t%.5f\t%.5f\n"%(a, "\t".join([str(abund[m][a]) for m in keep]), r_value, p_value)
+        else:
+            oline = "%s\t%.5f\t%.5f\n"%(a, r_value, p_value)
         if opts.cutoff:
             if p_value < opts.cutoff:
                 safe_print(oline)
