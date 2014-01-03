@@ -14,8 +14,6 @@ mg_calculate_fdr <- function (
   # generate filename for the outout
   if ( identical(table_out, "default") ){
     table_out = paste(table_in, ".with_fdr.txt", sep="", collapse="")
-  }else{
-    table_out = paste(table_out, ".txt", sep="", collapse="")
   }
   ###################################################################################################################################
     
@@ -40,9 +38,10 @@ mg_calculate_fdr <- function (
   output_matrix <- cbind( data_matrix, fdr_values)
 
   # sort the output by the fdr
-  output_matrix.ordered <- output_matrix[ order(output_matrix[,ncol(output_matrix)], decreasing=FALSE), ]
+  #output_matrix.ordered <- output_matrix[ order(output_matrix[,ncol(output_matrix)], decreasing=FALSE), ]
 
   # write the output
-  write.table(output_matrix.ordered, file = table_out, col.names=NA, row.names = rownames(output_matrix.ordered), sep="\t", quote=FALSE)
+  #write.table(output_matrix.ordered, file = table_out, col.names=NA, row.names = rownames(output_matrix.ordered), sep="\t", quote=FALSE)
+  write.table(output_matrix, file = table_out, col.names=NA, row.names = rownames(output_matrix), sep="\t", quote=FALSE)
     
   }

@@ -5,6 +5,7 @@ import sys
 import json
 from collections import defaultdict
 from optparse import OptionParser
+import numpy as np
 from scipy import stats
 from mglib import *
 
@@ -16,7 +17,7 @@ VERSION
     %s
 
 SYNOPSIS
-    mg-correlate-metadata [ --help, --input <input file or stdin>, --format <cv: 'text' or 'biom'>, --metadata <metadata field>, --groups <json string or filepath>, --group_pos <integer>, --cutoff <float> ]
+    mg-correlate-metadata [ --help, --input <input file or stdin>, --format <cv: 'text' or 'biom'>, --metadata <metadata field>, --groups <json string or filepath>, --group_pos <integer>, --output <cv: 'full' or 'minimum'>, --cutoff <float>, --fdr <boolean> ]
 
 DESCRIPTION
     Identify annotations with a significant correlation to a given metadata field using linear regression.
@@ -39,6 +40,20 @@ AUTHORS
     %s
 """
 
+def calculate_fdr(p_values):
+    p_values = np.atleast_1d(p_values)
+    n_samples = p_values.size
+    order = p_values.argsort()
+    sp_values = p_values[order]
+    # compute q while in ascending order
+    q = np.minimum(1, n_samples * sp_values / np.arange(1, n_samples + 1))
+    for i in range(n_samples - 1, 0, - 1):
+        q[i - 1] = min(q[i], q[i - 1])
+    # reorder the results
+    inverse_order = np.arange(n_samples)
+    inverse_order[order] = np.arange(n_samples)
+    return q[inverse_order]
+
 def main(args):
     OptionParser.format_description = lambda self, formatter: self.description
     OptionParser.format_epilog = lambda self, formatter: self.epilog
@@ -50,6 +65,7 @@ def main(args):
     parser.add_option("", "--group_pos", dest="group_pos", type="int", default=1, help="position of metadata group to use, default is 1 (first)")
     parser.add_option("", "--output", dest="output", default='full', help="output format: 'full' for abundances and significance, 'minimum' for significance only, default is full")
     parser.add_option("", "--cutoff", dest="cutoff", default=None, help="only show p-value less than this, default show all")
+    parser.add_option("", "--fdr", dest="fdr", action="store_true", default=False, help="output FDR for computed p-values, default is off")
     
     # get inputs
     (opts, args) = parser.parse_args()
@@ -124,12 +140,10 @@ def main(args):
             for j, r in enumerate(rows):
                 abund[c][r] = data[j][i]
     
-    # check correlation and output
+    # check correlation
     annotation = sorted(rows)
-    if opts.output == 'full':
-        safe_print("\t%s\tr-value\tp-value\n"%"\t".join(keep))
-    else:
-        safe_print("\tr-value\tp-value\n")
+    results = []
+    pvalues = []
     for a in annotation:
         l_meta = []
         l_anno = []
@@ -138,14 +152,34 @@ def main(args):
             l_anno.append(float(abund[m][a]))
         gradient, intercept, r_value, p_value, std_err = stats.linregress(l_meta, l_anno)
         if opts.output == 'full':
-            oline = "%s\t%s\t%.5f\t%.5f\n"%(a, "\t".join([str(abund[m][a]) for m in keep]), r_value, p_value)
+            l_result = [a]+[int(abund[m][a]) for m in keep]+[r_value, p_value]
         else:
-            oline = "%s\t%.5f\t%.5f\n"%(a, r_value, p_value)
-        if opts.cutoff:
-            if p_value < opts.cutoff:
-                safe_print(oline)
-        else:
-            safe_print(oline)
+            l_result = [a, r_value, p_value]
+        if (not opts.cutoff) or (opts.cutoff and (p_value < opts.cutoff)):
+            results.append(l_result)
+            pvalues.append(p_value)
+    
+    # calculate fdr
+    if opts.fdr and pvalues:
+        fdr_values = calculate_fdr(pvalues)
+        for i, x in enumerate(fdr_values):
+            results[i].append(x)
+    
+    # output
+    header = ['r-value', 'p-value']
+    if opts.output == 'full':
+        header = keep+header
+    if opts.fdr:
+        header.append('fdr')
+    safe_print("\t%s\n"%"\t".join(header))
+    for r in results:
+        safe_print(r[0])
+        for x in r[1:]:
+            if int(x) == float(x):
+                safe_print("\t%d"%int(x))
+            else:
+                safe_print("\t%.5f"%float(x))
+        safe_print("\n")
     
     return 0
     
