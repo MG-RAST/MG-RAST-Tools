@@ -14,8 +14,6 @@ mg_calculate_fdr <- function (
   # generate filename for the outout
   if ( identical(table_out, "default") ){
     table_out = paste(table_in, ".with_fdr.txt", sep="", collapse="")
-  }else{
-    table_out = paste(table_out, ".txt", sep="", collapse="")
   }
   ###################################################################################################################################
     
