@@ -17,7 +17,7 @@ VERSION
     %s
 
 SYNOPSIS
-    mg-correlate-metadata [ --help, --input <input file or stdin>, --format <cv: 'text' or 'biom'>, --metadata <metadata field>, --groups <json string or filepath>, --group_pos <integer>, --cutoff <float> ]
+    mg-correlate-metadata [ --help, --input <input file or stdin>, --format <cv: 'text' or 'biom'>, --metadata <metadata field>, --groups <json string or filepath>, --group_pos <integer>, --output <cv: 'full' or 'minimum'>, --cutoff <float>, --fdr <boolean> ]
 
 DESCRIPTION
     Identify annotations with a significant correlation to a given metadata field using linear regression.
