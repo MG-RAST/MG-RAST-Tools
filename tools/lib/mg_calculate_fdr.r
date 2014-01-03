@@ -41,6 +41,7 @@ mg_calculate_fdr <- function (
   #output_matrix.ordered <- output_matrix[ order(output_matrix[,ncol(output_matrix)], decreasing=FALSE), ]
 
   # write the output
-  write.table(output_matrix.ordered, file = table_out, col.names=NA, row.names = rownames(output_matrix), sep="\t", quote=FALSE)
+  #write.table(output_matrix.ordered, file = table_out, col.names=NA, row.names = rownames(output_matrix.ordered), sep="\t", quote=FALSE)
+  write.table(output_matrix, file = table_out, col.names=NA, row.names = rownames(output_matrix), sep="\t", quote=FALSE)
     
   }
