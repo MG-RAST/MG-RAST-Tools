@@ -155,7 +155,7 @@ def main(args):
             l_anno.append(float(abund[m][a]))
         gradient, intercept, r_value, p_value, std_err = stats.linregress(l_meta, l_anno)
         if opts.output == 'full':
-            l_result = [a]+[int(abund[m][a]) for m in keep]+[r_value, p_value]
+            l_result = [a]+[float(abund[m][a]) for m in keep]+[r_value, p_value]
         else:
             l_result = [a, r_value, p_value]
         if (not opts.cutoff) or (opts.cutoff and (p_value < opts.cutoff)):
