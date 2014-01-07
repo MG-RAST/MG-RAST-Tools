@@ -67,7 +67,10 @@ def main(args):
     # parse inputs
     try:
         indata = sys.stdin.read() if opts.input == '-' else open(opts.input, 'r').read()
-        rows, cols, data = tab_to_matrix(indata)
+        rows, cols, datatemp = tab_to_matrix(indata)
+        data = []
+        for r in datatemp:
+            data.append( map(lambda x: int(x) if x.isdigit() else float(x), r) )
     except:
         sys.stderr.write("ERROR: unable to load input data\n")
         return 1
