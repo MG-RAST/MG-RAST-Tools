@@ -129,8 +129,11 @@ def main(args):
             for line in gtext.strip().split("\n")[1:]:
                 parts = line.strip().split("\t")
                 mgid  = parts.pop(0)
-                keep.append(mgid)
-                meta[mgid] = parts[gindx]
+                try:
+                    meta[mgid] = float(parts[gindx])
+                    keep.append(mgid)
+                except:
+                    pass
     
     # get annotations
     abund = defaultdict(dict)
