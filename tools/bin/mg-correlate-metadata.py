@@ -126,7 +126,7 @@ def main(args):
         # no - its tabbed
         except:
             gtext = open(opts.groups, 'r').read() if os.path.isfile(opts.groups) else opts.groups
-            for line in ctext.strip().split("\n")[1:]:
+            for line in gtext.strip().split("\n")[1:]:
                 parts = line.strip().split("\t")
                 mgid  = parts.pop(0)
                 keep.append(mgid)
