@@ -21,7 +21,8 @@ my $shockurl = "http://shock1.chicago.kbase.us:80";
 
 my $aweserverurl = "http://140.221.84.148:8000"; # Wei's server
 my $clientgroup = 'qiime-wolfgang';
-my $shocktoken=$ENV{'GLOBUSONLINE'};
+
+my $shocktoken=$ENV{'GLOBUSONLINE'} || ENV{'KB_AUTH_TOKEN'};
 
 #purpose of wrapper: replace env variables, capture stdout and stderr and archive output directory
 my @awe_job_states = ('in-progress', 'completed', 'queued', 'pending', 'deleted' , 'suspend' );
@@ -242,14 +243,9 @@ sub download_and_delete_output_job_nodes {
 }
 
 
-sub getAWE_results_and_cleanup {
+sub getCompletedJobs {
 	my $awe = new AWE($aweserverurl, $shocktoken);
 	unless (defined $awe) {
-		die;
-	}
-	
-	my $shock = new Shock($shockurl, $shocktoken); # shock production
-	unless (defined $shock) {
 		die;
 	}
 	
@@ -290,9 +286,45 @@ sub getAWE_results_and_cleanup {
 	if (keys($states) > 6) { # in case Wei introduces new states.. ;-)
 		die;
 	}
+	return @completed_jobs;
+}
+
+
+sub get_jobs_and_cleanup {
+	
+	#my @jobs = @ARGV;
+	
+	my $job_hash={};
+	foreach my $job (@ARGV) {
+		$job_hash->{$job}=1;
+	}
+	
+	my $awe = new AWE($aweserverurl, $shocktoken);
+	unless (defined $awe) {
+		die;
+	}
+	
+	
+	my $all_jobs = $awe->getJobQueue('info.clientgroups' => $clientgroup);
+	
+	print Dumper($all_jobs);
+	
+	
+	my $shock = new Shock($shockurl, $shocktoken); # shock production
+	unless (defined $shock) {
+		die;
+	}
+	
 	
 	my $job_deletion_ok= 1;
-	foreach my $job (@completed_jobs) {
+	foreach my $job_object (@{$all_jobs->{data}}) {
+		
+		my $job = $job_object->{'id'};
+		
+		unless (defined($job_hash->{$job})) {
+			next;
+		}
+		
 		#print "completed job $job\n";
 		
 		print Dumper($job)."\n";
@@ -309,6 +341,21 @@ sub getAWE_results_and_cleanup {
 		
 		
 	}
+	
+	if ($job_deletion_ok == 1) {
+		return 1;
+	}
+	
+	return 0;
+}
+
+sub getAWE_results_and_cleanup {
+	
+	my @completed_jobs = getCompletedJobs();
+	
+	
+	my $job_deletion_ok =  get_jobs_and_cleanup(@completed_jobs);
+	
 	
 	if ($job_deletion_ok == 1) {
 		return 1;
@@ -665,12 +712,12 @@ unless (@ARGV) {
 
 my $h = {};
 
-GetOptions($h, 'cmd=s' , 'status', 'get', 'delete' , 'shock_query=s' , 'shock_clean' , 'output_files=s');
+GetOptions($h, 'cmd=s' , 'status', 'get_all', 'get_jobs=s' , 'delete=s' , 'shock_query=s' , 'shock_clean' , 'output_files=s');
 
 
 
 if (defined($h->{"status"})) {
-	showAWEstatus($ARGV[1]);
+	showAWEstatus($ARGV[0]);
 	exit(0);
 
 } elsif (defined($h->{"delete"})) {
@@ -731,8 +778,14 @@ if (defined($h->{"status"})) {
 	
 	
 	exit(0);
+
+} elsif (defined($h->{"get_jobs"})) {
 	
-} elsif (defined($h->{"get"})) {
+	get_jobs_and_cleanup(split(',',$h->{"get_jobs"}));
+	
+	print "done.\n";
+	
+} elsif (defined($h->{"get_all"})) {
 	getAWE_results_and_cleanup();
 	print "done.\n";
 	exit(0);
@@ -751,34 +804,8 @@ if (defined($h->{"status"})) {
 	#./awe.pl --output_files=ucr/otu_table.biom --cmd="pick_closed_reference_otus.py -i @4506694.3.fas -o ucrC97 -p @otu_picking_params_97.txt -r /home/ubuntu/data/gg_13_5_otus/rep_set/97_otus.fasta"
 	
 	## compose AWE job ##
-	my $awe_qiime_job = generateAndSubmitSimpleAWEJob('cmd' => $cmd, @moreopts);
-	#"output_files" => "ucr/otu_table.biom",
-	#"cmd" => 'pick_closed_reference_otus.py -i @4506694.3.fas -o ucrC97 -p @otu_picking_params_97.txt -r /home/ubuntu/data/gg_13_5_otus/rep_set/97_otus.fasta'
-	#);
+	generateAndSubmitSimpleAWEJob('cmd' => $cmd, @moreopts);
 	
-	
-	#$awe_qiime_job->{'info'} = decode_json($awe_info);
-	#push(@{$awe_qiime_job->{'tasks'}} , $first_task);
-	
-	#my $json = JSON->new;
-	#print "AWE job:\n".$json->pretty->encode( $awe_qiime_job )."\n";
-	#my $awe_qiime_job_json  = $json->encode( $awe_qiime_job );  # hash2json
-	
-	
-	
-	#my $awe = new AWE($aweserverurl, $shocktoken);
-	#unless (defined $awe) {
-		#die;
-	#}
-	
-	
-	#$awe->checkClientGroup($clientgroup) == 0 or exit(1);
-	
-	#my $response_content_hash = $awe->submit_job('json_data' => $awe_qiime_job_json);
-	#print $json->pretty->encode( $response_content_hash )."\n";
-	#my $job_id =$response_content_hash->{data}->{id};
-	
-	#print "job_id: ".$job_id."\n";
 	
 	
 	exit(0);
