@@ -151,6 +151,8 @@ def main(args):
         l_meta = []
         l_anno = []
         for m in keep:
+            if a not in abund[m]:
+                continue
             l_meta.append(meta[m])
             l_anno.append(float(abund[m][a]))
         gradient, intercept, r_value, p_value, std_err = stats.linregress(l_meta, l_anno)
