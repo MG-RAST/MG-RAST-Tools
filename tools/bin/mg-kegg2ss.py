@@ -87,7 +87,7 @@ def main(args):
     # biom KO -> SS
     ssrows = []
     ssmatrix = []
-    for r, rid in rows:
+    for r, rid in enumerate(rows):
         ss_roles, md5s = ko2ss(opts, ss_hier, rid)
         for ss, roles in ss_roles.iteritems():
             fig_ids = ss2fig(opts, list(roles), md5s)
@@ -102,7 +102,7 @@ def main(args):
     if opts.output == 'biom':
         safe_print(json.dumps(biom)+"\n")
     elif opts.output == 'text':
-        for r, row in biom['rows']:
+        for r, row in enumerate(biom['rows']):
             # output: feature list, function, abundance for function, avg evalue for function, organism
             safe_print("%s\t%s\t%d\t%.2e\t%s\n" %(",".join(row['metadata']['accession']), row['id'], biom['data'][r][0], 0, 'glob'))
     else:
