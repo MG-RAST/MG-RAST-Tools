@@ -136,17 +136,15 @@ def main(args):
                     pass
     
     # get annotations
-    annotation_set = set()
     abund = defaultdict(dict)
     for i, c in enumerate(cols):
         # only use valid metagenomes
         if c in meta:
             for j, r in enumerate(rows):
                 abund[c][r] = data[j][i]
-                annotation_set.add(r)
     
     # check correlation
-    annotation = sorted(list(annotation_set))
+    annotation = sorted(rows)
     results = []
     pvalues = []
     for a in annotation:
