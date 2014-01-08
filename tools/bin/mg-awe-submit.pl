@@ -6,8 +6,8 @@ use warnings;
 
 
 #https://github.com/MG-RAST/Shock/blob/master/libs/shock.pm
-use Shock;
-use AWE;
+use shock;
+use awe;
 
 use JSON;
 
@@ -214,11 +214,12 @@ sub delete_shock_nodes{
 sub download_and_delete_output_job_nodes {
 	my ($job_hash, $shock) = @_;
 	
-
+	
 	my $job_name = $job_hash->{'info'}->{'name'} || die;
 	
-	my $download_dir = $job_name;
-	system("mkdir -p ".$download_dir);
+	my $download_dir = ".";
+	#my $download_dir = $job_name;
+	#system("mkdir -p ".$download_dir);
 	
 	my $output_nodes = get_awe_output_nodes($job_hash);
 	
@@ -292,12 +293,14 @@ sub getCompletedJobs {
 
 sub get_jobs_and_cleanup {
 	
-	#my @jobs = @ARGV;
+	
 	
 	my $job_hash={};
-	foreach my $job (@ARGV) {
+	foreach my $job (@_) {
 		$job_hash->{$job}=1;
 	}
+	my $jobs_to_process = @_;
+	print "jobs_to_process: $jobs_to_process\n";
 	
 	my $awe = new AWE($aweserverurl, $shocktoken);
 	unless (defined $awe) {
@@ -307,7 +310,7 @@ sub get_jobs_and_cleanup {
 	
 	my $all_jobs = $awe->getJobQueue('info.clientgroups' => $clientgroup);
 	
-	print Dumper($all_jobs);
+	#print Dumper($all_jobs);
 	
 	
 	my $shock = new Shock($shockurl, $shocktoken); # shock production
@@ -327,19 +330,23 @@ sub get_jobs_and_cleanup {
 		
 		#print "completed job $job\n";
 		
-		print Dumper($job)."\n";
-		my $node_delete_status = download_and_delete_output_job_nodes($job, $shock);
+		print Dumper($job_object)."\n";
+		my $node_delete_status = download_and_delete_output_job_nodes($job_object, $shock);
 		
 		if (defined $node_delete_status) {
-			print "deleting job ".$job->{id}."\n";
-			my $dd = $awe->deleteJob($job->{id});
+			print "deleting job ".$job_object->{id}."\n";
+			my $dd = $awe->deleteJob($job_object->{id});
 			print Dumper($dd);
 		} else {
 			$job_deletion_ok = 0;
 		}
+		$jobs_to_process--;
 		
 		
-		
+	}
+	
+	if ($jobs_to_process != 0 ) {
+		die "not all jobs processed";
 	}
 	
 	if ($job_deletion_ok == 1) {
@@ -781,10 +788,12 @@ if (defined($h->{"status"})) {
 
 } elsif (defined($h->{"get_jobs"})) {
 	
-	get_jobs_and_cleanup(split(',',$h->{"get_jobs"}));
+	my @jobs = split(/,/,$h->{"get_jobs"});
+	
+	get_jobs_and_cleanup(@jobs);
 	
 	print "done.\n";
-	
+	exit(0);
 } elsif (defined($h->{"get_all"})) {
 	getAWE_results_and_cleanup();
 	print "done.\n";
