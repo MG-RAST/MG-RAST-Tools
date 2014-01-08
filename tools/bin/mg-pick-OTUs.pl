@@ -15,7 +15,7 @@ my $shockurl = "http://shock1.chicago.kbase.us:80";
 
 my $aweserverurl = "http://140.221.84.148:8000"; # Wei's server
 my $clientgroup = 'qiime-wolfgang';
-my $shocktoken=$ENV{'GLOBUSONLINE'} || ENV{'KB_AUTH_TOKEN'};
+my $shocktoken=$ENV{'GLOBUSONLINE'} || $ENV{'KB_AUTH_TOKEN'};
 
 
 my @awe_job_states = ('in-progress', 'completed', 'queued', 'pending', 'deleted' , 'suspend' );
