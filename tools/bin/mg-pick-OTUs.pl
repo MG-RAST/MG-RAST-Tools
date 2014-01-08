@@ -205,7 +205,7 @@ system("rm -f ./otu_picking_params_97.txt");
 
 print "all jobs submitted... waiting for results\n";
 print "job IDs: ".join(',', @jobs)."\n";
-if (@jobs) ==0 ) {
+if (@jobs ==0 ) {
 	die "no jobs submitted?";
 }
 
