@@ -4,8 +4,8 @@ use strict;
 use warnings;
 use File::Basename;
 
-use Shock;
-use AWE;
+use shock;
+use awe;
 
 use JSON;
 
