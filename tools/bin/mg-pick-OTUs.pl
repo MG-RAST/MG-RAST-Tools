@@ -133,7 +133,7 @@ my $json = JSON->new;
 #create parameter file
 system("echo \"pick_otus:enable_rev_strand_match True\npick_otus:similarity 0.97\" > ./otu_picking_params_97.txt");
 
-my $jobs=();
+my @jobs=();
 #my $jobs_to_download = {};
 
 foreach my $file (@ARGV) {
