@@ -136,23 +136,23 @@ def main(args):
                     pass
     
     # get annotations
+    annotation_set = set()
     abund = defaultdict(dict)
     for i, c in enumerate(cols):
         # only use valid metagenomes
         if c in meta:
             for j, r in enumerate(rows):
                 abund[c][r] = data[j][i]
+                annotation_set.add(r)
     
     # check correlation
-    annotation = sorted(rows)
+    annotation = sorted(list(annotation_set))
     results = []
     pvalues = []
     for a in annotation:
         l_meta = []
         l_anno = []
         for m in keep:
-            if a not in abund[m]:
-                continue
             l_meta.append(meta[m])
             l_anno.append(float(abund[m][a]))
         gradient, intercept, r_value, p_value, std_err = stats.linregress(l_meta, l_anno)
