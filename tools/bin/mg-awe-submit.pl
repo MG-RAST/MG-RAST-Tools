@@ -14,7 +14,8 @@ use JSON;
 use Data::Dumper;
 use File::Basename;
 
-use Getopt::Long;
+#use Getopt::Long;
+use Getopt::Long::Descriptive;
 
 my $shockurl = "http://shock1.chicago.kbase.us:80";
 #my $shockurl = 'http://shock.metagenomics.anl.gov';
@@ -200,7 +201,7 @@ sub showAWEstatus {
 	
 	if (@jobs > 0) {
 		print "summary:\n";
-		print join(' ' , @jobs)."\n";
+		print join(',' , @jobs)."\n";
 	}
 	
 	print "\n** job states **\n";
@@ -230,21 +231,23 @@ sub showAWEstatus {
 
 
 
-unless (@ARGV) {
-	print "usage mg-awe-submit.pl --cmd=\"cmd args\"...\n";
-	print "      mg-awe-submit.pl --status\n";
-	print "      mg-awe-submit.pl --get\n";
-	print "      mg-awe-submit.pl --delete jobids\n";
-	print "      mg-awe-submit.pl --shock_query id_1,id_2..\n";
-	print "      mg-awe-submit.pl --shock_clean\n";
-	print "      mg-awe-submit.pl --wait_completed\n";
-	exit(0);
-}
+my ($h, $usage) = describe_options(
+	'%c %o <some-arg>',
+	[ 'cmd=s', "command to execute"],
+	[ 'status',  "status"],
+	[ 'get_all', "download all completed jobs"],
+	[ 'get_jobs=s' , "download specified jobs if state==completed"],
+	[ 'wait_and_get_jobs=s' , "wait for completion and download specified jobs"],
+	[ 'delete=s' , ""],
+	[ 'shock_query=s' , ""],
+	[ 'shock_clean' , ""],
+	[ 'output_files=s', ""],
+	[ 'wait_completed', "wait until any job is in state completed"],
+	[],
+	[ 'help',       "print usage message and exit" ],
+);
 
-
-my $h = {};
-
-GetOptions($h, 'cmd=s' , 'status', 'get_all', 'get_jobs=s' , 'delete=s' , 'shock_query=s' , 'shock_clean' , 'output_files=s', 'wait_completed');
+print($usage->text), exit if $h->help;
 
 
 
@@ -256,6 +259,34 @@ if (defined($h->{"status"})) {
 		sleep(5);
 	}
 	exit(0);
+} elsif (defined($h->{"wait_and_get_jobs"})) {
+	
+	my @jobs = split(',', $h->{"wait_and_get_jobs"});
+	
+	############################################
+	# connect to AWE server and check the clients
+	
+	my $awe = new AWE($aweserverurl, $shocktoken);
+	unless (defined $awe) {
+		die;
+	}
+	
+	
+	$awe->checkClientGroup($clientgroup) == 0 or exit(1);
+	
+	############################################
+	#connect to SHOCK server
+	
+	print "connect to SHOCK\n";
+	my $shock = new Shock($shockurl, $shocktoken); # shock production
+	unless (defined $shock) {
+		die;
+	}
+	
+	AWE::Job::wait_and_get_job_results ('awe' => $awe, 'shock' => $shock, 'jobs' => \@jobs, 'clientgroup' => $clientgroup);
+	
+	exit(0);
+
 } elsif (defined($h->{"delete"})) {
 	my $awe = new AWE($aweserverurl, $shocktoken);
 	unless (defined $awe) {
@@ -361,7 +392,7 @@ if (defined($h->{"status"})) {
 		die;
 	}
 	
-	checkClients($awe, $clientgroup) == 0 or exit(1);
+	$awe->checkClientGroup($clientgroup) == 0 or exit(1);
 	
 	
 	############################################
@@ -385,112 +416,4 @@ if (defined($h->{"status"})) {
 
 
 
-
-
-
-
-#my $json = JSON->new;
-
-# example
-#./awe.pl pick_closed_reference_otus.py -i @100.preprocess.passed.fna -o @@@ucrC97 -p @otu_picking_params_97.txt -r \$QIIME/../gg_otus-13_5-release/rep_set/97_otus.fasta
-#./awe.pl normalize_by_copy_number.py -i @ucrC97/otu_table.biom -o @@normalized_otus.biom
-
-
-#print join(',',@ARGV)."\n";
-
-
-
-
-
-
-
-#exit(0);
-
-
-
-
-
-
-
-############################################
-# upload trojan horse
-#my $trojan_nodeid = shock_upload($shock, data => AWE::JOB::get_trojanhorse(\@output_directories, $resulttarfile));
-
-
-############################################
-#upload input files to SHOCK
-#
-#my $first_task = {};
-#
-#foreach my $input_file (@input_files_local) {
-#	print "uploading input_file $input_file to SHOCK...\n";
-#	my $inputfile_nodeid = shock_upload($shock, file => $input_file);
-#	
-#	#push(@temporary_shocknodes, $inputfile_nodeid);
-#
-#	$first_task->{'inputs'}->{basename($input_file)} = {
-#		'host' => $shockurl,
-#		'node' => $inputfile_nodeid
-#	};
-#}
-#
-#
-#
-#if (@output_files > 0) {
-#	foreach my $output_file (@output_files) {
-#		$first_task->{'outputs'}->{basename($output_file)} = {
-#			'host' => $shockurl
-#		};
-#	}
-#}
-#
-#
-#if (@output_directories > 0) {
-#
-#	$first_task->{'outputs'}->{$resulttarfile} = {
-#		#	'nonzero' => "1",
-#		'host' => $shockurl
-#	};
-#}
-#
-#
-#
-#
-#############################################
-## create AWE job description
-#
-#
-#
-#
-#
-#
-#############################################
-## upload job to AWE
-#
-#print "submit job to AWE server...\n";
-#
-#my $response_content_hash = $awe->submit_job(json_data => $awe_qiime_job_json);
-##print $json->pretty->encode( $response_content_hash )."\n";
-#my $job_id =$response_content_hash->{data}->{id};
-#
-#
-#unless (defined $job_id) {
-#	print $json->pretty->encode( $response_content_hash )."\n";
-#	print STDERR "error: jobid not defined\n";
-#	exit(1);
-#	
-#}
-#
-#
-#############################################
-## wait for job completion
-#
-#
-#print "AWE job submitted, job_id: $job_id\n";
-#
-#
-#exit(0);
-#
-#my $jobstatus_hash = wait_for_job($awe, $job_id);
-#
 
