@@ -6,6 +6,8 @@ use warnings;
 use awe;
 use shock;
 
+use Getopt::Long::Descriptive;
+
 my $shockurl = "http://shock1.chicago.kbase.us:80";
 #my $shockurl = 'http://shock.metagenomics.anl.gov';
 
@@ -14,13 +16,55 @@ my $clientgroup = 'qiime-wolfgang';
 
 my $shocktoken=$ENV{'GLOBUSONLINE'} || $ENV{'KB_AUTH_TOKEN'};
 
+my $help_text = <<EOF;
 
-unless (@ARGV) {
-	print "usage: mg-picrust-predict [file ...]\n";
-	print "input is QIIME OTU file in BIOM format\n";
-	print "data should have normalized with mg-picrust-normalize-16s-copy\n";
+NAME
+    mg-picrust-predict -- something
+
+VERSION
+    1
+
+SYNOPSIS
+    mg-picrust-predict -i <input> -o <output>
+
+DESCRIPTION
+    Some description...
+
+    Parameters:
+XXX-XXX
+    Output:
+
+    Some output...
+
+EXAMPLES
+    ls
+
+SEE ALSO
+    -
+
+AUTHORS
+    Wolfgang Gerlach
+
+EOF
+
+my ($h, $usage) = describe_options(
+'',
+[ 'input|i=s', "QIIME OTU file in BIOM format"],
+[ 'output|o=s',   "PICRUST functional prediction in BIOM format" ],
+[],
+[ 'help|h', "", { hidden => 1  }]
+);
+
+my $htext = $usage->text;
+$help_text =~ s/XXX-XXX/$htext/;
+
+if ($h->help) {
+	print $help_text;
 	exit(0);
 }
+
+$h->input || die "no input defined";
+$h->output || die "no output defined";
 
 
 
@@ -45,30 +89,13 @@ unless (defined $shock) {
 }
 
 
-my @jobs=();
+	
+my $cmd = "predict_metagenomes.py -i \@".$h->{'input'}." -o \@\@".$h->{'output'};
+	
+my $job_id = AWE::Job::generateAndSubmitSimpleAWEJob('cmd' => $cmd, 'awe' => $awe, 'shock' => $shock);
 
-foreach my $file (@ARGV) {
-	
-	#print $file."\n";
-	
-		
-	
-	my $cmd = "predict_metagenomes.py -i \@$file -o \@\@$file.metagenome_predictions.biom";
-	
-	my $job_id = AWE::Job::generateAndSubmitSimpleAWEJob('cmd' => $cmd, 'awe' => $awe, 'shock' => $shock);
-	
-	push (@jobs,$job_id);
-	
-	#print $cmd."\n";
-	
-	
-}
+print "job submitted: $job_id\n";
 
-print "all jobs submitted\n";
-print "jobs: ".join(',', @jobs)."\n";
-
-
-
-AWE::Job::wait_and_get_job_results ('awe' => $awe, 'shock' => $shock, 'jobs' => \@jobs, 'clientgroup' => $clientgroup);
+#AWE::Job::wait_and_get_job_results ('awe' => $awe, 'shock' => $shock, 'jobs' => \@jobs, 'clientgroup' => $clientgroup);
 
 

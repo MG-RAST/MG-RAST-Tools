@@ -3,11 +3,13 @@
 use strict;
 use warnings;
 use File::Basename;
+use Pod::Usage;
 
 use shock;
 use awe;
 
 use JSON;
+use Getopt::Long::Descriptive;
 
 use Data::Dumper;
 my $shockurl = "http://shock1.chicago.kbase.us:80";
@@ -20,19 +22,55 @@ my $shocktoken=$ENV{'GLOBUSONLINE'} || $ENV{'KB_AUTH_TOKEN'};
 
 my @awe_job_states = ('in-progress', 'completed', 'queued', 'pending', 'deleted' , 'suspend' );
 
+my $help_text = <<EOF;
 
+NAME
+    mg-pick-OTUs -- something
 
+VERSION
+    1
 
+SYNOPSIS
+    mg-pick-OTUs -i <file> -o <file>
 
+DESCRIPTION
+    Some description...
 
-unless (@ARGV) {
-	print "usage: mg-pick-OTUs [file ...]\n";
-	print "input are 16S sequences in FASTA format\n";
+    Parameters:
+XXX-XXX
+    Output:
+
+    Some output...
+
+EXAMPLES
+    ls
+
+SEE ALSO
+    -
+
+AUTHORS
+    Wolfgang Gerlach
+
+EOF
+
+my ($h, $usage) = describe_options(
+'',
+	[ 'input|i=s', "16S sequences in FASTA format"],
+	[ 'output|o=s',   "QIIME OTUs in BIOM format" ],
+	[ 'nowait|n',   "asynchronous call" ],
+	[ 'help|h', "", { hidden => 1  }]
+);
+
+my $htext = $usage->text;
+$help_text =~ s/XXX-XXX/$htext/;
+
+if ($h->help) {
+	print $help_text;
 	exit(0);
 }
 
-
-
+$h->input || die "no input defined";
+$h->output || die "no output defined";
 
 
 
@@ -43,11 +81,17 @@ my $task_tmpls_json = <<EOF;
 	"pick_closed_reference_otus" : {
 		"cmd" : "pick_closed_reference_otus.py -i @[INPUT] -o ucr -p @[INPUT-PARAMETER] -r /home/ubuntu/data/gg_13_5_otus/rep_set/97_otus.fasta",
 		"inputs" : ["[INPUT]", "[INPUT-PARAMETER]"],
-		"outputs" : ["otu_table.biom"],
-		"trojan" : {"out_files" : ["ucr/otu_table.biom"]}
+		"outputs" : ["ucr/otu_table.biom"]
 	}
 }
 EOF
+
+#"outputs" : ["ucr/otu_table.biom"]
+
+#"outputs" : ["otu_table.biom"],
+#"trojan" : {"out_files" : ["ucr/otu_table.biom"]}
+
+
 
 $task_tmpls = decode_json($task_tmpls_json);
 
@@ -133,83 +177,76 @@ my $json = JSON->new;
 #create parameter file
 system("echo \"pick_otus:enable_rev_strand_match True\npick_otus:similarity 0.97\" > ./otu_picking_params_97.txt");
 
-my @jobs=();
+#my @jobs=();
 #my $jobs_to_download = {};
 
-foreach my $file (@ARGV) {
-	print $file."\n";
+#foreach my $file (@ARGV) {
 
-	my $fasta = $file;
-	if ($file =~ /\.gz$/) {
-		system("gzip -d $file");
-		$fasta = basename($file, ".gz");
-	}
-	
-	unless (-e $fasta) {
-		die "fasta file $fasta not found\n";
-	}
-	
-	my $base = basename($fasta, ".fas", ".fna");
-	
-	$tasks->[1]->{'OUTPUT'} = $base.".otus.biom";
-	my $awe_qiime_job = create_qiime_pipeline();
-	
-	
-	
-	#print Dumper($awe_qiime_job->{'tasks'});
-	#exit(0);
-	
-	
-	
-	#define job input
-	my $job_input = {};
-	$job_input->{'INPUT'}->{'file'} = $fasta;   	  # local file to be uploaded
-	$job_input->{'INPUT-PARAMETER'}->{'file'} = './otu_picking_params_97.txt';   	  # local file to be uploaded
-	$job_input->{'TROJAN1'}->{'data'} = AWE::Job::get_trojanhorse(%{$task_tmpls->{'pick_closed_reference_otus'}->{'trojan'}});
-	$job_input->{'TROJAN2'}->{'data'} = AWE::Job::get_trojanhorse();
-	$job_input->{'TROJAN3'}->{'data'} = AWE::Job::get_trojanhorse();
-	
-	#upload job input files
-	$shock->upload_temporary_files($job_input);
-	
-	
-	# create job with the input defined above
-	my $workflow = $awe_qiime_job->create(%$job_input);
-	
-	#overwrite jobname:
-	#$workflow->{'info'}->{'name'} = $sample;
-	
-	print "AWE job ready for submission:\n".$json->pretty->encode( $workflow )."\n";
-	
-	print "submit job to AWE server...\n";
-	my $submission_result = $awe->submit_job('json_data' => $json->encode($workflow));
-	
-	my $job_id = $submission_result->{'data'}->{'id'};
-	
-	unless (defined($job_id)) {
-		die "no job_id found";
-	}
-	
-	push(@jobs, $job_id);
-	
-	
-	print "result from AWE server:\n".$json->pretty->encode( $submission_result )."\n";
-	
-	
-	
-	
+if (-e $h->{'output'}) {
+	die "error: outputfile \"".$h->{'output'}."\" already exists.";
 }
+
+
+my $file = $h->{'input'};
+print $file."\n";
+
+my $fasta = $file;
+if ($file =~ /\.gz$/) {
+	system("gzip -d $file") == 0 or die;
+	$fasta = basename($file, ".gz");
+}
+
+unless (-e $fasta) {
+	die "fasta file $fasta not found\n";
+}
+
+#my $base = basename($fasta, ".fas", ".fna");
+
+$tasks->[1]->{'OUTPUT'} = $h->{'output'};
+my $awe_qiime_job = create_qiime_pipeline();
+
+
+
+#print Dumper($awe_qiime_job->{'tasks'});
+#exit(0);
+
+
+
+#define job input
+my $job_input = {};
+$job_input->{'INPUT'}->{'file'} = $fasta;   	  # local file to be uploaded
+$job_input->{'INPUT-PARAMETER'}->{'file'} = './otu_picking_params_97.txt';   	  # local file to be uploaded
+$job_input->{'TROJAN1'}->{'data'} = AWE::Job::get_trojanhorse(%{$task_tmpls->{'pick_closed_reference_otus'}->{'trojan'}});
+$job_input->{'TROJAN2'}->{'data'} = AWE::Job::get_trojanhorse();
+$job_input->{'TROJAN3'}->{'data'} = AWE::Job::get_trojanhorse();
+
+#upload job input files
+$shock->upload_temporary_files($job_input);
+
+
+# create job with the input defined above
+my $workflow = $awe_qiime_job->create(%$job_input);
+
+#overwrite jobname:
+#$workflow->{'info'}->{'name'} = $sample;
+
+print "AWE job ready for submission:\n".$json->pretty->encode( $workflow )."\n";
+
+print "submit job to AWE server...\n";
+my $submission_result = $awe->submit_job('json_data' => $json->encode($workflow));
+
+my $job_id = $submission_result->{'data'}->{'id'} || die "no job_id found";
+
+
+print "result from AWE server:\n".$json->pretty->encode( $submission_result )."\n";
+
 
 system("rm -f ./otu_picking_params_97.txt");
 
+print "job submitted: $job_id\n";
 
-print "all jobs submitted... waiting for results\n";
-print "job IDs: ".join(',', @jobs)."\n";
-if (@jobs ==0 ) {
-	die "no jobs submitted?";
+unless (defined($h->{'nowait'})) {
+	AWE::Job::wait_and_get_job_results ('awe' => $awe, 'shock' => $shock, 'jobs' => [$job_id], 'clientgroup' => $clientgroup);
 }
-
-AWE::Job::wait_and_get_job_results ('awe' => $awe, 'shock' => $shock, 'jobs' => \@jobs, 'clientgroup' => $clientgroup);
-
 
 
