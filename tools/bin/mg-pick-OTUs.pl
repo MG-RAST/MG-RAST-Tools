@@ -11,66 +11,50 @@ use awe;
 use JSON;
 use Getopt::Long::Descriptive;
 
-use Data::Dumper;
-my $shockurl = "http://shock1.chicago.kbase.us:80";
-#my $shockurl = 'http://shock.metagenomics.anl.gov';
+use USAGEPOD qw(parse_options);
 
-my $aweserverurl = "http://140.221.84.148:8000"; # Wei's server
-my $clientgroup = 'qiime-wolfgang';
+use Data::Dumper;
+
+
+
+# export AWE_SERVER_URL="http://140.221.85.36:8000" or "http://140.221.84.148:8000"
+# export SHOCK_SERVER_URL="http://shock1.chicago.kbase.us:80"
+# export AWE_CLIENT_GROUP=qiime-wolfgang
+
+
+
+my $aweserverurl =  $ENV{'AWE_SERVER_URL'};
+my $shockurl =  $ENV{'SHOCK_SERVER_URL'};
+my $clientgroup = $ENV{'AWE_CLIENT_GROUP'};
+
 my $shocktoken=$ENV{'GLOBUSONLINE'} || $ENV{'KB_AUTH_TOKEN'};
 
 
-my @awe_job_states = ('in-progress', 'completed', 'queued', 'pending', 'deleted' , 'suspend' );
 
-my $help_text = <<EOF;
-
-NAME
-    mg-pick-OTUs -- something
-
-VERSION
-    1
-
-SYNOPSIS
-    mg-pick-OTUs -i <file> -o <file>
-
-DESCRIPTION
-    Some description...
-
-    Parameters:
-XXX-XXX
-    Output:
-
-    Some output...
-
-EXAMPLES
-    ls
-
-SEE ALSO
-    -
-
-AUTHORS
-    Wolfgang Gerlach
-
-EOF
-
-my ($h, $usage) = describe_options(
-'',
-	[ 'input|i=s', "16S sequences in FASTA format"],
-	[ 'output|o=s',   "QIIME OTUs in BIOM format" ],
-	[ 'nowait|n',   "asynchronous call" ],
-	[ 'help|h', "", { hidden => 1  }]
+my ($h, $help_text) = &parse_options (
+	'name' => 'mg-pick-OTUs -- wrapper for picrust-normalize',
+	'version' => '1',
+	'synopsis' => 'mg-pick-OTUs -i <input> -o <output>',
+	'examples' => 'ls',
+	'authors' => 'Wolfgang Gerlach',
+	'options' => [
+		[ 'input|i=s',  "16S sequences in FASTA format" ],
+		[ 'output|o=s', "QIIME OTUs in BIOM format" ],
+		[ 'nowait|n',   "asynchronous call" ],
+		[ 'help|h', "", { hidden => 1  }]
+	]
 );
 
-my $htext = $usage->text;
-$help_text =~ s/XXX-XXX/$htext/;
 
-if ($h->help) {
+
+if ($h->{'help'} || keys(%$h)==0) {
 	print $help_text;
 	exit(0);
 }
 
-$h->input || die "no input defined";
-$h->output || die "no output defined";
+$h->{'input'} || die "no input defined";
+$h->{'output'} || die "no output defined";
+
 
 
 
@@ -85,11 +69,6 @@ my $task_tmpls_json = <<EOF;
 	}
 }
 EOF
-
-#"outputs" : ["ucr/otu_table.biom"]
-
-#"outputs" : ["otu_table.biom"],
-#"trojan" : {"out_files" : ["ucr/otu_table.biom"]}
 
 
 
