@@ -129,6 +129,8 @@ def main(args):
             for line in gtext.strip().split("\n")[1:]:
                 parts = line.strip().split("\t")
                 mgid  = parts.pop(0)
+                if mgid not in cols:
+                    continue
                 try:
                     meta[mgid] = float(parts[gindx])
                     keep.append(mgid)
