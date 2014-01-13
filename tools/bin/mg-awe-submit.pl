@@ -14,14 +14,13 @@ use JSON;
 use Data::Dumper;
 use File::Basename;
 
-#use Getopt::Long;
-use Getopt::Long::Descriptive;
+use USAGEPOD qw(parse_options);
 
-my $shockurl = "http://shock1.chicago.kbase.us:80";
-#my $shockurl = 'http://shock.metagenomics.anl.gov';
 
-my $aweserverurl = "http://140.221.84.148:8000"; # Wei's server
-my $clientgroup = 'qiime-wolfgang';
+my $aweserverurl =  $ENV{'AWE_SERVER_URL'};
+my $shockurl =  $ENV{'SHOCK_SERVER_URL'};
+my $clientgroup = $ENV{'AWE_CLIENT_GROUP'};
+
 
 my $shocktoken=$ENV{'GLOBUSONLINE'} || ENV{'KB_AUTH_TOKEN'};
 
@@ -224,30 +223,38 @@ sub showAWEstatus {
 ########################################################################################
 # START
 
-#if (-e $resultfilename) {
-#	print STDERR "error: resultfile $resultfilename already exists\n";
-#	exit(1);
-#}
 
 
 
-my ($h, $usage) = describe_options(
-	'%c %o <some-arg>',
-	[ 'cmd=s', "command to execute"],
-	[ 'status',  "status"],
-	[ 'get_all', "download all completed jobs"],
-	[ 'get_jobs=s' , "download specified jobs if state==completed"],
-	[ 'wait_and_get_jobs=s' , "wait for completion and download specified jobs"],
-	[ 'delete=s' , ""],
-	[ 'shock_query=s' , ""],
-	[ 'shock_clean' , ""],
-	[ 'output_files=s', ""],
-	[ 'wait_completed', "wait until any job is in state completed"],
-	[],
-	[ 'help',       "print usage message and exit" ],
+
+my ($h, $help_text) = &parse_options (
+	'name' => 'mg-awe-submit ',
+	'version' => '1',
+	'synopsis' => 'mg-awe-submit --status',
+	'examples' => 'ls',
+	'authors' => 'Wolfgang Gerlach',
+	'options' => [
+		[ 'cmd=s', "command to execute"],
+		[ 'status',  "status"],
+		[ 'get_all', "download all completed jobs"],
+		[ 'get_jobs=s' , "download specified jobs if state==completed"],
+		[ 'wait_and_get_jobs=s' , "wait for completion and download specified jobs"],
+		[ 'delete=s'],
+		[ 'shock_query=s'],
+		[ 'shock_clean'],
+		[ 'output_files=s'],
+		[ 'wait_completed', "wait until any job is in state completed"],
+		[ 'help|h', "", { hidden => 1  }]
+	]
 );
 
-print($usage->text), exit if $h->help;
+
+
+if ($h->{'help'} || keys(%$h)==0) {
+	print $help_text;
+	exit(0);
+}
+
 
 
 

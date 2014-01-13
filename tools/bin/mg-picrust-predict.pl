@@ -6,67 +6,41 @@ use warnings;
 use awe;
 use shock;
 
-use Getopt::Long::Descriptive;
+use USAGEPOD qw(parse_options);
 
-my $shockurl = "http://shock1.chicago.kbase.us:80";
-#my $shockurl = 'http://shock.metagenomics.anl.gov';
 
-my $aweserverurl = "http://140.221.84.148:8000"; # Wei's server
-my $clientgroup = 'qiime-wolfgang';
+my $aweserverurl =  $ENV{'AWE_SERVER_URL'};
+my $shockurl =  $ENV{'SHOCK_SERVER_URL'};
+my $clientgroup = $ENV{'AWE_CLIENT_GROUP'};
 
 my $shocktoken=$ENV{'GLOBUSONLINE'} || $ENV{'KB_AUTH_TOKEN'};
 
-my $help_text = <<EOF;
 
-NAME
-    mg-picrust-predict -- something
 
-VERSION
-    1
 
-SYNOPSIS
-    mg-picrust-predict -i <input> -o <output>
-
-DESCRIPTION
-    Some description...
-
-    Parameters:
-XXX-XXX
-    Output:
-
-    Some output...
-
-EXAMPLES
-    ls
-
-SEE ALSO
-    -
-
-AUTHORS
-    Wolfgang Gerlach
-
-EOF
-
-my ($h, $usage) = describe_options(
-'',
-[ 'input|i=s', "QIIME OTU file in BIOM format"],
-[ 'output|o=s',   "PICRUST functional prediction in BIOM format" ],
-[],
-[ 'help|h', "", { hidden => 1  }]
+my ($h, $help_text) = &parse_options (
+	'name' => 'mg-picrust-predict -- wrapper for picrust-normalize',
+	'version' => '1',
+	'synopsis' => 'mg-picrust-predict -i <input> -o <output>',
+	'examples' => 'ls',
+	'authors' => 'Wolfgang Gerlach',
+	'options' => [
+		[ 'input|i=s',  "QIIME OTU file in BIOM format" ],
+		[ 'output|o=s', "PICRUST functional prediction in BIOM format" ],
+		[ 'nowait|n',   "asynchronous call" ],
+		[ 'help|h', "", { hidden => 1  }]
+	]
 );
 
-my $htext = $usage->text;
-$help_text =~ s/XXX-XXX/$htext/;
 
-if ($h->help) {
+
+if ($h->{'help'} || keys(%$h)==0) {
 	print $help_text;
 	exit(0);
 }
 
-$h->input || die "no input defined";
-$h->output || die "no output defined";
-
-
+$h->{'input'} || die "no input defined";
+$h->{'output'} || die "no output defined";
 
 ############################################
 # connect to AWE server and check the clients
@@ -96,6 +70,7 @@ my $job_id = AWE::Job::generateAndSubmitSimpleAWEJob('cmd' => $cmd, 'awe' => $aw
 
 print "job submitted: $job_id\n";
 
-#AWE::Job::wait_and_get_job_results ('awe' => $awe, 'shock' => $shock, 'jobs' => \@jobs, 'clientgroup' => $clientgroup);
-
+unless (defined($h->{'nowait'})) {
+	AWE::Job::wait_and_get_job_results ('awe' => $awe, 'shock' => $shock, 'jobs' => [$job_id], 'clientgroup' => $clientgroup);
+}
 
