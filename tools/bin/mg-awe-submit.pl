@@ -22,7 +22,7 @@ my $shockurl =  $ENV{'SHOCK_SERVER_URL'};
 my $clientgroup = $ENV{'AWE_CLIENT_GROUP'};
 
 
-my $shocktoken=$ENV{'GLOBUSONLINE'} || ENV{'KB_AUTH_TOKEN'};
+my $shocktoken=$ENV{'GLOBUSONLINE'} || $ENV{'KB_AUTH_TOKEN'};
 
 #purpose of wrapper: replace env variables, capture stdout and stderr and archive output directory
 my @awe_job_states = ('in-progress', 'completed', 'queued', 'pending', 'deleted' , 'suspend' );
