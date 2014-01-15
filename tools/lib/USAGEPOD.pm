@@ -21,6 +21,7 @@ sub parse_options {
 	my $help_authors = $h{'authors'} || '-';
 	
 	
+	my $prefix = '    ';
 	
 	my $help_options = $h{'options'} || die "options not defined";
 	
@@ -40,6 +41,11 @@ sub parse_options {
 	my @opt_list=();
 	my $options_description="";
 	foreach my $opt_array (@$help_options) {
+		
+		unless (ref($opt_array) eq 'ARRAY') {
+			$options_description .= $prefix.$opt_array."\n";
+			next;
+		}
 		if (@$opt_array > 0) {
 			my ($opt, $opt_help, $prop) = @$opt_array;
 			unless (defined $prop) {
@@ -52,7 +58,7 @@ sub parse_options {
 				$opt.=' ';
 			}
 			unless ($prop->{'hidden'}) {
-				$options_description .= "    ".$opt." ".$opt_help."\n";
+				$options_description .= $prefix.' --'.$opt." ".$opt_help."\n";
 			}
 			
 		} else {
