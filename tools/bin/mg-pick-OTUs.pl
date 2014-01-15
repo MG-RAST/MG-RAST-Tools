@@ -225,7 +225,7 @@ system("rm -f ./otu_picking_params_97.txt");
 print "job submitted: $job_id\n";
 
 unless (defined($h->{'nowait'})) {
-	AWE::Job::wait_and_get_job_results ('awe' => $awe, 'shock' => $shock, 'jobs' => [$job_id], 'clientgroup' => $clientgroup);
+	AWE::Job::wait_and_download_job_results ('awe' => $awe, 'shock' => $shock, 'jobs' => [$job_id], 'clientgroup' => $clientgroup);
 }
 
 

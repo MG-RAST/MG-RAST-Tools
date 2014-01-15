@@ -73,5 +73,5 @@ print "get results using:\n";
 print "mg-awe-submit.pl --wait_and_get_jobs=$job_id\n";
 
 unless (defined($h->{'nowait'})) {
-	AWE::Job::wait_and_get_job_results ('awe' => $awe, 'shock' => $shock, 'jobs' => [$job_id], 'clientgroup' => $clientgroup);
+	AWE::Job::wait_and_download_job_results ('awe' => $awe, 'shock' => $shock, 'jobs' => [$job_id], 'clientgroup' => $clientgroup);
 }
