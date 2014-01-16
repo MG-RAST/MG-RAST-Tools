@@ -36,23 +36,25 @@ AUTHORS
 """
 
 # get subsystems->roles and md5s per ko id
-def ko2ss(opts, sshier, koid):
-    ko_anno = obj_from_url(opts.url+'/m5nr/accession/'+koid+'?source=KO&limit=1000')
+def ko2roles(opts, sshier, koid):
+    ko_anno = obj_from_url(opts.url+'/m5nr/accession/'+koid+'?version=1&source=KO&limit=1000')
     ko_md5s = set( map(lambda x: x['md5'], ko_anno['data']) )
-    ko_post = {'source': 'Subsystems', 'data': list(ko_md5s), 'limit': 1000}
+    if len(ko_md5s) == 0:
+        return [], []
+    ko_post = {'version': 1, 'source': 'Subsystems', 'data': list(ko_md5s), 'limit': 10000}
     ss_anno = obj_from_url(opts.url+'/m5nr/md5', data=json.dumps(ko_post, separators=(',',':')))
-    ss_role = defaultdict(set)
+    roles   = set()
     for ss in ss_anno['data']:
         if ss['accession'] in sshier:
-            ss_role[ sshier[ss['accession']]['level3'] ].add( sshier[ss['accession']]['level4'] )
-    return ss_role, list(ko_md5s)
+            roles.add( sshier[ss['accession']]['level4'] )
+    return list(roles), list(ko_md5s)
 
 # get fig ids per subsystem and roles
-def ss2fig(opts, roles, md5s):
-    ss_post = {'source': 'SEED', 'data': roles, 'md5s': md5s, 'exact': 1, 'limit': 1000}
-    ss_anno = obj_from_url(opts.url+'/m5nr/function', data=json.dumps(ss_post, separators=(',',':')))
-    fig_ids = set( map(lambda x: x['accession'], ss_anno['data']) )
-    return list(fig_ids)
+def role2figs(opts, role, md5s):
+    post = {'version': 1, 'source': 'SEED', 'data': [role], 'md5s': md5s, 'exact': 1, 'limit': 10000}
+    anno = obj_from_url(opts.url+'/m5nr/function', data=json.dumps(post, separators=(',',':')))
+    fids = set( map(lambda x: x['accession'], anno['data']) )
+    return list(fids)
 
 def main(args):
     OptionParser.format_description = lambda self, formatter: self.description
@@ -82,22 +84,25 @@ def main(args):
         return 1
     
     # get SS hierarchy
-    ss_hier = dict([ (x['accession'], x) for x in obj_from_url(opts.url+'m5nr/ontology?source=Subsystems')['data'] ])
+    ss_hier = dict([ (x['accession'], x) for x in obj_from_url(opts.url+'m5nr/ontology?version=1&source=Subsystems')['data'] ])
     
     # biom KO -> SS
     ssrows = []
     ssmatrix = []
     for r, rid in enumerate(rows):
-        ss_roles, md5s = ko2ss(opts, ss_hier, rid)
-        for ss, roles in ss_roles.iteritems():
-            fig_ids = ss2fig(opts, list(roles), md5s)
-            ssrows.append({'id': ss, 'metadata': {'accession': fig_ids, 'md5': md5s}})
+        roles, md5s = ko2roles(opts, ss_hier, rid)
+        if not roles:
+            continue
+        for role in roles:
+            fig_ids = role2figs(opts, role, md5s)
+            print rid, role, len(fig_ids)
+            ssrows.append({'id': role, 'metadata': {'accession': fig_ids}})
             ssmatrix.append(matrix[r])
     biom['matrix_type'] = 'sparse'
     biom['shape'][0] = len(ssrows)
     biom['rows'] = ssrows
     biom['data'] = ssmatrix
-    
+    return 0
     # output data
     if opts.output == 'biom':
         safe_print(json.dumps(biom)+"\n")

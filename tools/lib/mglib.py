@@ -135,7 +135,9 @@ def biom_to_tab(biom, hdl, rows=None, use_id=True):
         matrix = biom['data']
     hdl.write( "\t%s\n" %"\t".join([c['id'] for c in biom['columns']]) )
     for i, row in enumerate(matrix):
-        name = biom['rows'][i]['id'] if use_id else biom['rows'][i]['metadata']['ontology'][-1]
+        name = biom['rows'][i]['id']
+        if (not use_id) and ('ontology' in biom['rows'][i]['metadata']):
+            name += ':'+biom['rows'][i]['metadata']['ontology'][-1]
         if rows and (name not in rows):
             continue
         try:
