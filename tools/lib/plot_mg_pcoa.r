@@ -40,6 +40,7 @@ plot_mg_pcoa <<- function(
                           table_in="", # annotation abundance table (raw or normalized values)
                           image_out="default",
                           plot_pcs=c(1,2,3), # R formated string telling which coordinates to plot, and how many (2 or 3 coordinates)
+                          dist_metric="euclidean", # distance metric to use one of (bray-curtis, euclidean, maximum, manhattan, canberra, minkowski, difference,)
                           label_points=FALSE, # default is off
                           color_list=NA, # a list of colors for data points
                           color_table=NA, # matrix that contains colors or metadata that can be used to generate colors
@@ -151,10 +152,10 @@ plot_mg_pcoa <<- function(
   if( length(plot_pcs)==2 ){
     # with labels
     if( identical(label_points, TRUE) ){
-      pco(data_collection, comp = plot_pcs, col = plot_colors, pch = plot_pch)
+      matR::pco(data_collection, comp = plot_pcs, method = dist_metric, col = plot_colors, pch = plot_pch)
     }else{
     # without labels
-      pco(data_collection, comp = plot_pcs, col = plot_colors, pch = plot_pch, labels=NA)
+      matR::pco(data_collection, comp = plot_pcs, method = dist_metric,  col = plot_colors, pch = plot_pch, labels=NA)
     }
   }
 
@@ -162,10 +163,10 @@ plot_mg_pcoa <<- function(
   if( length(plot_pcs)==3 ){
     # with labels
     if( identical(label_points, TRUE) ){
-      pco(data_collection, comp = plot_pcs, color = plot_colors, pch = plot_pch)
+      pco(data_collection, comp = plot_pcs, method = dist_metric, color = plot_colors, pch = plot_pch)
     }else{
     # without labels
-      pco(data_collection, comp = plot_pcs, color = plot_colors, pch = plot_pch, labels=NA)
+      pco(data_collection, comp = plot_pcs, method = dist_metric, color = plot_colors, pch = plot_pch, labels=NA)
     }
   }
 
