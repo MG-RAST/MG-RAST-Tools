@@ -95,14 +95,14 @@ def main(args):
             continue
         for role in roles:
             fig_ids = role2figs(opts, role, md5s)
-            print rid, role, len(fig_ids)
+            #print rid, role, len(fig_ids)
             ssrows.append({'id': role, 'metadata': {'accession': fig_ids}})
             ssmatrix.append(matrix[r])
     biom['matrix_type'] = 'sparse'
     biom['shape'][0] = len(ssrows)
     biom['rows'] = ssrows
     biom['data'] = ssmatrix
-    return 0
+    
     # output data
     if opts.output == 'biom':
         safe_print(json.dumps(biom)+"\n")
