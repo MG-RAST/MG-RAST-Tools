@@ -10,7 +10,7 @@ plot_mg_heatdend <<- function(
                           table_in="", # annotation abundance table (raw or normalized values)
                           image_out="default",
                           label_rows=FALSE,
-                          order_columns=TRUE,
+                          order_columns=FALSE,
                           image_width_in=8.5,
                           image_height_in=11,
                           image_res_dpi=300
@@ -49,9 +49,9 @@ plot_mg_heatdend <<- function(
     
   # Can create heat dend with or without row labels
   if ( identical( label_rows, FALSE ) ){
-    suppressWarnings(heatmap(data_collection, colsep=NULL, Colv=order_columns))
+    suppressWarnings(matR::heatmap(data_collection, colsep=NULL, Colv=order_columns))
   }else{
-    suppressWarnings(heatmap(data_collection, colsep=NULL, Colv=order_columns, labRow=dimnames(data_collection$x)[[1]]))
+    suppressWarnings(matR::heatmap(data_collection, colsep=NULL, Colv=order_columns, labRow=dimnames(data_collection$x)[[1]]))
   }
   dev.off()
 
