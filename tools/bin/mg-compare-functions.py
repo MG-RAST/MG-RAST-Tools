@@ -40,7 +40,7 @@ def main(args):
     OptionParser.format_description = lambda self, formatter: self.description
     OptionParser.format_epilog = lambda self, formatter: self.epilog
     parser = OptionParser(usage='', description=prehelp%VERSION, epilog=posthelp%AUTH_LIST)
-    parser.add_option("", "--ids", dest="ids", default=None, help="comma seperated list of KBase Metagenome IDs")
+    parser.add_option("", "--ids", dest="ids", default=None, help="comma seperated list or file of KBase Metagenome IDs")
     parser.add_option("", "--url", dest="url", default=API_URL, help="communities API url")
     parser.add_option("", "--user", dest="user", default=None, help="OAuth username")
     parser.add_option("", "--passwd", dest="passwd", default=None, help="OAuth password")
@@ -73,7 +73,10 @@ def main(args):
     token = get_auth_token(opts)
     
     # build url
-    id_list = kbids_to_mgids( opts.ids.split(',') )
+    if os.path.isfile(opts.ids):
+        id_list = kbids_to_mgids( open(opts.ids,'r').read().strip().split('\n') )
+    else:
+        id_list = kbids_to_mgids( opts.ids.strip().split(',') )
     params = [ ('group_level', opts.level), 
                ('source', opts.source),
                ('evalue', opts.evalue),
