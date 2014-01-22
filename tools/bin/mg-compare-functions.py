@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 
+import os
 import sys
 import urllib
 from operator import itemgetter
@@ -14,7 +15,7 @@ VERSION
     %s
 
 SYNOPSIS
-    mg-compare-functions [ --help, --user <user>, --passwd <password>, --token <oAuth token>, --ids <metagenome ids>, --level <functional level>, --source <datasource>, --filter_name <function name>, --filter_level <function level>, --evalue <evalue negative exponent>, --identity <percent identity>, --length <alignment length>, --format <cv: 'text' or 'biom'> ]
+    mg-compare-functions [ --help, --user <user>, --passwd <password>, --token <oAuth token>, --ids <metagenome ids>, --level <functional level>, --source <function datasource>, --filter_level <function level>, --filter_name <function name>, --intersect_source <taxon datasource>, --intersect_level <taxon level>, --intersect_name <taxon name>, --evalue <evalue negative exponent>, --identity <percent identity>, --length <alignment length>, --format <cv: 'text' or 'biom'> ]
 
 DESCRIPTION
     Retrieve matrix of functional abundance profiles for multiple metagenomes.
@@ -45,9 +46,12 @@ def main(args):
     parser.add_option("", "--passwd", dest="passwd", default=None, help="OAuth password")
     parser.add_option("", "--token", dest="token", default=None, help="OAuth token")
     parser.add_option("", "--level", dest="level", default='function', help="functional level to retrieve abundances for, default is function")
-    parser.add_option("", "--source", dest="source", default='Subsystems', help="datasource to filter results by, default is Subsystems")
-    parser.add_option("", "--filter_name", dest="filter_name", default=None, help="function name to filter by")
+    parser.add_option("", "--source", dest="source", default='Subsystems', help="function datasource to filter results by, default is Subsystems")
     parser.add_option("", "--filter_level", dest="filter_level", default=None, help="function level to filter by")
+    parser.add_option("", "--filter_name", dest="filter_name", default=None, help="function name to filter by, file or comma seperated list")
+    parser.add_option("", "--intersect_source", dest="intersect_source", default='SEED', help="taxon datasource for insersection, default is SEED")
+    parser.add_option("", "--intersect_level", dest="intersect_level", default=None, help="taxon level for insersection")
+    parser.add_option("", "--intersect_name", dest="intersect_name", default=None, help="taxon name(s) for insersection, file or comma seperated list")
     parser.add_option("", "--format", dest="format", default='text', help="output format: 'text' for tabbed table, 'biom' for BIOM format, default is text")
     parser.add_option("", "--evalue", type="int", dest="evalue", default=5, help="negative exponent value for maximum e-value cutoff, default is 5")
     parser.add_option("", "--identity", type="int", dest="identity", default=60, help="percent value for minimum % identity cutoff, default is 60")
@@ -60,6 +64,9 @@ def main(args):
         return 1
     if (opts.filter_name and (not opts.filter_level)) or ((not opts.filter_name) and opts.filter_level):
         sys.stderr.write("ERROR: both --filter_level and --filter_name need to be used together\n")
+        return 1
+    if (opts.intersect_name and (not opts.intersect_level)) or ((not opts.intersect_name) and opts.intersect_level):
+        sys.stderr.write("ERROR: both --intersect_level and --intersect_name need to be used together\n")
         return 1
     
     # get auth
@@ -76,6 +83,16 @@ def main(args):
                ('asynchronous', '1') ]
     for i in id_list:
         params.append(('id', i))
+    if opts.intersect_level and opts.intersect_name:
+        params.append(('filter_source', opts.intersect_source))
+        params.append(('filter_level', opts.intersect_level))
+        if os.path.isfile(opts.intersect_name):
+            with open(opts.intersect_name) as file_:
+                for f in file_:
+                    params.append(('filter', f.strip()))
+        else:
+            for f in opts.intersect_name.strip().split(','):
+                params.append(('filter', f))
     url = opts.url+'/matrix/function?'+urllib.urlencode(params, True)
 
     # retrieve data
@@ -84,15 +101,25 @@ def main(args):
     # get sub annotations
     sub_ann = set()
     if opts.filter_name and opts.filter_level:
-        params = [ ('filter', opts.filter_name),
-                   ('filter_level', opts.filter_level),
+        # get input filter list
+        filter_list = []
+        if os.path.isfile(opts.filter_name):
+            with open(opts.filter_name) as file_:
+                for f in file_:
+                    filter_list.append(f.strip())
+        else:
+            for f in opts.filter_name.strip().split(','):
+                filter_list.append(f)
+        # annotation mapping from m5nr
+        params = [ ('version', '1'),
                    ('min_level', opts.level),
-                   ('version', '1'),
                    ('source', opts.source) ]
         url = opts.url+'/m5nr/ontology?'+urllib.urlencode(params, True)
         data = obj_from_url(url)
         level = 'level4' if opts.level == 'function' else opts.level
-        sub_ann = set( map(lambda x: x[level], data['data']) )
+        for ann in data['data']:
+            if (opts.filter_level in ann) and (level in ann) and (ann[opts.filter_level] in filter_list):
+                sub_ann.add(ann[level])
     
     # output data
     if opts.format == 'biom':
