@@ -11,8 +11,9 @@ plot_mg_heatdend <<- function(
                           image_out="default",
                           label_rows=FALSE,
                           order_columns=FALSE,
-                          colCex="5", # scale factor for column labels
-                          rowCex="5", # scale factor for row labels
+                          figure_title=NULL,
+                          colCex="1", # scale factor for column labels
+                          rowCex="1", # scale factor for row labels
                           image_width_in=8.5,
                           image_height_in=11,
                           image_res_dpi=300
@@ -51,9 +52,9 @@ plot_mg_heatdend <<- function(
     
   # Can create heat dend with or without row labels
   if ( identical( label_rows, FALSE ) ){
-    suppressWarnings(matR::heatmap(data_collection, colsep=NULL, Colv=order_columns, cexRow=rowCex, cexCol=colCex))
+    suppressWarnings(matR::heatmap(data_collection, colsep=NULL, main=figure_title, Colv=order_columns, cexRow=rowCex, cexCol=colCex))
   }else{
-    suppressWarnings(matR::heatmap(data_collection, colsep=NULL, Colv=order_columns, labRow=dimnames(data_collection$x)[[1]]))
+    suppressWarnings(matR::heatmap(data_collection, colsep=NULL, main=figure_title, Colv=order_columns, labRow=dimnames(data_collection$x)[[1]]))
   }
   dev.off()
 
