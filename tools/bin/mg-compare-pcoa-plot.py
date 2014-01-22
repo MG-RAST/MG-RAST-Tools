@@ -14,7 +14,7 @@ VERSION
     %s
 
 SYNOPSIS
-    mg-compare-pcoa-plot [ --help, --input <input file or stdin>, --format <cv: 'text' or 'biom'>, --plot <filename for png>, --metadata <metadata field>, --color_group <json string or filepath>, --color_pos <integer>, --color_auto <boolean>, --rlib <R lib path>, --height <image height in inches>, --width <image width in inches>, --dpi <image DPI>, --three <boolean>, --label <boolean> ]
+    mg-compare-pcoa-plot [ --help, --input <input file or stdin>, --format <cv: 'text' or 'biom'>, --plot <filename for png>, --distance <cv: bray-curtis, euclidean, maximum, manhattan, canberra, minkowski, difference>, --metadata <metadata field>, --color_group <json string or filepath>, --color_pos <integer>, --color_auto <boolean>, --rlib <R lib path>, --height <image height in inches>, --width <image width in inches>, --dpi <image DPI>, --three <boolean>, --label <boolean> ]
 
 DESCRIPTION
     Tool to generate PCoA vizualizations from metagenome abundance profiles.
@@ -46,6 +46,7 @@ def main(args):
     parser.add_option("", "--input", dest="input", default='-', help="input: filename or stdin (-), default is stdin")
     parser.add_option("", "--format", dest="format", default='text', help="input format: 'text' for tabbed table, 'biom' for BIOM format, default is text")
     parser.add_option("", "--plot", dest="plot", default=None, help="filename for output plot")
+    parser.add_option("", "--distance", dest="distance", default='bray-curtis', help="distance metric, one of: bray-curtis, euclidean, maximum, manhattan, canberra, minkowski, difference, default is bray-curtis")
     parser.add_option("", "--metadata", dest="metadata", default=None, help="metadata field to color by, only for 'biom' input")
     parser.add_option("", "--color_group", dest="color_group", default=None, help="list of color groups in JSON or tabbed format - either as input string or filename")
     parser.add_option("", "--color_pos", dest="color_pos", type="int", default=1, help="position of color group to use, default is 1 (first)")
@@ -165,6 +166,7 @@ suppressMessages( plot_mg_pcoa(
     table_in="%s",
     image_out="%s",
     plot_pcs=%s,
+    dist_metric="%s",
     label_points=%s,
     color_table=%s,
     color_column=%d,
@@ -172,7 +174,7 @@ suppressMessages( plot_mg_pcoa(
     image_height_in=%.1f,
     image_width_in=%.1f,
     image_res_dpi=%d
-))"""%(opts.rlib, tmp_in, opts.plot, three, label, table, opts.color_pos, color, opts.height, opts.width, opts.dpi)
+))"""%(opts.rlib, tmp_in, opts.plot, three, opts.distance, label, table, opts.color_pos, color, opts.height, opts.width, opts.dpi)
     execute_r(r_cmd)
     
     # cleanup

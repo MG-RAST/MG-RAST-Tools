@@ -47,7 +47,7 @@ def main(args):
     parser.add_option("", "--input", dest="input", default='-', help="input: filename or stdin (-), default is stdin")
     parser.add_option("", "--format", dest="format", default='text', help="input format: 'text' for tabbed table, 'biom' for BIOM format, default is text")
     parser.add_option("", "--output", dest="output", default='text', help="output format: 'text' for tabbed table, 'json' for JSON format, default is text")
-    parser.add_option("", "--distance", dest="distance", default='bray-curtis', help="distance function, one of: bray-curtis, euclidean, maximum, manhattan, canberra, minkowski, difference, default is bray-curtis")
+    parser.add_option("", "--distance", dest="distance", default='bray-curtis', help="distance metric, one of: bray-curtis, euclidean, maximum, manhattan, canberra, minkowski, difference, default is bray-curtis")
     parser.add_option("", "--normalize", dest="normalize", action="store_true", default=False, help="normalize the input data, default is off")
     
     # get inputs
