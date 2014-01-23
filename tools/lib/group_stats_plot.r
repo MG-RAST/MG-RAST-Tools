@@ -1,6 +1,7 @@
 group_stats_plot <- function(
                          file_in = "",
                          file_out = "",
+                         append_group_headers=TRUE,
                          figure_out = NULL, # give a name and it will produce a file
                          figure_width_in=6,
                          figure_height_in=6,
@@ -113,8 +114,11 @@ group_stats_plot <- function(
 
 # Create headers for the data columns
   for (i in 1:dim(my_data)[2]){
-    #colnames(my_data)[i] <- paste( colnames(my_data)[i], "::", (my_groups)[i], sep="" )
-    colnames(my_data)[i] <- colnames(my_data)[i]
+    if ( append_group_headers==TRUE ){ # append group to data column header if selected
+       colnames(my_data)[i] <- paste( colnames(my_data)[i], "::", (my_groups)[i], sep="" )
+    }else{
+       colnames(my_data)[i] <- colnames(my_data)[i]
+    }
   }
   for (i in 1:dim(my_stats$mean)[2]){
     colnames(my_stats$mean)[i] <- paste( colnames(my_stats$mean)[i], "::group_mean", sep="" )
