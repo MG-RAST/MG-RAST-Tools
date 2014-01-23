@@ -25,7 +25,7 @@ Output
     List of metagenomes.
 
 EXAMPLES
-    mg-search-metagenomes
+    mg-search-metagenomes --help
 
 SEE ALSO
     -
