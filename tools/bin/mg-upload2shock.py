@@ -13,7 +13,7 @@ VERSION
     %s
 
 SYNOPSIS
-    mg-upload-to-shock [ --help, --user <user> --passwd <password> --token <auth_token> shock_url file_path ]
+    mg-upload-to-shock [ --help, --user <user> --passwd <password> --token <auth_token> ] shock_url file_path
 
 DESCRIPTION
     Upload a file to Shock.
