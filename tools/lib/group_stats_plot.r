@@ -113,7 +113,8 @@ group_stats_plot <- function(
 
 # Create headers for the data columns
   for (i in 1:dim(my_data)[2]){
-    colnames(my_data)[i] <- paste( colnames(my_data)[i], "::", (my_groups)[i], sep="" )
+    #colnames(my_data)[i] <- paste( colnames(my_data)[i], "::", (my_groups)[i], sep="" )
+    colnames(my_data)[i] <- colnames(my_data)[i]
   }
   for (i in 1:dim(my_stats$mean)[2]){
     colnames(my_stats$mean)[i] <- paste( colnames(my_stats$mean)[i], "::group_mean", sep="" )
