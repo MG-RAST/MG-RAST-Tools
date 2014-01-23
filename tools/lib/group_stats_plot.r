@@ -1,7 +1,7 @@
 group_stats_plot <- function(
                          file_in = "",
                          file_out = "",
-                         append_group_headers=TRUE,
+                         append_group_headers=FALSE,
                          figure_out = NULL, # give a name and it will produce a file
                          figure_width_in=6,
                          figure_height_in=6,
