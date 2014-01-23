@@ -12,8 +12,8 @@ plot_mg_heatdend <<- function(
                           label_rows=FALSE,
                           order_columns=FALSE,
                           figure_title=NULL,
-                          colCex="1", # scale factor for column labels
-                          rowCex="1", # scale factor for row labels
+                          colCex="0.25", # scale factor for column labels
+                          rowCex="0.25", # scale factor for row labels
                           image_width_in=8.5,
                           image_height_in=11,
                           image_res_dpi=300
