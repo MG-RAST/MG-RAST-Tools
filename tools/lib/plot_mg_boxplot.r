@@ -10,6 +10,7 @@ plot_mg_boxplot <<- function(
                           table_in="", # annotation abundance table (raw or normalized values)
                           image_out="default",
                           label_rows=FALSE,
+                          label_cex=0.25,
                           image_width_in=10.5,
                           image_height_in=8,
                           image_res_dpi=150
@@ -45,7 +46,7 @@ plot_mg_boxplot <<- function(
     )
 
   # create a boxplot
-  boxplot(data_matrix, las=2, mai = c(2, 0.5, 0.5, 0.5), cex=0.5 )
+  boxplot(data_matrix, las=2, mai = c(2, 0.5, 0.5, 0.5), cex=label_cex )
   dev.off()
 
 }
