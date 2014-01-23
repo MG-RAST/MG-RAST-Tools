@@ -11,7 +11,7 @@ plot_mg_heatdend <<- function(
                           image_out="default",
                           label_rows=FALSE,
                           order_columns=FALSE,
-                          figure_title=NULL,
+                          figure_title=NULL, # NULL for no title or quoted text string for figure title
                           colCex="0.25", # scale factor for column labels
                           rowCex="0.25", # scale factor for row labels
                           image_width_in=8.5,
