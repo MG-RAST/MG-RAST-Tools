@@ -46,7 +46,8 @@ plot_mg_boxplot <<- function(
     )
 
   # create a boxplot
-  boxplot(data_matrix, las=2, mai = c(3, 0.5, 0.5, 0.5), cex.lab=label_cex )
+  boxplot(data_matrix, las=2, mar = c(3, 0.5, 0.5, 0.5), cex.lab=label_cex )
+  #boxplot(data_matrix, las=2, mai = c(3, 0.5, 0.5, 0.5), cex.lab=label_cex )
   dev.off()
 
 }
