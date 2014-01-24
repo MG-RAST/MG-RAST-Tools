@@ -95,24 +95,20 @@ def main(args):
             continue
         for role in roles:
             fig_ids = role2figs(opts, role, md5s)
-            #print rid, role, len(fig_ids)
-            ssrows.append({'id': role, 'metadata': {'accession': fig_ids}})
-            ssmatrix.append(matrix[r])
-    biom['matrix_type'] = 'sparse'
-    biom['shape'][0] = len(ssrows)
-    biom['rows'] = ssrows
-    biom['data'] = ssmatrix
+            if opts.output == 'text':
+                # text output: feature list, function, abundance for function, avg evalue for function, organism
+                safe_print("%s\t%s\t%d\t%.2e\t%s\n" %(",".join(fig_ids), role, matrix[r][0], 0, 'glob'))
+            elif opts.output == 'biom':
+                ssrows.append({'id': role, 'metadata': {'accession': fig_ids}})
+                ssmatrix.append(matrix[r])
     
-    # output data
+    # biom output
     if opts.output == 'biom':
+        biom['matrix_type'] = 'sparse'
+        biom['shape'][0] = len(ssrows)
+        biom['rows'] = ssrows
+        biom['data'] = ssmatrix
         safe_print(json.dumps(biom)+"\n")
-    elif opts.output == 'text':
-        for r, row in enumerate(biom['rows']):
-            # output: feature list, function, abundance for function, avg evalue for function, organism
-            safe_print("%s\t%s\t%d\t%.2e\t%s\n" %(",".join(row['metadata']['accession']), row['id'], biom['data'][r][0], 0, 'glob'))
-    else:
-        sys.stderr.write("ERROR: invalid output type, use one of: text, biom\n")
-        return 1
     
     return 0
     
