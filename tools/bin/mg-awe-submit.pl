@@ -260,7 +260,7 @@ my ($h, $help_text) = &parse_options (
 		[ 'delete_jobs=s'				, "deletes jobs and temporary shock nodes, unless keep_nodes used"],
 		[ 'shock_clean'					, "delete all temporary nodes from SHOCK server"],
 		[ 'shock_query=s'				, "query SHOCK node"],
-		[ 'shock_view_node=s', ""],
+		[ 'shock_view=s'                , "view SHOCK node"],
 		'',
 		'Options:',
 		[ 'keep_nodes'					, "use with --delete_jobs"],
@@ -368,10 +368,11 @@ if (defined($h->{"status"})) {
 	my $response =  $shock->query(@queries);
 	print Dumper($response);
 	exit(0);
-} elsif (defined($h->{"shock_view_node"})) {
+
+} elsif (defined($h->{"shock_view"})) {
 	
 	
-	my @nodes = split(',', $h->{"shock_view_node"});
+	my @nodes = split(',', $h->{"shock_view"});
 	
 	my $shock = new Shock($shockurl, $shocktoken);
 	unless (defined $shock) {
