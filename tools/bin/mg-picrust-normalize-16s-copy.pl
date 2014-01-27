@@ -66,7 +66,7 @@ unless (defined $shock) {
 my $cmd = "normalize_by_copy_number.py -i \@".$h->{'input'}." -o \@\@".$h->{'output'};
 
 
-my $job_id = AWE::Job::generateAndSubmitSimpleAWEJob('cmd' => $cmd, 'awe' => $awe, 'shock' => $shock);
+my $job_id = AWE::Job::generateAndSubmitSimpleAWEJob('cmd' => $cmd, 'awe' => $awe, 'shock' => $shock, 'clientgroup' => $clientgroup);
 	
 print "job submitted: $job_id\n";
 print "get results using:\n";

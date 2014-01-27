@@ -253,17 +253,20 @@ my ($h, $help_text) = &parse_options (
 		'Actions:',
 		[ 'status'						, "show job states on AWE server"],
 		[ 'cmd=s'						, "command to execute"],
+		[ 'show_jobs=s'					, " "],
 		[ 'check_jobs=s'				, " "],
 		[ 'download_jobs=s'				, "download specified jobs if state==completed"],
 		[ 'wait_and_download_jobs=s'	, "wait for completion and download specified jobs"],
 		[ 'delete_jobs=s'				, "deletes jobs and temporary shock nodes, unless keep_nodes used"],
 		[ 'shock_clean'					, "delete all temporary nodes from SHOCK server"],
 		[ 'shock_query=s'				, "query SHOCK node"],
+		[ 'shock_view_node=s', ""],
 		'',
 		'Options:',
 		[ 'keep_nodes'					, "use with --delete_jobs"],
 		[ 'wait_completed'				, "wait until any job is in state completed"],
 		[ 'output_files=s'				, "specify extra output files for --cmd"],
+		[ 'clientgroup=s',				, "clientgroup"],
 		[ 'help|h'						, "", { hidden => 1  }]
 	]
 );
@@ -276,6 +279,9 @@ if ($h->{'help'} || keys(%$h)==0) {
 }
 
 
+if (defined($h->{'clientgroup'})) {
+	$clientgroup = $h->{'clientgroup'};
+}
 
 
 if (defined($h->{"status"})) {
@@ -362,6 +368,24 @@ if (defined($h->{"status"})) {
 	my $response =  $shock->query(@queries);
 	print Dumper($response);
 	exit(0);
+} elsif (defined($h->{"shock_view_node"})) {
+	
+	
+	my @nodes = split(',', $h->{"shock_view_node"});
+	
+	my $shock = new Shock($shockurl, $shocktoken);
+	unless (defined $shock) {
+		die;
+	}
+	
+	foreach my $node (@nodes) {
+		my $response =  $shock->get('node/'.$node);
+		print Dumper($response);
+	}
+	
+	
+	
+	exit(0);
 	
 } elsif (defined($h->{"shock_clean"})) {
 	
@@ -370,10 +394,11 @@ if (defined($h->{"status"})) {
 		die;
 	}
 		
-	my $response =  $shock->query('temporary' => '1');
+	my $response =  $shock->query('temporary' => 1);
 	
 	#my $response =  $shock->query('statistics.length_max' => 1175);
 	print Dumper($response);
+	#exit(0);
 	
 	my @list =();
 	
@@ -382,12 +407,16 @@ if (defined($h->{"status"})) {
 	}
 	
 	foreach my $node (@{$response->{'data'}}) {
-		print $node->{'id'}."\n";
+		#print $node->{'id'}."\n";
 		push(@list, $node->{'id'});
 	}
 	
+	print "found ".@list. " nodes that can be deleted\n";
+	
 	foreach my $node (@list) {
-		defined($shock->delete($node)) or die;
+		my $ret = $shock->delete_node($node);
+		defined($ret) or die;
+		print Dumper($ret);
 	}
 	
 	
@@ -407,8 +436,10 @@ if (defined($h->{"status"})) {
 		die;
 	}
 	
+	my $use_download_dir = 1;
+	my $only_last_task = 0;
 	
-	AWE::Job::download_jobs('awe' => $awe, 'shock' => $shock, 'jobs' => \@jobs, 'clientgroup' => $clientgroup);
+	AWE::Job::download_jobs('awe' => $awe, 'shock' => $shock, 'jobs' => \@jobs, 'clientgroup' => $clientgroup, 'use_download_dir' => $use_download_dir, 'only_last_task' => $only_last_task);
 	
 	print "done.\n";
 	exit(0);
@@ -431,6 +462,30 @@ if (defined($h->{"status"})) {
 
 	print "jobs not completed :-( \n";
 	exit(1);
+} elsif (defined($h->{"show_jobs"})) {
+	
+	my @jobs = split(/,/,$h->{"show_jobs"});
+	
+	my $awe = new AWE($aweserverurl, $shocktoken);
+	unless (defined $awe) {
+		die;
+	}
+	
+	foreach my $job (@jobs) {
+		my $job_obj = $awe->getJobStatus($job);
+		print Dumper($job_obj);
+	}
+	
+	#my $ret = AWE::Job::check_jobs('awe' => $awe,  'jobs' => \@jobs, 'clientgroup' => $clientgroup);
+	
+	#if ($ret ==0) {
+	#	print "all jobs completed :-) \n";
+	#	exit(0);
+	#}
+	
+	#print "jobs not completed :-( \n";
+	#exit(1);
+	exit(0);
 	
 } elsif (defined($h->{"get_all"})) {
 	#getAWE_results_and_cleanup();
@@ -476,7 +531,7 @@ if (defined($h->{"status"})) {
 
 	
 	## compose AWE job ##
-	AWE::Job::generateAndSubmitSimpleAWEJob('cmd' => $cmd, 'awe' => $awe, 'shock' => $shock, @moreopts);
+	AWE::Job::generateAndSubmitSimpleAWEJob('cmd' => $cmd, 'awe' => $awe, 'shock' => $shock, 'clientgroup' => $clientgroup, @moreopts);
 	
 	
 	

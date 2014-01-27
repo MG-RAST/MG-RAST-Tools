@@ -84,15 +84,13 @@ my $tasks_json = <<EOF;
 	"task_id" : "0_pick_closed_reference_otus",
 	"task_template" : "pick_closed_reference_otus",
 	"INPUT" : ["shock", "[INPUT]", "input.fas"],
-	"INPUT-PARAMETER" : ["shock", "[INPUT-PARAMETER]", "otu_picking_params_97.txt"],
-	"TROJAN" : ["shock", "[TROJAN1]", "trojan.pl"]
+	"INPUT-PARAMETER" : ["shock", "[INPUT-PARAMETER]", "otu_picking_params_97.txt"]
 },
 {
 	"task_id" : "1_rename",
 	"task_cmd" : "mv @[INPUT] @@[OUTPUT]",
 	"INPUT" : ["task", "0_pick_closed_reference_otus", "otu_table.biom"],
-	"OUTPUT" : "XXXXXXXXXX",
-	"TROJAN" : ["shock", "[TROJAN2]", "trojan2.pl"]
+	"OUTPUT" : "<define>"
 }
 ]
 EOF
@@ -102,11 +100,11 @@ my $tasks = decode_json($tasks_json);
 
 
 sub create_qiime_pipeline {
-	
+	my ($tasks, $output_filename)  = @_;
 
 
 
-
+	$tasks->[1]->{'OUTPUT'} = $output_filename;
 
 	
 	# create AWE job (without input data !)
@@ -181,12 +179,13 @@ unless (-e $fasta) {
 
 #my $base = basename($fasta, ".fas", ".fna");
 
-$tasks->[1]->{'OUTPUT'} = $h->{'output'};
-my $awe_qiime_job = create_qiime_pipeline();
+#define workflow output
+#$tasks->[1]->{'OUTPUT'} = $h->{'output'};
+my $awe_qiime_job = create_qiime_pipeline($tasks, $h->{'output'});
 
 
 
-#print Dumper($awe_qiime_job->{'tasks'});
+print Dumper($awe_qiime_job->{'tasks'});
 #exit(0);
 
 
@@ -195,22 +194,23 @@ my $awe_qiime_job = create_qiime_pipeline();
 my $job_input = {};
 $job_input->{'INPUT'}->{'file'} = $fasta;   	  # local file to be uploaded
 $job_input->{'INPUT-PARAMETER'}->{'file'} = './otu_picking_params_97.txt';   	  # local file to be uploaded
-$job_input->{'TROJAN1'}->{'data'} = AWE::Job::get_trojanhorse(%{$task_tmpls->{'pick_closed_reference_otus'}->{'trojan'}});
-$job_input->{'TROJAN2'}->{'data'} = AWE::Job::get_trojanhorse();
-$job_input->{'TROJAN3'}->{'data'} = AWE::Job::get_trojanhorse();
+#$job_input->{'TROJAN1'}->{'data'} = AWE::Job::get_trojanhorse(%{$task_tmpls->{'pick_closed_reference_otus'}->{'trojan'}});
+#$job_input->{'TROJAN2'}->{'data'} = AWE::Job::get_trojanhorse();
+#$job_input->{'TROJAN3'}->{'data'} = AWE::Job::get_trojanhorse();
 
 #upload job input files
 $shock->upload_temporary_files($job_input);
 
 
 # create job with the input defined above
-my $workflow = $awe_qiime_job->create(%$job_input);
+my $workflow = $awe_qiime_job->create(%$job_input, 'OUTPUT' => $h->{'output'});#define workflow output
 
 #overwrite jobname:
 #$workflow->{'info'}->{'name'} = $sample;
 
 print "AWE job ready for submission:\n".$json->pretty->encode( $workflow )."\n";
 
+exit(0);
 print "submit job to AWE server...\n";
 my $submission_result = $awe->submit_job('json_data' => $json->encode($workflow));
 
