@@ -107,7 +107,6 @@ sub pretty {
 	my ($self, $hash) = @_;
 	
 	return $self->json->pretty->encode ($hash);
-	
 }
 
 
