@@ -27,7 +27,7 @@ sub new {
         json => $json,
         agent => $agent,
         api_server => $h{api_server} || 'http://api.metagenomics.anl.gov',
-        token => $h{token} || ''
+        token => $h{'auth'}
     };
    
 
@@ -60,7 +60,7 @@ sub create_url {
 	
 	my $api_url = $self->api_server . "/$version/$resource";
 	
-	if (defined $self->token) {
+	if (defined($self->token) && $self->token ne '') {
 		$query{'auth'}=$self->token;
 	}
 	
@@ -102,45 +102,97 @@ sub create_url {
 #'source'=> 'COG',
 #'evalue'=>10
 #);
-sub get_hash {
-	my ($self) = @_;
+
+sub pretty {
+	my ($self, $hash) = @_;
 	
-	my $content = get(@_) || return undef;
+	return $self->json->pretty->encode ($hash);
+	
+}
+
+
+sub request {
+	#print 'request: '.join(',',@_)."\n";
+	my ($self, $version, $method, $resource, $query, $headers) = @_;
+	
+	
+	my $my_url = $self->create_url($version, $resource, (defined($query)?%$query:()));
+	
+	print "url: $my_url\n";
+	
+	
+	
+	my @method_args = ($my_url);
+	
+	if (defined $headers) {
+		push(@method_args, %$headers);
+	}
+	
+	#print 'method_args: '.join(',', @method_args)."\n";
+	
+	my $response_content = undef;
+    
+    eval {
 		
-	my $hash = $self->json->decode( $content );
+        my $response_object = undef;
+		
+        if ($method eq 'GET') {
+			$response_object = $self->agent->get(@method_args );
+		} elsif ($method eq 'DELETE') {
+			$response_object = $self->agent->delete(@method_args );
+		} elsif ($method eq 'POST') {
+			$response_object = $self->agent->post(@method_args );
+		} else {
+			die "not implemented yet";
+		}
+		
+		
+		$response_content = $self->json->decode( $response_object->content );
+        
+    };
+    
+	if ($@ || (! ref($response_content))) {
+        print STDERR "[error] unable to connect to MG-RAST API ".$self->api_server."\n";
+        return undef;
+    } elsif (exists($response_content->{error}) && $response_content->{error}) {
+        print STDERR "[error] unable to send $method request to MG-RAST API: ".$response_content->{error}[0]."\n";
+		return undef;
+    } else {
+		#print "response_content: $response_content\n";
+		#my $jhash = $self->json->decode( $response_content );
+		
+        #return $jhash;
+
+        return $response_content;
+    }
 	
-	return $hash;
+}
+
+
+sub status {
+	my ($self, $id) = @_;
+	
+	unless (defined $id) {
+		die;
+	}
+	#my $api_url = $self->create_url(1, 'status/'.$id);
+	my $status_obj = $self->get('1', 'status/'.$id );
+	
+	if (defined($status_obj) && $status_obj->{'status'} eq 'done') {
+		return $status_obj->{'data'};
+	}
+	return undef;
 }
 
 sub get {
-	my ($self, $version, $resource, %hash) = @_;
+	my ($self, $version, $resource, $query, $headers) = @_;
 	
-	my $api_url = create_url(@_);
-	
-	print "$api_url\n";
-	
-    my $content = undef;
-    eval {
-        my $get = undef;
-        
-        $get = $self->agent->get(	$api_url );
-       
-        $content = $get->content;
-    };
-    
-    if ($@) {
-        print STDERR "[error] unable to connect to API ".$api_url ."\n";
-        return undef;
-    } elsif (ref($content) && exists($content->{error}) && $content->{error}) {
-        print STDERR "[error] unable to GET from API: ".$content->{error}[0]."\n";
-		
-        return undef;
-    } else {
-        return $content;
-    }
+	return $self->request($version, 'GET', $resource, $query, $headers);
 
 	
 }
+
+
 
 sub download {
 	my ($self, $path, $mg_id, %hash) = @_;
