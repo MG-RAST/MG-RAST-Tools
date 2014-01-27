@@ -283,6 +283,11 @@ if (defined($h->{'clientgroup'})) {
 	$clientgroup = $h->{'clientgroup'};
 }
 
+print "Configuration:\n";
+print "aweserverurl: ".($aweserverurl || 'undef') ."\n";
+print "shockurl: ". ($shockurl || 'undef') ."\n";
+print "clientgroup: ". ($clientgroup || 'undef') ."\n";
+
 
 if (defined($h->{"status"})) {
 	showAWEstatus();
