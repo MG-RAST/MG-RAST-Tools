@@ -129,7 +129,7 @@ def main(args):
     t_url = opts.url+'/matrix/organism?'+urllib.urlencode(t_params, True)
     biom = async_rest_api(t_url, auth=token)
     for d in sorted(biom['data'], key=itemgetter(2), reverse=True):
-        if len(top_taxa) >= opts.top:
+        if (opts.top > 0) and (len(top_taxa) >= opts.top):
             break
         top_taxa.append( biom['rows'][d[0]]['id'] )
     
@@ -153,14 +153,19 @@ def main(args):
     md5s = map(lambda x: x['id'], abiom['rows'])
     
     # get annotations for taxa
-    for taxa in top_taxa:
-        func_md5, func_acc = annotations_for_taxa(opts, md5s, [taxa])
-        output_annotation(md5s, func_md5, func_acc, amatrix, ematrix, taxa)
-    
-    # get annotations for tail
-    if opts.rest:
-        func_md5, func_acc = annotations_for_taxa(opts, md5s, top_taxa, True)
-        output_annotation(md5s, func_md5, func_acc, amatrix, ematrix, 'tail')
+    if opts.top > 0:
+        # get annotations for individual taxa
+        for taxa in top_taxa:
+            func_md5, func_acc = annotations_for_taxa(opts, md5s, [taxa])
+            output_annotation(md5s, func_md5, func_acc, amatrix, ematrix, taxa)
+        # get annotations for tail
+        if opts.rest:
+            func_md5, func_acc = annotations_for_taxa(opts, md5s, top_taxa, True)
+            output_annotation(md5s, func_md5, func_acc, amatrix, ematrix, 'tail')
+    else:
+        # get annotations for all taxa
+        func_md5, func_acc = annotations_for_taxa(opts, md5s, top_taxa)
+        output_annotation(md5s, func_md5, func_acc, amatrix, ematrix, 'glob')
     
     return 0
     
