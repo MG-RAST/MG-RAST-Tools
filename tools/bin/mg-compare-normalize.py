@@ -86,10 +86,16 @@ def main(args):
     
     # output data
     if biom and (opts.output == 'biom'):
+        # may have rows removed
+        new_rows = []
+        for i, r in biom['rows']:
+            if r['id'] in norm['rows']:
+                new_rows.append(r)
+        biom['rows'] = new_rows
+        biom['data'] = norm['data']
         biom['id'] = biom['id']+'_normalized'
         biom['matrix_type'] = 'dense'
         biom['matrix_element_type'] = 'float'
-        biom['data'] = norm['data']
         safe_print(json.dumps(biom)+'\n')
     else:
         safe_print( "\t%s\n" %"\t".join(norm['columns']) )
