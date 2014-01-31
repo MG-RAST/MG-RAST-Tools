@@ -183,9 +183,9 @@ def main(args):
         new_rows = []
         for i, robj in enumerate(biom['rows']):
             if not robj['metadata']:
-                robj['metadata'] = {'correlate_stats': results[i]}
+                robj['metadata'] = {'correlate': results[i]}
             else:
-                robj['metadata']['correlate_stats'] = results[i]
+                robj['metadata']['correlate'] = results[i]
             new_rows.append(robj)
         # update biom
         biom['id'] = biom['id']+'_corr'

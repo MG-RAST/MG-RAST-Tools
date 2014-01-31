@@ -187,16 +187,16 @@ suppressMessages( group_stats_plot(
             rindex = rids.index(rrows[i])
             robj = biom['rows'][rindex]
             if not robj['metadata']:
-                robj['metadata'] = {'group_stats': []}
+                robj['metadata'] = {'significance': []}
             else:
-                robj['metadata']['group_stats'] = []
+                robj['metadata']['significance'] = []
             # add stats
             for j, stat in enumerate(row[cnum:]):
                 try:
                     stat = float(stat)
                 except:
                     stat = None
-                robj['metadata']['group_stats'].append((rcols[cnum:][j], stat))
+                robj['metadata']['significance'].append((rcols[cnum:][j], stat))
             new_rows.append(robj)
             new_data.append(row[:cnum])
         # update biom
