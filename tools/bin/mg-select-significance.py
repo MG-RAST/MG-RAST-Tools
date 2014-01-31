@@ -14,7 +14,7 @@ VERSION
     %s
 
 SYNOPSIS
-    mg-select-significance [ --help, --input <input file or stdin>, --order <column number>, --direction <cv: 'asc', 'desc'>, --cols <number of columns>, --rows <number of rows> ]
+    mg-select-significance [ --help, --input <input file or stdin>, --format <cv: 'text' or 'biom'>, --output <cv: 'text' or 'biom'>, --order <integer>, --direction <cv: 'asc', 'desc'>, --cols <integer>, --rows <integer> ]
 
 DESCRIPTION
     Tool to order and subselect grouped metagenomic abundace profiles with significance statistics.
@@ -50,6 +50,8 @@ def main(args):
     OptionParser.format_epilog = lambda self, formatter: self.epilog
     parser = OptionParser(usage='', description=prehelp%VERSION, epilog=posthelp%AUTH_LIST)
     parser.add_option("", "--input", dest="input", default='-', help="input: filename or stdin (-), default is stdin")
+    parser.add_option("", "--format", dest="format", default='biom', help="input format: 'text' for tabbed table, 'biom' for BIOM format, default is biom")
+    parser.add_option("", "--output", dest="output", default='biom', help="output format: 'text' for tabbed table, 'biom' for BIOM format, default is biom")
     parser.add_option("", "--order", dest="order", default=None, help="column number to order output by (0 for last column), default is no ordering")
     parser.add_option("", "--direction", dest="direction", default="desc", help="direction of order. 'asc' for ascending order, 'desc' for descending order, default is desc")
     parser.add_option("", "--cols", dest="cols", default=None, help="number of columns from the left to return from input table, default is all")
@@ -60,17 +62,32 @@ def main(args):
     if (opts.input != '-') and (not os.path.isfile(opts.input)):
         sys.stderr.write("ERROR: input data missing\n")
         return 1
+    if opts.format not in ['text', 'biom']:
+        sys.stderr.write("ERROR: invalid input format\n")
+        return 1
+    if opts.output not in ['text', 'biom']:
+        sys.stderr.write("ERROR: invalid output format\n")
+        return 1
     if opts.direction not in ['asc', 'desc']:
         sys.stderr.write("ERROR: invalid order direction\n")
         return 1
     
     # parse inputs
+    biom = None
+    rows = []
+    cols = []
+    data = []    
     try:
         indata = sys.stdin.read() if opts.input == '-' else open(opts.input, 'r').read()
-        rows, cols, datatemp = tab_to_matrix(indata)
-        data = []
-        for r in datatemp:
-            data.append( map(lambda x: int(x) if x.isdigit() else float(x), r) )
+        if opts.format == 'biom':
+            try:
+                biom = json.loads(indata)
+                rows, cols, data = biom_to_matrix(biom, sig_stats=True)
+            except:
+                sys.stderr.write("ERROR: input BIOM data not correct format\n")
+                return 1
+        else:
+            rows, cols, data = tab_to_matrix(indata)
     except:
         sys.stderr.write("ERROR: unable to load input data\n")
         return 1
@@ -97,10 +114,38 @@ def main(args):
         data = sub_matrix(data, subcol)
     
     # output data
-    safe_print( "\t%s\n" %"\t".join(cols) )
-    for i, d in enumerate(data):
-        safe_print( "%s\t%s\n" %(rows[i], "\t".join(map(str, d))) )
-    
+    if biom and (opts.output == 'biom'):
+        # get list of new rows and columns with old indexes
+        br_ids = [r['id'] for r in biom['rows']]
+        bc_ids = [c['id'] for c in biom['columns']]
+        rindex = []
+        cindex = []
+        for r in rows:
+            try:
+                rindex.append( br_ids.index(r) )
+            except:
+                pass
+        for c in cols:
+            try:
+                cindex.append( bc_ids.index(c) )
+            except:
+                pass
+        # update biom
+        biom['id'] = biom['id']+'_altered'
+        biom['data'] = []
+        biom['rows'] = [biom['rows'][r] for r in rindex]
+        biom['columns'] = [biom['columns'][c] for c in cindex]
+        biom['matrix_type'] = 'dense'
+        for r in rindex:
+            new_row = []
+            for c in cindex:
+                new_row.append(data[r][c])
+            biom['data'].append(new_row)
+        safe_print(json.dumps(biom)+'\n')
+    else:
+        safe_print( "\t%s\n" %"\t".join(cols) )
+        for i, d in enumerate(data):
+            safe_print( "%s\t%s\n" %(rows[i], "\t".join(map(str, d))) )
     return 0
     
 
