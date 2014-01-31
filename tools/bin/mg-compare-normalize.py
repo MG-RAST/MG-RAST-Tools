@@ -93,6 +93,7 @@ def main(args):
                 new_rows.append(r)
         biom['rows'] = new_rows
         biom['data'] = norm['data']
+        biom['shape'][0] = len(biom['rows'])
         biom['id'] = biom['id']+'_normalized'
         biom['matrix_type'] = 'dense'
         biom['matrix_element_type'] = 'float'
