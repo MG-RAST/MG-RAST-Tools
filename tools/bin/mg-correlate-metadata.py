@@ -25,13 +25,14 @@ DESCRIPTION
 
 posthelp = """
 Input
-    BIOM format of abundance profiles with metadata.
+    1. BIOM format of abundance profiles with metadata.
+    2. Groups in JSON format - either as input string or filename
 
 Output
     Tabbed table of annotation and correlation p-value.
 
 EXAMPLES
-    mg-compare-taxa --ids 'mgm4441619.3,mgm4441656.4,mgm4441679.3,mgm4441680.3,mgm4441681.3,mgm4441682.3' --level class --source RefSeq --format biom | mg-correlate-metadata --input - --metadata latitude
+    mg-compare-taxa --ids 'mgm4441619.3,mgm4441656.4,mgm4441679.3,mgm4441680.3,mgm4441681.3,mgm4441682.3' --level class --source RefSeq --format biom | mg-correlate-metadata --input - --metadata latitude --format biom
 
 SEE ALSO
     -
@@ -59,11 +60,11 @@ def main(args):
     OptionParser.format_epilog = lambda self, formatter: self.epilog
     parser = OptionParser(usage='', description=prehelp%VERSION, epilog=posthelp%AUTH_LIST)
     parser.add_option("", "--input", dest="input", default='-', help="input: filename or stdin (-), default is stdin")
-    parser.add_option("", "--format", dest="format", default='text', help="input format: 'text' for tabbed table, 'biom' for BIOM format, default is text")
-    parser.add_option("", "--metadata", dest="metadata", default=None, help="metadata field to correlate")
-    parser.add_option("", "--groups", dest="groups", default=None, help="list of metadata groups in JSON or tabbed format - either as input string or filename")
-    parser.add_option("", "--group_pos", dest="group_pos", type="int", default=1, help="position of metadata group to use, default is 1 (first)")
-    parser.add_option("", "--output", dest="output", default='full', help="output format: 'full' for abundances and significance, 'minimum' for significance only, default is full")
+    parser.add_option("", "--format", dest="format", default='biom', help="input format: 'text' for tabbed table, 'biom' for BIOM format, default is biom")
+     parser.add_option("", "--output", dest="output", default='biom', help="output format: 'full' for tabbed abundances and stats, 'minimum' for tabbed stats only, 'biom' for BIOM format, default is biom")
+    parser.add_option("", "--metadata", dest="metadata", default=None, help="metadata field to correlate, only for 'biom' input")
+    parser.add_option("", "--groups", dest="groups", default=None, help="list of groups in JSON or tabbed format - either as input string or filename")
+    parser.add_option("", "--group_pos", dest="group_pos", type="int", default=1, help="position of group to use, default is 1 (first)")
     parser.add_option("", "--cutoff", dest="cutoff", default=None, help="only show p-value less than this, default show all")
     parser.add_option("", "--fdr", dest="fdr", action="store_true", default=False, help="output FDR for computed p-values, default is off")
     
@@ -75,15 +76,12 @@ def main(args):
     if opts.format not in ['text', 'biom']:
         sys.stderr.write("ERROR: invalid input format\n")
         return 1
-    if opts.metadata:
-        opts.group_pos = 1
     
-    # load input / get metadata
-    meta = {}
-    keep = []
+    # parse inputs
     rows = []
     cols = []
-    data = []
+    data = []    
+    groups = []
     try:
         indata = sys.stdin.read() if opts.input == '-' else open(opts.input, 'r').read()
         if opts.format == 'biom':
@@ -91,16 +89,7 @@ def main(args):
                 biom = json.loads(indata)
                 rows, cols, data = biom_to_matrix(biom)
                 if opts.metadata:
-                    for c in biom['columns']:
-                        value = None
-                        for v in c['metadata'].itervalues():
-                            if ('data' in v) and (opts.metadata in v['data']):
-                                value = v['data'][opts.metadata]
-                        try:
-                            meta[c['id']] = float(value)
-                            keep.append(c['id'])
-                        except:
-                            pass
+                    groups = metadata_from_biom(indata, opts.metadata)
             except:
                 sys.stderr.write("ERROR: input BIOM data not correct format\n")
                 return 1
@@ -111,53 +100,63 @@ def main(args):
         return 1
     
     # get groups if not in BIOM metadata and option used
-    if (not meta) and opts.groups:
-        gindx = opts.group_pos - 1
+    if (len(groups) == 0) and opts.groups:
         # is it json ?
+        ## example of 2 group sets in json format
+        ## [ {"group1": ["mg_id_1", "mg_id_2"], "group2": ["mg_id_3", "mg_id_4", "mg_id_5"]},
+        ##   {"group1": ["mg_id_1", "mg_id_2", "mg_id_3"], "group2": ["mg_id_4", "mg_id_5"]} ]
         try:
             gdata = json.load(open(opts.groups, 'r')) if os.path.isfile(opts.groups) else json.loads(opts.groups)
             if opts.group_pos > len(gdata):
-                sys.stderr.write("ERROR: group pos (%d) is greater than group size (%d)\n"%(opts.group_pos, len(gdata)))
+                sys.stderr.write("ERROR: position (%d) of metadata is out of bounds\n"%opts.group_pos)
                 return 1
-            for mg in cols:
-                for g in gdata[gindx].iterkeys():
-                    if mg in gdata[gindx][g]:
-                        meta[mg] = g
+            for m in cols:
+                found_g = None
+                for g, mgs in gdata[opts.group_pos-1].iteritems():
+                    if m in mgs:
+                        found_g = g
+                        break
+                if found_g:
+                    groups.append(found_g)
+                else:
+                    sys.stderr.write("ERROR: metagenome %s missing metadata\n"%m)
+                    return 1                  
         # no - its tabbed
         except:
             gtext = open(opts.groups, 'r').read() if os.path.isfile(opts.groups) else opts.groups
-            for line in gtext.strip().split("\n")[1:]:
-                parts = line.strip().split("\t")
-                mgid  = parts.pop(0)
-                if mgid not in cols:
-                    continue
+            grows, gcols, gdata = tab_to_matrix(gtext)
+            if opts.group_pos > len(gdata[0]):
+                sys.stderr.write("ERROR: position (%d) of metadata is out of bounds\n"%opts.group_pos)
+            for m in cols:
                 try:
-                    meta[mgid] = float(parts[gindx])
-                    keep.append(mgid)
+                    midx = gcols.index(m)
+                    groups.append(gdata[midx][opts.group_pos-1])
                 except:
-                    pass
+                    sys.stderr.write("ERROR: metagenome %s missing metadata\n"%m)
+                    return 1
     
-    # get annotations
-    abund = defaultdict(dict)
-    for i, c in enumerate(cols):
-        # only use valid metagenomes
-        if c in meta:
-            for j, r in enumerate(rows):
-                abund[c][r] = data[j][i]
+    # validate metadata
+    if len(groups) != len(cols):
+        sys.stderr.write("ERROR: Not all metagenomes have metadata\n")
+        return 1
+    try:
+        groups = map(lambda x: float(x), groups)
+    except:
+        sys.stderr.write("ERROR: Metadata is not numeric\n")
+        return 1
     
     # check correlation
-    annotation = sorted(rows)
     results = []
     pvalues = []
-    for a in annotation:
+    for i, a in enumerate(rows): # annotations
         l_meta = []
         l_anno = []
-        for m in keep:
-            l_meta.append(meta[m])
-            l_anno.append(float(abund[m][a]))
+        for j, m in enumerate(cols): # metagenomes
+            l_meta.append(groups[j])
+            l_anno.append(float(data[i][j]))
         gradient, intercept, r_value, p_value, std_err = stats.linregress(l_meta, l_anno)
         if opts.output == 'full':
-            l_result = [a]+[float(abund[m][a]) for m in keep]+[r_value, p_value]
+            l_result = [a]+[float(x) for x in data[i]]+[r_value, p_value]
         else:
             l_result = [a, r_value, p_value]
         if (not opts.cutoff) or (opts.cutoff and (p_value < opts.cutoff)):

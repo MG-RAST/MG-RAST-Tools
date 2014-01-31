@@ -52,7 +52,7 @@ def main(args):
     parser.add_option("", "--intersect_source", dest="intersect_source", default='SEED', help="taxon datasource for insersection, default is SEED")
     parser.add_option("", "--intersect_level", dest="intersect_level", default=None, help="taxon level for insersection")
     parser.add_option("", "--intersect_name", dest="intersect_name", default=None, help="taxon name(s) for insersection, file or comma seperated list")
-    parser.add_option("", "--format", dest="format", default='text', help="output format: 'text' for tabbed table, 'biom' for BIOM format, default is text")
+    parser.add_option("", "--format", dest="format", default='biom', help="output format: 'text' for tabbed table, 'biom' for BIOM format, default is biom")
     parser.add_option("", "--evalue", type="int", dest="evalue", default=5, help="negative exponent value for maximum e-value cutoff, default is 5")
     parser.add_option("", "--identity", type="int", dest="identity", default=60, help="percent value for minimum % identity cutoff, default is 60")
     parser.add_option("", "--length", type="int", dest="length", default=15, help="value for minimum alignment length cutoff, default is 15")
