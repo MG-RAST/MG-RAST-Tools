@@ -192,7 +192,7 @@ suppressMessages( group_stats_plot(
                 robj['metadata']['group_stats'] = []
             # add stats
             for j, stat in enumerate(row[cnum:]):
-                robj['metadata']['stats'].append((rcols[cnum:][j], float(stat)))
+                robj['metadata']['group_stats'].append((rcols[cnum:][j], float(stat)))
             new_rows.append(robj)
             new_data.append(row[:cnum])
         # update biom
