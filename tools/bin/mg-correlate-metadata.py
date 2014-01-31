@@ -61,7 +61,7 @@ def main(args):
     parser = OptionParser(usage='', description=prehelp%VERSION, epilog=posthelp%AUTH_LIST)
     parser.add_option("", "--input", dest="input", default='-', help="input: filename or stdin (-), default is stdin")
     parser.add_option("", "--format", dest="format", default='biom', help="input format: 'text' for tabbed table, 'biom' for BIOM format, default is biom")
-     parser.add_option("", "--output", dest="output", default='biom', help="output format: 'full' for tabbed abundances and stats, 'minimum' for tabbed stats only, 'biom' for BIOM format, default is biom")
+    parser.add_option("", "--output", dest="output", default='biom', help="output format: 'full' for tabbed abundances and stats, 'minimum' for tabbed stats only, 'biom' for BIOM format, default is biom")
     parser.add_option("", "--metadata", dest="metadata", default=None, help="metadata field to correlate, only for 'biom' input")
     parser.add_option("", "--groups", dest="groups", default=None, help="list of groups in JSON or tabbed format - either as input string or filename")
     parser.add_option("", "--group_pos", dest="group_pos", type="int", default=1, help="position of group to use, default is 1 (first)")
@@ -76,8 +76,12 @@ def main(args):
     if opts.format not in ['text', 'biom']:
         sys.stderr.write("ERROR: invalid input format\n")
         return 1
+    if opts.output not in ['full', 'minimum', 'biom']:
+        sys.stderr.write("ERROR: invalid output format\n")
+        return 1
     
     # parse inputs
+    biom = None
     rows = []
     cols = []
     data = []    
@@ -89,7 +93,7 @@ def main(args):
                 biom = json.loads(indata)
                 rows, cols, data = biom_to_matrix(biom)
                 if opts.metadata:
-                    groups = metadata_from_biom(indata, opts.metadata)
+                    groups = metadata_from_biom(biom, opts.metadata)
             except:
                 sys.stderr.write("ERROR: input BIOM data not correct format\n")
                 return 1
@@ -155,35 +159,53 @@ def main(args):
             l_meta.append(groups[j])
             l_anno.append(float(data[i][j]))
         gradient, intercept, r_value, p_value, std_err = stats.linregress(l_meta, l_anno)
-        if opts.output == 'full':
-            l_result = [a]+[float(x) for x in data[i]]+[r_value, p_value]
-        else:
-            l_result = [a, r_value, p_value]
-        if (not opts.cutoff) or (opts.cutoff and (p_value < opts.cutoff)):
-            results.append(l_result)
+        if biom and (opts.output == 'biom'):
+            results.append([('r-value', r_value), ('p-value', p_value)])
             pvalues.append(p_value)
+        else:
+            if opts.output == 'full':
+                l_result = [a]+[float(x) for x in data[i]]+[r_value, p_value]
+            elif opts.output == 'minimum':
+                l_result = [a, r_value, p_value]
+            if (not opts.cutoff) or (opts.cutoff and (p_value < opts.cutoff)):
+                results.append(l_result)
+                pvalues.append(p_value)
     
     # calculate fdr
     if opts.fdr and pvalues:
         fdr_values = calculate_fdr(pvalues)
         for i, x in enumerate(fdr_values):
-            results[i].append(x)
+            results[i].append(('fdr', x) if biom and (opts.output == 'biom') else x)
     
     # output
-    header = ['r-value', 'p-value']
-    if opts.output == 'full':
-        header = keep+header
-    if opts.fdr:
-        header.append('fdr')
-    safe_print("\t%s\n"%"\t".join(header))
-    for r in results:
-        safe_print(r[0])
-        for x in r[1:]:
-            if int(x) == float(x):
-                safe_print("\t%d"%int(x))
+    if biom and (opts.output == 'biom'):
+        # add stats to row data, same order
+        new_rows = []
+        for i, robj in enumerate(biom['rows']):
+            if not robj['metadata']:
+                robj['metadata'] = {'correlate_stats': results[i]}
             else:
-                safe_print("\t%.5f"%float(x))
-        safe_print("\n")
+                robj['metadata']['correlate_stats'] = results[i]
+            new_rows.append(robj)
+        # update biom
+        biom['id'] = biom['id']+'_corr'
+        biom['rows'] = new_rows
+        safe_print(json.dumps(biom)+'\n')
+    else:
+        header = ['r-value', 'p-value']
+        if opts.output == 'full':
+            header = keep+header
+        if opts.fdr:
+            header.append('fdr')
+        safe_print("\t%s\n"%"\t".join(header))
+        for r in results:
+            safe_print(r[0])
+            for x in r[1:]:
+                if int(x) == float(x):
+                    safe_print("\t%d"%int(x))
+                else:
+                    safe_print("\t%.5f"%float(x))
+            safe_print("\n")
     
     return 0
     
