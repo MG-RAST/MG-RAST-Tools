@@ -229,7 +229,7 @@ def merge_biom(b1, b2):
     return mBiom
 
 # transform BIOM format to matrix in json format
-def biom_to_matrix(biom, col_name=False):
+def biom_to_matrix(biom, col_name=False, sig_stats=False):
     if col_name:
         cols = [c['name'] for c in biom['columns']]
     else:
@@ -239,6 +239,10 @@ def biom_to_matrix(biom, col_name=False):
         data = sparse_to_dense(biom['data'], len(rows), len(cols))
     else:
         data = biom['data']
+    if sig_stats and ('significance' in biom['rows'][0]['metadata']) and (len(biom['rows'][0]['metadata']['significance']) > 0):
+        cols.extend( [s[0] for s in biom['rows'][0]['metadata']['significance']] )
+        for i, r in enumerate(biom['rows']):
+            data[i].extend( [s[1] for s in r['metadata']['significance']] )
     return rows, cols, data
 
 # transform tabbed table to matrix in json format
