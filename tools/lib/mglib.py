@@ -156,10 +156,10 @@ def biom_to_tab(biom, hdl, rows=None, use_id=True, col_name=False):
 # order is same as columns
 def metadata_from_biom(biom, term):
     vals = []
-    for col in indata['columns']:
+    for col in biom['columns']:
         value = 'null'
         if ('metadata' in col) and col['metadata']:
-            for v in c['metadata'].itervalues():
+            for v in col['metadata'].itervalues():
                 if ('data' in v) and (term in v['data']):
                     value = v['data'][term]
         vals.append(value)

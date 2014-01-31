@@ -173,12 +173,12 @@ suppressMessages( group_stats_plot(
     os.remove(tmp_out)
     
     if biom and (opts.output == 'biom'):
-        rrows, rcols, rdata = tab_to_matrix(results)
-        if (len(rrows) != biom['shape'][0]) or (len(rcols) != biom['shape'][1]):
-            sys.stderr.write("ERROR: significance test returned invalid results\n")
-            return 1
         cnum = biom['shape'][1]
         rids = [r['id'] for r in biom['rows']]
+        rrows, rcols, rdata = tab_to_matrix(results)
+        if (len(rrows) != biom['shape'][0]) or (len(rcols[:cnum]) != biom['shape'][1]):
+            sys.stderr.write("ERROR: significance test returned invalid results\n")
+            return 1
         # add stats to row data, re-order
         new_rows = []
         new_data = []
