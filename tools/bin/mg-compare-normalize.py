@@ -88,7 +88,7 @@ def main(args):
     if biom and (opts.output == 'biom'):
         # may have rows removed
         new_rows = []
-        for i, r in biom['rows']:
+        for r in biom['rows']:
             if r['id'] in norm['rows']:
                 new_rows.append(r)
         biom['rows'] = new_rows
