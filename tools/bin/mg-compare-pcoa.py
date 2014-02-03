@@ -14,7 +14,7 @@ VERSION
     %s
 
 SYNOPSIS
-    mg-compare-pcoa [ --help, --input <input file or stdin>, --format <cv: 'text' or 'biom'>, --distance <cv: bray-curtis, euclidean, maximum, manhattan, canberra, minkowski, difference>, --normalize <boolean>, --output <cv: 'text' or 'json'> ]
+    mg-compare-pcoa [ --help, --input <input file or stdin>, --format <cv: 'text' or 'biom'>, --distance <cv: bray-curtis, euclidean, maximum, manhattan, canberra, minkowski, difference>, --normalize <boolean>, --output <cv: 'text' or 'json'>, --name <boolean> ]
 
 DESCRIPTION
     Retrieve PCoA (Principal Coordinate Analysis) from abundance profiles for multiple metagenomes.
@@ -45,9 +45,10 @@ def main(args):
     parser = OptionParser(usage='', description=prehelp%VERSION, epilog=posthelp%AUTH_LIST)
     parser.add_option("", "--url", dest="url", default=API_URL, help="communities API url")
     parser.add_option("", "--input", dest="input", default='-', help="input: filename or stdin (-), default is stdin")
-    parser.add_option("", "--format", dest="format", default='text', help="input format: 'text' for tabbed table, 'biom' for BIOM format, default is text")
-    parser.add_option("", "--output", dest="output", default='text', help="output format: 'text' for tabbed table, 'json' for JSON format, default is text")
-    parser.add_option("", "--distance", dest="distance", default='bray-curtis', help="distance function, one of: bray-curtis, euclidean, maximum, manhattan, canberra, minkowski, difference, default is bray-curtis")
+    parser.add_option("", "--format", dest="format", default='biom', help="input format: 'text' for tabbed table, 'biom' for BIOM format, default is biom")
+    parser.add_option("", "--output", dest="output", default='json', help="output format: 'text' for tabbed table, 'json' for JSON format, default is json")
+    parser.add_option("", "--name", dest="name", action="store_true", default=False, help="label columns by name (biom only), default is by id")
+    parser.add_option("", "--distance", dest="distance", default='bray-curtis', help="distance metric, one of: bray-curtis, euclidean, maximum, manhattan, canberra, minkowski, difference, default is bray-curtis")
     parser.add_option("", "--normalize", dest="normalize", action="store_true", default=False, help="normalize the input data, default is off")
     
     # get inputs
@@ -57,6 +58,9 @@ def main(args):
         return 1
     if opts.format not in ['text', 'biom']:
         sys.stderr.write("ERROR: invalid input format\n")
+        return 1
+    if opts.output not in ['text', 'json']:
+        sys.stderr.write("ERROR: invalid output format\n")
         return 1
     
     # parse inputs
@@ -68,7 +72,7 @@ def main(args):
         if opts.format == 'biom':
             try:
                 biom = json.loads(indata)
-                rows, cols, data = biom_to_matrix(biom)
+                rows, cols, data = biom_to_matrix(biom, col_name=opts.name)
             except:
                 sys.stderr.write("ERROR: input BIOM data not correct format\n")
                 return 1

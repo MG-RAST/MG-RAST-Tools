@@ -25,7 +25,7 @@ Output
     List of metagenomes.
 
 EXAMPLES
-    mg-search-metagenomes
+    mg-search-metagenomes --help
 
 SEE ALSO
     -
@@ -49,7 +49,7 @@ def main(args):
     parser.add_option("", "--user", dest="user", default=None, help="OAuth username")
     parser.add_option("", "--passwd", dest="passwd", default=None, help="OAuth password")
     parser.add_option("", "--token", dest="token", default=None, help="OAuth token")
-    parser.add_option("", "--order", dest="order", default="name", help="field metagenomes are ordered by, default is name")
+    parser.add_option("", "--order", dest="order", default=None, help="field metagenomes are ordered by, default is no ordering")
     parser.add_option("", "--direction", dest="direction", default="asc", help="direction of order. 'asc' for ascending order, 'desc' for descending order, default is asc")
     parser.add_option("", "--match", dest="match", default="all", help="search logic. 'all' for metagenomes that match all search parameters, 'any' for metagenomes that match any search parameters, default is all")
     parser.add_option("", "--status", dest="status", default="public", help="types of metagenomes to return. 'both' for all data (public and private), 'public' for public data, 'private' for users private data, default is public")
@@ -65,14 +65,15 @@ def main(args):
     
     # build call url
     params = [ ('limit', '100'),
-               ('order', opts.order),
-               ('direction', opts.direction),
                ('match', opts.match),
                ('status', opts.status),
                ('verbosity', opts.verbosity if opts.verbosity == 'minimal' else 'mixs') ]
     for sfield in SEARCH_FIELDS:
         if hasattr(opts, sfield) and getattr(opts, sfield):
             params.append( (sfield, getattr(opts, sfield)) )
+    if opts.order:
+        params.append( ('order', opts.order) )
+        params.append( ('direction', opts.direction) )
     url = opts.url+'/metagenome?'+urllib.urlencode(params, True)
     
     # retrieve data
