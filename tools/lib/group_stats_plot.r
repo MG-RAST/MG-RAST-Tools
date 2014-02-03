@@ -152,7 +152,7 @@ group_stats_plot <- function(
   my_stats.summary.ordered <- my_stats.summary[ order(my_stats.summary[,order_by], decreasing=order_decreasing), ]
 
 # flat file output of the summary file
-  write.table(my_stats.summary.ordered, file = file_out, col.names=NA, row.names = rownames(my_stats.summary), sep="\t", quote=FALSE)
+  write.table(my_stats.summary.ordered, file = file_out, col.names=NA, sep="\t", quote=FALSE)
 
 # create a subselection of the data above based on selected number of categories
   my_stats.summary.ordered.subset <- as.matrix(my_stats.summary.ordered[1:my_n,])

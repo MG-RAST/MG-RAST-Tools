@@ -36,7 +36,7 @@
 # create a plot where every input argument is explicitly addressed:
 #   plot_mg_pcoa(table_in="test_data.txt", image_out = "wacky_pcoa", plot_pcs = c(1,3,5), label_points=NA, color_table="test_colors.txt", auto_colors=TRUE, color_column=3, pch_table="test_pch.txt", pch_column=3, image_width_in=10, image_height_in=10, image_res_dpi=250)
 
-plot_mg_pcoa <<- function(
+plot_mg_pcoav2 <<- function(
                           table_in="", # annotation abundance table (raw or normalized values)
                           image_out="default",
                           plot_pcs=c(1,2,3), # R formated string telling which coordinates to plot, and how many (2 or 3 coordinates)
@@ -49,8 +49,8 @@ plot_mg_pcoa <<- function(
                           pch_list=NA, # a list of shapes for data points
                           pch_table=NA, # additional matrix that allows users to specify the shape of the data points
                           pch_column=1,
-                          image_width_in=11,
-                          image_height_in=8.5,
+                          image_width_in=12,
+                          image_height_in=10,
                           image_res_dpi=300
                           )
   
@@ -73,8 +73,27 @@ plot_mg_pcoa <<- function(
   ###################################################################################################################################
   
   ###################################################################################################################################
-  ######## import/parse all inputs
+
+
+  ###### Initialize the figure / figure layout
+
+
   
+  png(
+      filename = image_out,
+      width = image_width_in,
+      height = image_height_in,
+      res = image_res_dpi,
+      units = 'in'
+      )
+
+  my_layout <- layout(  matrix(c(1,2), 1, 2, byrow=TRUE ), widths=c(0.2,0.8) )
+  layout.show(my_layout)
+
+  #layout(  matrix(c(1,2), 1, 2, byrow=TRUE ), widths=c(0.2,0.8) ) # i.e. legend will use 20% of the width
+  #layout.show(n = 1)
+
+  ######## import/parse all inputs  
   # import DATA the data (from tab text)
   data_matrix <- data.matrix(read.table(table_in, row.names=1, header=TRUE, sep="\t", comment.char="", quote="", check.names=FALSE))
   # convert data to a matR collection
@@ -88,16 +107,7 @@ plot_mg_pcoa <<- function(
     # this needs more work -- to get legend that maps colors to groups
     if ( identical(auto_colors, TRUE) ){
       pcoa_colors <- create_colors(color_matrix, color_mode="auto")
-
-      # generate figure legend (for auto-coloring only)
-      png(
-          filename = paste(image_out, ".legend.png", sep="", collapse=""),
-          width = 3,
-          height = 8,
-          res = 300,
-          units = 'in'
-          )
-      
+           
       # this bit is a repeat of the code in the sub below - clean up later
       column_factors <- as.factor(color_matrix[,color_column])
       column_levels <- levels(as.factor(color_matrix[,color_column]))
@@ -106,9 +116,12 @@ plot_mg_pcoa <<- function(
       #levels(column_factors) <- color_levels
       #my_data.color[,color_column]<-as.character(column_factors)
       plot.new()
+      #frame(1)
+
+                                        #layout.show(n = 2)
       legend( x="center", legend=column_levels, pch=15, col=color_levels )
       
-      dev.off()
+      #dev.off()
     }else{
       pcoa_colors <- color_matrix
     }
@@ -138,16 +151,9 @@ plot_mg_pcoa <<- function(
   ###################################################################################################################################
 
   ###################################################################################################################################
-  # GENERATE THE PLOT - A SCOND LEGEND FIGURE IS PRODUCED IF AU
+  # Generate the plot -- use layout to get legend on one side, PCoA on the other
   # Have matR calculate the pco and generate an image generate the image (2d)
-  png(
-      filename = image_out,
-      width = image_width_in,
-      height = image_height_in,
-      res = image_res_dpi,
-      units = 'in'
-    )
-  
+
   # 2d (color variable in matR is called "col")
   if( length(plot_pcs)==2 ){
     # with labels
@@ -170,11 +176,29 @@ plot_mg_pcoa <<- function(
     }
   }
 
- dev.off()
-
-  
+  graphics.off()
   
 }
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 ###################################################################################################################################
 
 ###################################################################################################################################
