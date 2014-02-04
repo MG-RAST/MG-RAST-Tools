@@ -103,10 +103,11 @@ def main(args):
     
     # output workspace
     if opts.workspace and opts.save_name:
+        sys.stdout.write('\n')
         ws_type = 'Communities.Collection-1.0'
-        ws_obj = {'name': opts.save_name, 'type': 'metagenomes', 'created': time.strftime("%Y-%m-%d %H:%M:%S"), 'data': []}
+        ws_obj = {'name': opts.save_name, 'type': 'metagenomes', 'created': time.strftime("%Y-%m-%d %H:%M:%S"), 'members': []}
         for i in ids:
-            ws_obj['data'].append({'ID': i, 'URL': opts.url+'/metagenome/'+i})
+            ws_obj['members'].append({'ID': i, 'URL': opts.url+'/metagenome/'+i})
         load_to_ws(opts.workspace, ws_type, opts.save_name, json.dumps(ws_obj))
     
     return 0

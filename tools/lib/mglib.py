@@ -333,7 +333,7 @@ def load_to_ws(wname, otype, oname, ostring):
         sys.stderr.write(error)
         sys.exit(1)
     else:
-        sys.stdout.write("\n%s saved in workspace %s as type %s\n"%(oname, wname, otype))
+        sys.stdout.write("%s saved in workspace %s as type %s\n"%(oname, wname, otype))
 
 def random_str(size=8):
     chars = string.ascii_letters + string.digits
