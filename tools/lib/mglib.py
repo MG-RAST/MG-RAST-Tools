@@ -323,12 +323,15 @@ def token_from_login(user, passwd):
     data = obj_from_url(API_URL, auth=auth)
     return data['token']
 
-def load_to_ws(wname, otype, oname, ostring):
+def load_to_ws(wname, otype, oname, obj):
     if not _cmd_exists('ws-load'):
         sys.stderr.write('ERROR: missing workspace client\n')
-    ws_cmd = "ws-load %s %s '%s' -w %s"%(otype, oname, ostring, wname)
+    tmp_ws = 'tmp_'+random_str()+'.txt'
+    json.dump(obj, open(tmp_ws, 'w'))
+    ws_cmd = "ws-load %s %s %s -w %s"%(otype, oname, tmp_ws, wname)
     process = subprocess.Popen(ws_cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
     output, error = process.communicate()
+    os.remove(tmp_ws)
     if error:
         sys.stderr.write(error)
         sys.exit(1)
