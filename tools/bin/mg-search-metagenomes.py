@@ -96,15 +96,17 @@ def main(args):
     fields.append('status')
     ids = [d['id'] for d in result['data']]
     
-    # output header
-    safe_print("\t".join(fields)+"\n")
-    # output rows
-    display_search(result['data'], fields)
+    if not (opts.workspace and opts.save_name):
+        # output header
+        safe_print("\t".join(fields)+"\n")
+        # output rows
+        display_search(result['data'], fields)
     while result['next']:
         url = result['next']
         result = obj_from_url(url, auth=token)
         ids.extend([d['id'] for d in result['data']])
-        display_search(result['data'], fields)
+        if not (opts.workspace and opts.save_name):
+            display_search(result['data'], fields)
     
     # output workspace
     if opts.workspace and opts.save_name:
