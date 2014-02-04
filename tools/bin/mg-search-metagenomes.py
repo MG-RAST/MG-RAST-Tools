@@ -39,8 +39,13 @@ search_opts = " ".join( map(lambda x: "--%s <query text>"%x, SEARCH_FIELDS) )
 
 def display_search(data, fields):
     for d in data:
-        row = [d[f] for f in fields]
-        safe_print("\t".join([r if ord(r) < 128 else '?' for r in row])+"\n")
+        row = []
+        for f in fields:
+            try:
+                row.append( str(d[f]) )
+            except:
+                row.append( "".join([x if ord(x) < 128 else '?' for x in d[f]]) )
+        safe_print("\t".join(row)+"\n")
 
 def main(args):
     OptionParser.format_description = lambda self, formatter: self.description
