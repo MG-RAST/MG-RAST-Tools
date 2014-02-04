@@ -81,7 +81,7 @@ def main(args):
     
     # retrieve data
     fields = ['id']
-    result = obj_from_url(url, auth=token, debug=True)
+    result = obj_from_url(url, auth=token)
     if len(result['data']) == 0:
         sys.stdout.write("No results found for the given search parameters\n")
         return 0
