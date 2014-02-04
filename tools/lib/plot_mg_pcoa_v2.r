@@ -51,7 +51,10 @@ plot_mg_pcoav2 <<- function(
                           pch_column=1,
                           image_width_in=12,
                           image_height_in=10,
-                          image_res_dpi=300
+                          image_res_dpi=300,
+                          width_legend = 0.4, # fraction of width used by legend
+                          width_figure = 0.6, # fraction of width used by figure
+                          use_all_metadata_columns=FALSE # option to overide color_column -- if true, plots are generate for all of the metadata columns
                           )
   
 {
@@ -77,8 +80,6 @@ plot_mg_pcoav2 <<- function(
 
   ###### Initialize the figure / figure layout
 
-
-  
   png(
       filename = image_out,
       width = image_width_in,
@@ -87,11 +88,8 @@ plot_mg_pcoav2 <<- function(
       units = 'in'
       )
 
-  my_layout <- layout(  matrix(c(1,2), 1, 2, byrow=TRUE ), widths=c(0.2,0.8) )
+  my_layout <- layout(  matrix(c(1,2), 1, 2, byrow=TRUE ), widths=c( width_legend,width_figure) )
   layout.show(my_layout)
-
-  #layout(  matrix(c(1,2), 1, 2, byrow=TRUE ), widths=c(0.2,0.8) ) # i.e. legend will use 20% of the width
-  #layout.show(n = 1)
 
   ######## import/parse all inputs  
   # import DATA the data (from tab text)
@@ -99,13 +97,21 @@ plot_mg_pcoav2 <<- function(
   # convert data to a matR collection
   data_collection <- suppressWarnings(as(data_matrix, "collection")) # take the input data and create a matR object with it
   
+
+
   # import colors if the option is selected - generate colors from metadata table if that option is selected
   if ( identical( is.na(color_table), FALSE ) ){
-    #color_matrix <- matrix(read.table(color_table, row.names=1, header=TRUE, sep="\t", comment.char="", quote="", check.names=FALSE))
-    color_matrix <- as.matrix(read.table(file=color_table, row.names=1, header=TRUE, sep="\t", colClasses = "character", check.names=FALSE, comment.char = ""))
-    # generate auto colors if the color matrix contains metadata and not colors
-    # this needs more work -- to get legend that maps colors to groups
+    
+
+
+                                        #color_matrix <- as.matrix(read.table(file=color_table, row.names=1, header=TRUE, sep="\t", colClasses = "character", check.names=FALSE, comment.char = ""))
+    color_matrix <- as.matrix(read.table(file=color_table, row.names=1, header=TRUE, sep="\t", colClasses = "character", check.names=FALSE, comment.char = "", quote="", fill=TRUE, blank.lines.skip=FALSE)) # edit 2-3-14 - not sure which option fixed
+                                        # generate auto colors if the color matrix contains metadata and not colors
+
+    # use autocolors created from the metadata, or user specified colors, or just black points                         
     if ( identical(auto_colors, TRUE) ){
+
+      # create the color matrix from the metadata
       pcoa_colors <- create_colors(color_matrix, color_mode="auto")
            
       # this bit is a repeat of the code in the sub below - clean up later
@@ -113,15 +119,15 @@ plot_mg_pcoav2 <<- function(
       column_levels <- levels(as.factor(color_matrix[,color_column]))
       num_levels <- length(column_levels)
       color_levels <- col.wheel(num_levels)
-      #levels(column_factors) <- color_levels
-      #my_data.color[,color_column]<-as.character(column_factors)
-      plot.new()
-      #frame(1)
 
-                                        #layout.show(n = 2)
+      # plot the legend
+      plot.new()
       legend( x="center", legend=column_levels, pch=15, col=color_levels )
+
+
+
+
       
-      #dev.off()
     }else{
       pcoa_colors <- color_matrix
     }
