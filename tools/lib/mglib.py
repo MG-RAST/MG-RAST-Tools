@@ -169,6 +169,11 @@ def metadata_from_biom(biom, term):
 def merge_biom(b1, b2):
     """input: 2 biom objects of same 'type', 'matrix_element_type', and 'matrix_element_value'
     return: merged biom object, duplicate columns skipped, duplicate rows added"""
+    # hack for using in loop when one oif 2 is empty
+    if b1 and (not b2):
+        return b1
+    if b2 and (not b1):
+        return b2
     # validate
     if not (b1 and b2 and (b1['type'] == b2['type']) and (b1['matrix_element_type'] == b2['matrix_element_type']) and (b1['matrix_element_value'] == b2['matrix_element_value'])):
         sys.stderr.write("The inputed biom objects are not compatable for merging\n")
@@ -176,7 +181,7 @@ def merge_biom(b1, b2):
     # build
     mBiom = { "generated_by": b1['generated_by'],
                "matrix_type": 'dense',
-               "date": strftime("%Y-%m-%dT%H:%M:%S", localtime()),
+               "date": time.strftime("%Y-%m-%d %H:%M:%S"),
                "columns": copy.deepcopy(b1['columns']),
                "rows": copy.deepcopy(b1['rows']),
                "data": sparse_to_dense(b1['data'], b1['shape'][0], b1['shape'][1]) if b1['matrix_type'] == 'sparse' else copy.deepcopy(b1['data']),
@@ -318,6 +323,21 @@ def token_from_login(user, passwd):
     data = obj_from_url(API_URL, auth=auth)
     return data['token']
 
+def load_to_ws(wname, otype, oname, obj):
+    if not _cmd_exists('ws-load'):
+        sys.stderr.write('ERROR: missing workspace client\n')
+    tmp_ws = 'tmp_'+random_str()+'.txt'
+    json.dump(obj, open(tmp_ws, 'w'))
+    ws_cmd = "ws-load %s %s %s -w %s"%(otype, oname, tmp_ws, wname)
+    process = subprocess.Popen(ws_cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
+    output, error = process.communicate()
+    os.remove(tmp_ws)
+    if error:
+        sys.stderr.write(error)
+        sys.exit(1)
+    else:
+        sys.stdout.write("%s saved in workspace %s as type %s\n"%(oname, wname, otype))
+
 def random_str(size=8):
     chars = string.ascii_letters + string.digits
     return ''.join(random.choice(chars) for x in range(size))
@@ -333,3 +353,6 @@ def execute_r(cmd, debug=False):
         if error:
             sys.stderr.write(error)
             sys.exit(1)
+
+def _cmd_exists(cmd):
+    return subprocess.call("type %s"%cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE) == 0
