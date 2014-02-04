@@ -351,5 +351,5 @@ def execute_r(cmd, debug=False):
             sys.stderr.write(error)
             sys.exit(1)
 
-def _cmd_exists(self, cmd):
-    return subprocess.call("type " + cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE) == 0
+def _cmd_exists(cmd):
+    return subprocess.call("type %s"%cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE) == 0
