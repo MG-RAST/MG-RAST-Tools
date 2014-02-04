@@ -2,6 +2,7 @@
 
 import os
 import sys
+import copy
 import urllib
 from operator import itemgetter
 from optparse import OptionParser
@@ -56,6 +57,7 @@ def main(args):
     parser.add_option("", "--evalue", type="int", dest="evalue", default=5, help="negative exponent value for maximum e-value cutoff, default is 5")
     parser.add_option("", "--identity", type="int", dest="identity", default=60, help="percent value for minimum % identity cutoff, default is 60")
     parser.add_option("", "--length", type="int", dest="length", default=15, help="value for minimum alignment length cutoff, default is 15")
+    parser.add_option("", "--temp", dest="temp", default=None, help="filename to temporarly save biom output at each iteration")
     
     # get inputs
     (opts, args) = parser.parse_args()
@@ -84,8 +86,6 @@ def main(args):
                ('length', opts.length),
                ('result_type', 'abundance'),
                ('asynchronous', '1') ]
-    for i in id_list:
-        params.append(('id', i))
     if opts.intersect_level and opts.intersect_name:
         params.append(('filter_source', opts.intersect_source))
         params.append(('filter_level', opts.intersect_level))
@@ -96,10 +96,28 @@ def main(args):
         else:
             for f in opts.intersect_name.strip().split(','):
                 params.append(('filter', f))
-    url = opts.url+'/matrix/organism?'+urllib.urlencode(params, True)
 
     # retrieve data
-    biom = async_rest_api(url, auth=token)
+    biom = None
+    size = 50
+    if len(id_list) > size:
+        for i in xrange(0, len(id_list), size):
+            sub_ids = id_list[i:i+size]
+            cur_params = copy.deepcopy(params)
+            for i in sub_ids:
+                cur_params.append(('id', i))
+            cur_url  = opts.url+'/matrix/organism?'+urllib.urlencode(cur_params, True)
+            cur_biom = async_rest_api(cur_url, auth=token)
+            biom = merge_biom(biom, cur_biom)
+            if opts.temp:
+                json.dump(biom, open(opts.temp, 'w'))
+    else:
+        for i in id_list:
+            params.append(('id', i))
+        url = opts.url+'/matrix/organism?'+urllib.urlencode(params, True)
+        biom = async_rest_api(url, auth=token)
+        if opts.temp:
+            json.dump(biom, open(opts.temp, 'w'))
     
     # get sub annotations
     sub_ann = set()
