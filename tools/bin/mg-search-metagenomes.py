@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 
 import sys
+import time
 import urllib
 from operator import itemgetter
 from optparse import OptionParser
@@ -49,6 +50,8 @@ def main(args):
     parser.add_option("", "--user", dest="user", default=None, help="OAuth username")
     parser.add_option("", "--passwd", dest="passwd", default=None, help="OAuth password")
     parser.add_option("", "--token", dest="token", default=None, help="OAuth token")
+    parser.add_option("", "--workspace", dest="workspace", default=None, help="Save results in a workspace with this name")
+    parser.add_option("", "--save_name", dest="save_name", default=None, help="Name of object to create in workspace")
     parser.add_option("", "--order", dest="order", default=None, help="field metagenomes are ordered by, default is no ordering")
     parser.add_option("", "--direction", dest="direction", default="asc", help="direction of order. 'asc' for ascending order, 'desc' for descending order, default is asc")
     parser.add_option("", "--match", dest="match", default="all", help="search logic. 'all' for metagenomes that match all search parameters, 'any' for metagenomes that match any search parameters, default is all")
@@ -78,7 +81,7 @@ def main(args):
     
     # retrieve data
     fields = ['id']
-    result = obj_from_url(url, auth=token)
+    result = obj_from_url(url, auth=token, debug=True)
     if len(result['data']) == 0:
         sys.stdout.write("No results found for the given search parameters\n")
         return 0
@@ -86,6 +89,7 @@ def main(args):
         if sfield in result['data'][0]:
             fields.append(sfield)
     fields.append('status')
+    ids = [d['id'] for d in result['data']]
     
     # output header
     safe_print("\t".join(fields)+"\n")
@@ -94,7 +98,16 @@ def main(args):
     while result['next']:
         url = result['next']
         result = obj_from_url(url, auth=token)
+        ids.extend([d['id'] for d in result['data']])
         display_search(result['data'], fields)
+    
+    # output workspace
+    if opts.workspace and opts.save_name:
+        ws_type = 'Communities.Collection-1.0'
+        ws_obj = {'name': opts.save_name, 'type': 'metagenomes', 'created': time.strftime("%Y-%m-%d %H:%M:%S"), 'data': []}
+        for i in ids:
+            ws_obj['data'].append({'ID': i, 'URL': opts.url+'/metagenome/'+i})
+        load_to_ws(opts.workspace, ws_type, opts.save_name, json.dumps(ws_obj))
     
     return 0
     
