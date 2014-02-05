@@ -61,10 +61,6 @@ def main(args):
     if (opts.input != '-') and (not os.path.isfile(opts.input)):
         sys.stderr.write("ERROR: input data missing\n")
         return 1
-    row_start = 0 if opts.row_start is None else opt2int('row_start', opts.row_start)-1
-    row_end   = -1 if opts.row_end is None else opt2int('row_end', opts.row_end)
-    col_start = 0 if opts.col_start is None else opt2int('col_start', opts.col_start)-1
-    col_end   = -1 if opts.col_end is None else opt2int('col_end', opts.col_end)
     
     # parse inputs
     try:
@@ -78,6 +74,11 @@ def main(args):
     except:
         sys.stderr.write("ERROR: unable to load input data\n")
         return 1
+    
+    row_start = 0 if opts.row_start is None else opt2int('row_start', opts.row_start)-1
+    row_end   = len(rows) if opts.row_end is None else opt2int('row_end', opts.row_end)
+    col_start = 0 if opts.col_start is None else opt2int('col_start', opts.col_start)-1
+    col_end   = len(cols) if opts.col_end is None else opt2int('col_end', opts.col_end)
     
     # output data
     try:
