@@ -37,7 +37,8 @@ def main(args):
     OptionParser.format_epilog = lambda self, formatter: self.epilog
     parser = OptionParser(usage='', description=prehelp%VERSION, epilog=posthelp%AUTH_LIST)
     parser.add_option("", "--id", dest="id", default=None, help="ID to add to workspace")
-    parser.add_option("", "--type", dest="type", default=None, help="type of ID: one of 'metagenome' or 'project'")
+    parser.add_option("", "--type", dest="type", default=None, help="type of ID: one of 'metagenome' or 'project' or 'sequence'")
+    parser.add_option("", "--url", dest="url", default=None, help="base URL if IS is for shock")
     parser.add_option("", "--workspace", dest="workspace", default=None, help="workspace name")
     parser.add_option("", "--name", dest="name", default=None, help="object name")
     
@@ -48,6 +49,9 @@ def main(args):
         return 1
     if not (opts.workspace and opts.name):
         sys.stderr.write("ERROR: workspace and object names required\n")
+        return 1
+    if (opts.type == 'sequence') and (not opts.url):
+        sys.stderr.write("ERROR: shock IDs require shock URL\n")
         return 1
     
     # upload to workspace
@@ -60,6 +64,9 @@ def main(args):
         wtype = 'Communities.Metagenome-1.0'
     elif opts.type == 'project':
         wtype = 'Communities.Project-1.0'
+    elif opts.type == 'sequence':
+        wtype = 'Communities.SequenceFile-1.0'
+        wdata['ref']['URL'] = "%s/%s/%s"%(opts.url, 'node', opts.id)
     else:
         sys.stderr.write("ERROR: type %s is invalid\n"%opts.type)
         return 1
