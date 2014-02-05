@@ -194,7 +194,7 @@ def merge_biom(b1, b2):
                "type": b1['type'] }
     # make sure we are dense
     if b2['matrix_type'] == 'sparse':
-        b2['data'] = sparse_to_dense(b1['data'], b2['shape'][0], b2['shape'][1])
+        b2['data'] = sparse_to_dense(b2['data'], b2['shape'][0], b2['shape'][1])
     # get lists of ids
     c1_id = [c['id'] for c in b1['columns']]
     r1_id = [r['id'] for r in b1['rows']]
