@@ -45,13 +45,13 @@ def main(args):
     (opts, args) = parser.parse_args()
     if len(args) != 2:
         sys.stderr.write("ERROR: must have 2 input arguments, shock_url and file_path\n")
-	return 1
+        return 1
 
     # get auth
     token = get_auth_token(opts)
     if token == None:
         sys.stderr.write("ERROR: no token found in KB_AUTH_TOKEN environment variable or input option\n")
-	return 1
+        return 1
 
     shock_url = args[0]
     file_path = args[1]
