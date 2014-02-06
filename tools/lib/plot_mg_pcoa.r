@@ -106,7 +106,7 @@ plot_mg_pcoa <<- function(
       #levels(column_factors) <- color_levels
       #my_data.color[,color_column]<-as.character(column_factors)
       plot.new()
-      legend( x="center", legend=column_levels, pch=15, col=color_levels )
+      legend( x="center", legend=column_levels, pch=15, col=color_levels, cex=0.5 )
       
       dev.off()
     }else{
