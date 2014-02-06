@@ -18,8 +18,13 @@ my $run_dir = getcwd();
 
 # options
 my $file = "";
+my $help = 0;
 
-my $options = GetOptions ("input=s" => \$file);
+my $options = GetOptions ("input=s" => \$file, "help!" => \$help);
+if ($help) {
+    print_usage();
+    exit 0;
+}
 
 unless (-s $file) {
     print  "Error: input file: [$file] does not exist or is size zero\n";
@@ -58,10 +63,10 @@ if ($type eq 'tar gzip') {
 
 system($command) == 0 or exit __LINE__;
 
-print "Finished decompress on file $input\n";
+print "Finished decompress on file $file\n";
 
 exit(0);
 
 sub print_usage{
-    print "USAGE: mg-inbox-decompress.pl -input=<input file>\n";
+    print "USAGE: mg-inbox-decompress.pl --input=<input file>\n";
 }
