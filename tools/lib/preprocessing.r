@@ -1,7 +1,7 @@
 MGRAST_preprocessing <<- function(
                                   file_in,     # name of the input file (tab delimited text with the raw counts)
                                   file_out = "preprocessed_data",    # name of the output data file (tab delimited text of preprocessed data)
-                                  remove_sg = FALSE, # boolean to remove singleton counts
+                                  remove_sg = TRUE, # boolean to remove singleton counts
                                   sg_threshold = 1 # rows with a sum of counts equal to or less than this value will be removed if remove_sg=TRUE
                                   )
   {
