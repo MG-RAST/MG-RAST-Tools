@@ -147,7 +147,7 @@ def main(args):
         hdl_group = open(tmp_group, 'w')
         hdl_group.write("\tgroup\n")
         for i, m in enumerate(mg_list):
-            hdl_group.write("%s\t%s\n"%(m, groups[i]))
+            hdl_group.write("%s\t%s\n"%(m, ''.join([x if ord(x) < 128 else '?' for x in groups[i]])))
         hdl_group.close()
     elif len(groups) > 0:
         sys.stderr.write("Warning: Not all metagenomes in a group\n")
