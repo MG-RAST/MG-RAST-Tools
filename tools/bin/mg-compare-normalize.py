@@ -99,8 +99,7 @@ def main(args):
         r_cmd = """source("%s/preprocessing.r")
 suppressMessages( MGRAST_preprocessing(
     file_in="%s",
-    file_out="%s",
-    produce_fig=FALSE
+    file_out="%s"
 ))"""%(opts.rlib, tmp_in, tmp_out)
         execute_r(r_cmd)
         nrows, ncols, ndata = tab_to_matrix(open(tmp_out, 'r').read())
