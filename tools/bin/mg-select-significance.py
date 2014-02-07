@@ -102,6 +102,7 @@ def main(args):
         rd_merged  = zip(rows, data)
         rd_sorted  = sorted(rd_merged, key=lambda x: x[1][order_col], reverse=rev_order)
         rows, data = zip(*rd_sorted)
+        rows, data = list(rows), list(data)
         
     # subselect rows
     if opts.rows is not None:
@@ -132,15 +133,11 @@ def main(args):
                 pass
         # update biom
         biom['id'] = biom['id']+'_altered'
-        biom['data'] = []
+        biom['data'] = sub_matrix(data, biom['shape'][1])
         biom['rows'] = [biom['rows'][r] for r in rindex]
         biom['columns'] = [biom['columns'][c] for c in cindex]
+        biom['shape'] = [len(biom['rows']), len(biom['columns'])] 
         biom['matrix_type'] = 'dense'
-        for r in rindex:
-            new_row = []
-            for c in cindex:
-                new_row.append(data[r][c])
-            biom['data'].append(new_row)
         safe_print(json.dumps(biom)+'\n')
     else:
         safe_print( "\t%s\n" %"\t".join(cols) )
