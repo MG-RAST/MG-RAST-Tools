@@ -266,7 +266,9 @@ def tab_to_matrix(indata):
 
 # return a subselection of matrix columns
 def sub_matrix(matrix, ncols):
-    sub = []
+    if ncols >= len(matrix[0]):
+        return matrix
+    sub = list()
     for row in matrix:
         sub.append( row[:ncols] )
     return sub
