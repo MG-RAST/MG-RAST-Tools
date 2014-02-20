@@ -234,7 +234,7 @@ for (my $i = 0 ; $i < @tasks ; ++$i) {
 	
 	
 	# create job with the input defined above
-	my $workflow = $awe_qiime_job->create(%$job_input, 'OUTPUT' => $h->{'output'});#define workflow output
+	my $workflow = $awe_job->create(%$job_input, 'OUTPUT' => $h->{'output'});#define workflow output
 
 	print "AWE job ready for submission:\n";
 	print $json->pretty->encode( $workflow )."\n";
