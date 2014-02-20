@@ -192,7 +192,7 @@ for (my $i = 0 ; $i < @tasks ; ++$i) {
 	my ($pair_file, $matrix_file, $group_file, $tree_file) = @{$task};
 	
 	
-	my $input_filename = basename($pair_file).'_'.$i.'.txt';
+	my $input_filename = basename($h->{'cmdfile'}).'_'.$i.'.txt';
 	
 	print "got:\n $pair_file\n $matrix_file, $group_file, $tree_file\n";
 	
