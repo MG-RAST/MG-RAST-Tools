@@ -6,7 +6,8 @@ use warnings;
 use FindBin;
 use lib $FindBin::Bin;
 
-use awe;
+use AWE::Client;
+use AWE::Job;
 use SHOCK::Client;
 
 use USAGEPOD qw(parse_options);
@@ -49,7 +50,7 @@ $h->{'output'} || die "no output defined";
 ############################################
 # connect to AWE server and check the clients
 
-my $awe = new AWE($aweserverurl, $shocktoken);
+my $awe = new AWE::Client($aweserverurl, $shocktoken);
 unless (defined $awe) {
 	die;
 }
