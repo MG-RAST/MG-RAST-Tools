@@ -6,13 +6,16 @@ use warnings;
 
 
 #https://github.com/MG-RAST/Shock/blob/master/libs/shock.pm
-use shock;
+use SHOCK::Client;
 use awe;
 
 use JSON;
 
 use Data::Dumper;
 use File::Basename;
+
+eval "use Text::ASCIITable; 1"
+or die "module required: cpan install Text::ASCIITable";
 
 use USAGEPOD qw(parse_options);
 
@@ -145,7 +148,7 @@ sub getAWE_results_and_cleanup {
 	}
 	
 	#print "connect to SHOCK\n";
-	my $shock = new Shock($shockurl, $shocktoken); # shock production
+	my $shock = new SHOCK::Client($shockurl, $shocktoken); # shock production
 	unless (defined $shock) {
 		die;
 	}
@@ -187,6 +190,9 @@ sub getJobStates {
 	foreach my $job (@{$jobs->{data}}){
 		
 		my $job_id = $job->{id};
+		
+		#print Dumper($job)."\n";
+		
 		my $state = lc($job->{state});
 		
 		push(@{ $states->{$state} } , $job_id);
@@ -202,7 +208,8 @@ sub showAWEstatus {
 	
 	
 	
-	my $states = getJobStates();
+	my $states = getJobStates() || die "states undefined";
+	
 	
 	print "\n\n** job states **\n";
 	#print "$_: ".($states->{$_}||'0')."\n" for @awe_job_states;
@@ -221,7 +228,8 @@ sub showAWEstatus {
 		
 	}
 	
-	if (keys($states) > 6) { # in case Wei introduces new states.. ;-)
+	if (keys($states) > 7) { # in case Wei introduces new states.. ;-)
+		print 'keys: '.join(',',keys($states));
 		die;
 	}
 	
@@ -253,16 +261,22 @@ my ($h, $help_text) = &parse_options (
 		'Actions:',
 		[ 'status'						, "show job states on AWE server"],
 		[ 'cmd=s'						, "command to execute"],
+        [ 'show_clients'                , "show clients in current clientgroup"],
+		[ 'resume_clients=s'            , " "],
 		[ 'show_jobs=s'					, " "],
 		[ 'check_jobs=s'				, " "],
 		[ 'download_jobs=s'				, "download specified jobs if state==completed"],
 		[ 'wait_and_download_jobs=s'	, "wait for completion and download specified jobs"],
+		[ 'resume_jobs=s'				, "resume jobs"],
+		[ 'suspend_jobs=s'				, "suspend jobs"],
+		[ 'resubmit_jobs=s'				, "resubmit jobs"],
 		[ 'delete_jobs=s'				, "deletes jobs and temporary shock nodes, unless keep_nodes used"],
 		[ 'shock_clean'					, "delete all temporary nodes from SHOCK server"],
 		[ 'shock_query=s'				, "query SHOCK node"],
 		[ 'shock_view=s'                , "view SHOCK node"],
 		'',
 		'Options:',
+		[ 'out_dir=s'						, "specify download directory (default uses job name)"],
 		[ 'keep_nodes'					, "use with --delete_jobs"],
 		[ 'wait_completed'				, "wait until any job is in state completed"],
 		[ 'output_files=s'				, "specify extra output files for --cmd"],
@@ -286,11 +300,71 @@ if (defined($h->{'clientgroup'})) {
 print "Configuration:\n";
 print "aweserverurl: ".($aweserverurl || 'undef') ."\n";
 print "shockurl: ". ($shockurl || 'undef') ."\n";
-print "clientgroup: ". ($clientgroup || 'undef') ."\n";
+print "clientgroup: ". ($clientgroup || 'undef') ."\n\n";
 
 
 if (defined($h->{"status"})) {
 	showAWEstatus();
+	exit(0);
+} elsif (defined($h->{"show_clients"})) {
+	my $awe = new AWE($aweserverurl, $shocktoken);
+	unless (defined $awe) {
+		die;
+	}
+	
+	#$awe->checkClientGroup($clientgroup);
+	
+	my $clients = $awe->request('GET', 'client');
+	
+	#print Dumper($clients);
+	#print "clientgroup: $clientgroup\n";
+	
+	my $t = Text::ASCIITable->new({ headingText => "clientgroup: $clientgroup" });
+	
+	$t->setCols('ID', 'name', 'IP', 'status', 'current work');
+	#$t->alignCol('networks','left');
+	
+	
+	
+	foreach my $client (@{$clients->{'data'}}) {
+		
+		if (lc($client->{'group'}) eq lc($clientgroup)) {
+			#print Dumper($client);
+			#print $client->{'name'}."\t";
+			#print ($client->{'Status'} || 'NA');
+			#print "\t";
+			
+			my @current = keys(%{$client->{'current_work'}});
+			my $cur_text;
+			if (@current == 0 ) {
+				$cur_text = "idle";
+			} else {
+				$cur_text = join(',', @current);
+			}
+			
+			$t->addRow( $client->{'id'}, $client->{'name'}, $client->{'host'}, ($client->{'Status'} || 'NA'), $cur_text);
+		}
+		
+		
+	}
+	
+	print $t;
+	
+	exit(0);
+} elsif (defined($h->{"resume_clients"})) {
+	my @clients = split(',', $h->{"resume_clients"});
+	
+	my $awe = new AWE($aweserverurl, $shocktoken);
+	unless (defined $awe) {
+		die;
+	}
+	
+	foreach my $client (@clients) {
+		$awe->resumeClient($client);
+	}
+
+	
+	
 	exit(0);
 } elsif (defined($h->{"wait_completed"})) {
 	
@@ -325,7 +399,7 @@ if (defined($h->{"status"})) {
 	#connect to SHOCK server
 	
 	print "connect to SHOCK\n";
-	my $shock = new Shock($shockurl, $shocktoken); # shock production
+	my $shock = new SHOCK::Client($shockurl, $shocktoken); # shock production
 	unless (defined $shock) {
 		die;
 	}
@@ -359,6 +433,48 @@ if (defined($h->{"status"})) {
 		AWE::Job::delete_jobs ('awe' => $awe, 'shock' => $shock, 'jobs' => \@jobs, 'clientgroup' => $clientgroup);
 		
 	}
+	exit(0);
+} elsif (defined($h->{"resume_jobs"})) {
+	my $awe = new AWE($aweserverurl, $shocktoken);
+	unless (defined $awe) {
+		die;
+	}
+	
+	my @jobs = split(',', $h->{"resume_jobs"});
+	foreach my $job (@jobs) {
+		$awe->resumeJob($job);
+	}
+	
+	
+	
+	exit(0);
+} elsif (defined($h->{"suspend_jobs"})) {
+	my $awe = new AWE($aweserverurl, $shocktoken);
+	unless (defined $awe) {
+		die;
+	}
+	
+	my @jobs = split(',', $h->{"suspend_jobs"});
+	foreach my $job (@jobs) {
+		$awe->suspendJob($job);
+	}
+	
+	
+	
+	exit(0);
+} elsif (defined($h->{"resubmit_jobs"})) {
+	my $awe = new AWE($aweserverurl, $shocktoken);
+	unless (defined $awe) {
+		die;
+	}
+	
+	my @jobs = split(',', $h->{"resubmit_jobs"});
+	foreach my $job (@jobs) {
+		$awe->resubmitJob($job);
+	}
+	
+	
+	
 	exit(0);
 } elsif (defined($h->{"shock_query"})) {
 	
@@ -442,10 +558,11 @@ if (defined($h->{"status"})) {
 		die;
 	}
 	
-	my $use_download_dir = 1;
+	
+	
 	my $only_last_task = 0;
 	
-	AWE::Job::download_jobs('awe' => $awe, 'shock' => $shock, 'jobs' => \@jobs, 'clientgroup' => $clientgroup, 'use_download_dir' => $use_download_dir, 'only_last_task' => $only_last_task);
+	AWE::Job::download_jobs('awe' => $awe, 'shock' => $shock, 'jobs' => \@jobs, 'use_download_dir' => $h->{'out_dir'}, 'only_last_task' => $only_last_task);
 	
 	print "done.\n";
 	exit(0);
