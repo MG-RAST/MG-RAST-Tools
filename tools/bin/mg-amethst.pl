@@ -22,6 +22,18 @@ my $shocktoken=$ENV{'GLOBUSONLINE'} || $ENV{'KB_AUTH_TOKEN'};
 
 
 
+sub process_pair {
+	my ($cmd1, $cmd2, $sum_cmd) = @_;
+
+	my ($matrix_file) = $cmd1 =~ /-f\s+(\S+)/;
+	unless (defined $matrix_file) {
+		die;
+	}
+	print "matrix_file: $matrix_file\n";
+
+}
+
+
 my ($h, $help_text) = &parse_options (
 	'name' => 'mg-amethst -- wrapper for amethst',
 	'version' => '1',
@@ -55,10 +67,16 @@ while (my $line = <FILE>) {
 		my $cmd1 =  <FILE>;
 		my $cmd2 =  <FILE>;
 		my $sum_cmd =  <FILE>;
+		chomp($cmd1);
+		chomp($cmd2);
+		chomp($sum_cmd);
 	
 		print $cmd1."\n";
 		print $cmd2."\n";
 		print $sum_cmd."\n";
+	
+		process_pair($cmd1, $cmd2, $sum_cmd);
+	
 	}
 	
 }
