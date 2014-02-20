@@ -11,6 +11,7 @@ use AWE::Job;
 use SHOCK::Client;
 
 use JSON;
+use File::Basename;
 
 use USAGEPOD qw(parse_options);
 
