@@ -49,7 +49,7 @@ if ($h->{'help'} || keys(%$h)==0) {
 $h->{'cmdfile'} || die "no cmdfile defined";
 
 open FILE, $h->{'cmdfile'} or die $!;
-while my $line = <FILE> {
+while (my $line = <FILE>) {
 	
 	if ($line =~ /^\#job/) {
 		my $cmd1 =  <FILE>;
