@@ -4,7 +4,7 @@ use strict;
 use warnings;
 
 use awe;
-use shock;
+use SHOCK::Client;
 
 use USAGEPOD qw(parse_options);
 
@@ -57,7 +57,7 @@ $awe->checkClientGroup($clientgroup)==0 || die;
 #connect to SHOCK server
 
 print "connect to SHOCK\n";
-my $shock = new Shock($shockurl, $shocktoken); # shock production
+my $shock = new SHOCK::Client($shockurl, $shocktoken); # shock production
 unless (defined $shock) {
 	die;
 }
