@@ -43,9 +43,31 @@ if ($h->{'help'} || keys(%$h)==0) {
 	exit(0);
 }
 
-$h->{'input'} || die "no input defined";
-$h->{'output'} || die "no output defined";
+#$h->{'input'} || die "no input defined";
+#$h->{'output'} || die "no output defined";
 
+$h->{'cmdfile'} || die "no cmdfile defined";
+
+open FILE, $h->{'cmdfile'} or die $!;
+while my $line = <FILE> {
+	
+	if ($line =~ /^\#job/) {
+		my $cmd1 =  <FILE>;
+		my $cmd2 =  <FILE>;
+		my $sum_cmd =  <FILE>;
+	
+		print $cmd1."\n";
+		print $cmd2."\n";
+		print $sum_cmd."\n";
+	}
+	
+}
+
+
+close(FILE)
+
+
+exit(0);
 
 ############################################
 # connect to AWE server and check the clients
