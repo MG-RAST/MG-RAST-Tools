@@ -31,7 +31,42 @@ sub process_pair {
 	}
 	print "matrix_file: $matrix_file\n";
 
+	my ($group_file) = $cmd1 =~ /-g\s+(\S+)/;
+	unless (defined $group_file) {
+		die;
+	}
+	print "group_file: $group_file\n";
+	
+	my ($tree_file) = $cmd1 =~ /-a\s+(\S+)/;
+	if (defined $tree_file) {
+		print "tree_file: $tree_file\n";
+	}
+	
+	
+	if (-e $matrix_file) {
+		print "found $matrix_file\n";
+	} else {
+		die "$matrix_file not found"
+	}
+	
+	if (-e $group_file) {
+		print "found $group_file\n";
+	} else {
+		die "$group_file not found"
+	}
+	
+	if (defined $tree_file) {
+		
+		if (-e $tree_file) {
+			print "found $tree_file\n";
+		} else {
+			die "$tree_file not found"
+		}
+	}
+	
+	
 }
+
 
 
 my ($h, $help_text) = &parse_options (
