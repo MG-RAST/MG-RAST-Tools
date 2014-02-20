@@ -183,7 +183,7 @@ foreach my $task (@tasks) {
 }
 
 # create and sumbit workflows
-for (my $i = 0 ; $i < @tasks ; ++i) {
+for (my $i = 0 ; $i < @tasks ; ++$i) {
 	my $task = $tasks[$i];
 	
 	my ($pair_file, $matrix_file, $group_file, $tree_file) = @{$task};
