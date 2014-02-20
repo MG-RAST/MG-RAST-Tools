@@ -25,6 +25,7 @@ my $shocktoken=$ENV{'GLOBUSONLINE'} || $ENV{'KB_AUTH_TOKEN'};
 sub process_pair {
 	my ($cmd1, $cmd2, $sum_cmd) = @_;
 
+	
 	my ($matrix_file) = $cmd1 =~ /-f\s+(\S+)/;
 	unless (defined $matrix_file) {
 		die;
@@ -64,7 +65,7 @@ sub process_pair {
 		}
 	}
 	
-	
+	return ($matrix_file, $group_file, $tree_file);
 }
 
 ##################################################
@@ -100,6 +101,9 @@ print "clientgroup: ". ($clientgroup || 'undef') ."\n\n";
 
 $h->{'cmdfile'} || die "no cmdfile defined";
 
+
+my @tasks=();
+
 open FILE, $h->{'cmdfile'} or die $!;
 while (my $line = <FILE>) {
 	
@@ -111,18 +115,30 @@ while (my $line = <FILE>) {
 		chomp($cmd2);
 		chomp($sum_cmd);
 	
-		print $cmd1."\n";
-		print $cmd2."\n";
-		print $sum_cmd."\n";
+		my $pair_file = $line.$cmd1."\n".$cmd2."\n".$sum_cmd;
 	
-		process_pair($cmd1, $cmd2, $sum_cmd);
+		#print $cmd1."\n";
+		#print $cmd2."\n";
+		#print $sum_cmd."\n";
 	
+		my @input_files = process_pair($cmd1, $cmd2, $sum_cmd);
+		push(@tasks, [$pair_file, @input_files]);
+		
 	}
 	
 }
 
 
 close(FILE);
+
+
+
+foreach my $task (@tasks) {
+	my ($pair_file, $matrix_file, $group_file, $tree_file) = @{$task};
+	
+	print "got: $pair_file, $matrix_file, $group_file, $tree_file\n";
+	
+}
 
 
 exit(0);
