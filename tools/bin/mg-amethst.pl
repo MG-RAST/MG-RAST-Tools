@@ -64,7 +64,7 @@ while (my $line = <FILE>) {
 }
 
 
-close(FILE)
+close(FILE);
 
 
 exit(0);
