@@ -156,32 +156,104 @@ unless (defined $shock) {
 
 
 
+my $task_tmpls;
 
+my $task_tmpls_json = <<EOF;
+{
+	"amethst" : {
+		"cmd" : "AMETHST.pl -f @[CMDFILE] -z",
+		"inputs" : ["[CMDFILE]"],
+		"outputs" : ["[OUTPUT]"]
+	}
+}
+EOF
+
+$task_tmpls = decode_json($task_tmpls_json);
+
+
+#check if output file already exists
 foreach my $task (@tasks) {
 	my ($pair_file, $matrix_file, $group_file, $tree_file) = @{$task};
 	
+	my $output_file = $matrix_file.'.'.$group_file.'_results.zip';
+	
+	if (-e $output_file) {
+		die "output file $output_file already exists\n";
+	}
+}
+
+# create and sumbit workflows
+for (my $i = 0 ; $i < @tasks ; ++i) {
+	my $task = $tasks[$i];
+	
+	my ($pair_file, $matrix_file, $group_file, $tree_file) = @{$task};
+	
+	
+	my $input_filename = basename($pair_file).'_'.$i.'.txt';
+	
 	print "got:\n $pair_file\n $matrix_file, $group_file, $tree_file\n";
 	
+	
+	my $output_file = $matrix_file.'.'.$group_file.'_results.zip';
+	
+	my $tasks =
+	[
+	{
+		"task_id" => "0_amethst",
+		"task_template" => "amethst",
+		"INPUT" => ["shock", "[INPUT]", $input_filename],
+		"OUTPUT" => $output_file
+	}
+	];
+	
+	
+	
+	my $awe_job = AWE::Job->new(
+	'info' => {
+		"pipeline"=> "amethst",
+		"name"=> "amethst-job_".int(rand(100000)),
+		"project"=> "project",
+		"user"=> "wgerlach",
+		"clientgroups"=> $clientgroup,
+		"noretry"=> JSON::true
+	},
+	'shockhost' => $shockurl,
+	'task_templates' => $task_tmpls,
+	'tasks' => $tasks
+	);
+	
+	my $json = JSON->new;
+	print "AWE job without input:\n".$json->pretty->encode( $awe_job->hash() )."\n";
+	
+	
+	#define and upload job input files
+	my $job_input = {};
+	$job_input->{'INPUT'}->{'data'} = $pair_file;
+	$shock->upload_temporary_files($job_input);
+
+	
+	
+	# create job with the input defined above
+	my $workflow = $awe_qiime_job->create(%$job_input, 'OUTPUT' => $h->{'output'});#define workflow output
+
+	print "AWE job ready for submission:\n";
+	print $json->pretty->encode( $workflow )."\n";
+	
+	exit(0);
+	print "submit job to AWE server...\n";
+	my $submission_result = $awe->submit_job('json_data' => $json->encode($workflow));
+	
+	my $job_id = $submission_result->{'data'}->{'id'} || die "no job_id found";
+	
+	
+	print "result from AWE server:\n".$json->pretty->encode( $submission_result )."\n";
+	
+	print "job submitted: $job_id\n";
+	
+	unless (defined($h->{'nowait'})) {
+		AWE::Job::wait_and_download_job_results ('awe' => $awe, 'shock' => $shock, 'jobs' => [$job_id], 'clientgroup' => $clientgroup);
+	}
+	
 }
 
-
-exit(0);
-
-
-##############
-
-#parse command file
-
-
-##############
-	
-my $cmd = "AMETHST.pl -f test_commands \@".$h->{'input'}." -o \@\@".$h->{'output'};
-	
-my $job_id = AWE::Job::generateAndSubmitSimpleAWEJob('cmd' => $cmd, 'awe' => $awe, 'shock' => $shock, 'clientgroup' => $clientgroup);
-
-print "job submitted: $job_id\n";
-
-unless (defined($h->{'nowait'})) {
-	AWE::Job::wait_and_download_job_results ('awe' => $awe, 'shock' => $shock, 'jobs' => [$job_id], 'clientgroup' => $clientgroup);
-}
-
+print "finished\n";"
