@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 
 import sys
+import time
 import urllib
 from operator import itemgetter
 from optparse import OptionParser
@@ -38,8 +39,13 @@ search_opts = " ".join( map(lambda x: "--%s <query text>"%x, SEARCH_FIELDS) )
 
 def display_search(data, fields):
     for d in data:
-        row = map(lambda x: d[x], fields)
-        safe_print("\t".join(map(str, row))+"\n")
+        row = []
+        for f in fields:
+            try:
+                row.append( str(d[f]) )
+            except:
+                row.append( "".join([x if ord(x) < 128 else '?' for x in d[f]]) )
+        safe_print("\t".join(row)+"\n")
 
 def main(args):
     OptionParser.format_description = lambda self, formatter: self.description
@@ -49,7 +55,9 @@ def main(args):
     parser.add_option("", "--user", dest="user", default=None, help="OAuth username")
     parser.add_option("", "--passwd", dest="passwd", default=None, help="OAuth password")
     parser.add_option("", "--token", dest="token", default=None, help="OAuth token")
-    parser.add_option("", "--order", dest="order", default="name", help="field metagenomes are ordered by, default is name")
+    parser.add_option("", "--workspace", dest="workspace", default=None, help="Save results in a workspace with this name")
+    parser.add_option("", "--save_name", dest="save_name", default=None, help="Name of object to create in workspace")
+    parser.add_option("", "--order", dest="order", default=None, help="field metagenomes are ordered by, default is no ordering")
     parser.add_option("", "--direction", dest="direction", default="asc", help="direction of order. 'asc' for ascending order, 'desc' for descending order, default is asc")
     parser.add_option("", "--match", dest="match", default="all", help="search logic. 'all' for metagenomes that match all search parameters, 'any' for metagenomes that match any search parameters, default is all")
     parser.add_option("", "--status", dest="status", default="public", help="types of metagenomes to return. 'both' for all data (public and private), 'public' for public data, 'private' for users private data, default is public")
@@ -65,14 +73,15 @@ def main(args):
     
     # build call url
     params = [ ('limit', '100'),
-               ('order', opts.order),
-               ('direction', opts.direction),
                ('match', opts.match),
                ('status', opts.status),
                ('verbosity', opts.verbosity if opts.verbosity == 'minimal' else 'mixs') ]
     for sfield in SEARCH_FIELDS:
         if hasattr(opts, sfield) and getattr(opts, sfield):
             params.append( (sfield, getattr(opts, sfield)) )
+    if opts.order:
+        params.append( ('order', opts.order) )
+        params.append( ('direction', opts.direction) )
     url = opts.url+'/metagenome?'+urllib.urlencode(params, True)
     
     # retrieve data
@@ -85,15 +94,28 @@ def main(args):
         if sfield in result['data'][0]:
             fields.append(sfield)
     fields.append('status')
+    ids = [d['id'] for d in result['data']]
     
-    # output header
-    safe_print("\t".join(fields)+"\n")
-    # output rows
-    display_search(result['data'], fields)
+    if not (opts.workspace and opts.save_name):
+        # output header
+        safe_print("\t".join(fields)+"\n")
+        # output rows
+        display_search(result['data'], fields)
     while result['next']:
         url = result['next']
         result = obj_from_url(url, auth=token)
-        display_search(result['data'], fields)
+        ids.extend([d['id'] for d in result['data']])
+        if not (opts.workspace and opts.save_name):
+            display_search(result['data'], fields)
+    
+    # output workspace
+    if opts.workspace and opts.save_name:
+        sys.stdout.write('\n')
+        ws_type = 'Communities.Collection-1.0'
+        ws_obj = {'name': opts.save_name, 'type': 'metagenomes', 'created': time.strftime("%Y-%m-%d %H:%M:%S"), 'members': []}
+        for i in ids:
+            ws_obj['members'].append({'ID': i, 'URL': opts.url+'/metagenome/'+i})
+        load_to_ws(opts.workspace, ws_type, opts.save_name, ws_obj)
     
     return 0
     

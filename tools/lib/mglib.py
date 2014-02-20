@@ -1,6 +1,7 @@
 import os
 import sys
 import time
+import copy
 import urllib2
 import base64
 import json
@@ -128,12 +129,15 @@ def sparse_to_dense(sMatrix, rmax, cmax):
     return dMatrix
 
 # transform BIOM format to tabbed table
-def biom_to_tab(biom, hdl, rows=None, use_id=True):
+def biom_to_tab(biom, hdl, rows=None, use_id=True, col_name=False):
     if biom['matrix_type'] == 'sparse':
         matrix = sparse_to_dense(biom['data'], biom['shape'][0], biom['shape'][1])
     else:
         matrix = biom['data']
-    hdl.write( "\t%s\n" %"\t".join([c['id'] for c in biom['columns']]) )
+    if col_name:
+        hdl.write( "\t%s\n" %"\t".join([c['name'] for c in biom['columns']]) )
+    else:
+        hdl.write( "\t%s\n" %"\t".join([c['id'] for c in biom['columns']]) )
     for i, row in enumerate(matrix):
         name = biom['rows'][i]['id']
         if (not use_id) and ('ontology' in biom['rows'][i]['metadata']):
@@ -148,14 +152,102 @@ def biom_to_tab(biom, hdl, rows=None, use_id=True):
             except:
                 pass
 
+# retrieve a list of metadata values from biom file columns for given term
+# order is same as columns
+def metadata_from_biom(biom, term):
+    vals = []
+    for col in biom['columns']:
+        value = 'null'
+        if ('metadata' in col) and col['metadata']:
+            for v in col['metadata'].itervalues():
+                if ('data' in v) and (term in v['data']):
+                    value = v['data'][term]
+        vals.append(value)
+    return vals
+
+# merge two BIOM objects
+def merge_biom(b1, b2):
+    """input: 2 biom objects of same 'type', 'matrix_element_type', and 'matrix_element_value'
+    return: merged biom object, duplicate columns skipped, duplicate rows added"""
+    # hack for using in loop when one oif 2 is empty
+    if b1 and (not b2):
+        return b1
+    if b2 and (not b1):
+        return b2
+    # validate
+    if not (b1 and b2 and (b1['type'] == b2['type']) and (b1['matrix_element_type'] == b2['matrix_element_type']) and (b1['matrix_element_value'] == b2['matrix_element_value'])):
+        sys.stderr.write("The inputed biom objects are not compatable for merging\n")
+        return None
+    # build
+    mBiom = { "generated_by": b1['generated_by'],
+               "matrix_type": 'dense',
+               "date": time.strftime("%Y-%m-%d %H:%M:%S"),
+               "columns": copy.deepcopy(b1['columns']),
+               "rows": copy.deepcopy(b1['rows']),
+               "data": sparse_to_dense(b1['data'], b1['shape'][0], b1['shape'][1]) if b1['matrix_type'] == 'sparse' else copy.deepcopy(b1['data']),
+               "shape": [],
+               "matrix_element_value": b1['matrix_element_value'],
+               "matrix_element_type": b1['matrix_element_type'],
+               "format_url": "http://biom-format.org",
+               "format": "Biological Observation Matrix 1.0",
+               "id": b1['id']+'_'+b2['id'],
+               "type": b1['type'] }
+    # make sure we are dense
+    if b2['matrix_type'] == 'sparse':
+        b2['data'] = sparse_to_dense(b2['data'], b2['shape'][0], b2['shape'][1])
+    # get lists of ids
+    c1_id = [c['id'] for c in b1['columns']]
+    r1_id = [r['id'] for r in b1['rows']]
+    r2_id = [r['id'] for r in b2['rows']]
+    c2_keep = 0
+    # merge columns, skip duplicate by id
+    for c in b2['columns']:
+        if c['id'] not in c1_id:
+            mBiom['columns'].append(c)
+            c2_keep += 1
+    # merge b2-cols into b1-rows
+    for i, r in enumerate(mBiom['rows']):
+        add_row = []
+        try:
+            # b1-row is in b2, use those values
+            r2_index = r2_id.index(r['id'])
+            for j, c in enumerate(b2['columns']):
+                if c['id'] not in c1_id:
+                    add_row.append(b2['data'][r2_index][j])
+        except:
+            # b1-row not in b2, add 0's
+            add_row = [0]*c2_keep
+        mBiom['data'][i].extend(add_row)
+    # add b2-rows that are not in b1
+    for i, r in enumerate(b2['rows']):
+        if r['id'] in r1_id:
+            continue
+        # b1-col all 0's
+        add_row = [0]*b1['shape'][1]
+        # add b2-cols
+        for j, c in enumerate(b2['columns']):
+            if c['id'] not in c1_id:
+                add_row.append(b2['data'][i][j])
+        mBiom['rows'].append(r)
+        mBiom['data'].append(add_row)
+    mBiom['shape'] = [ len(mBiom['rows']), len(mBiom['columns']) ]
+    return mBiom
+
 # transform BIOM format to matrix in json format
-def biom_to_matrix(biom):
+def biom_to_matrix(biom, col_name=False, sig_stats=False):
+    if col_name:
+        cols = [c['name'] for c in biom['columns']]
+    else:
+        cols = [c['id'] for c in biom['columns']]
     rows = [r['id'] for r in biom['rows']]
-    cols = [c['id'] for c in biom['columns']]
     if biom['matrix_type'] == 'sparse':
         data = sparse_to_dense(biom['data'], len(rows), len(cols))
     else:
         data = biom['data']
+    if sig_stats and ('significance' in biom['rows'][0]['metadata']) and (len(biom['rows'][0]['metadata']['significance']) > 0):
+        cols.extend( [s[0] for s in biom['rows'][0]['metadata']['significance']] )
+        for i, r in enumerate(biom['rows']):
+            data[i].extend( [s[1] for s in r['metadata']['significance']] )
     return rows, cols, data
 
 # transform tabbed table to matrix in json format
@@ -174,7 +266,9 @@ def tab_to_matrix(indata):
 
 # return a subselection of matrix columns
 def sub_matrix(matrix, ncols):
-    sub = []
+    if ncols >= len(matrix[0]):
+        return matrix
+    sub = list()
     for row in matrix:
         sub.append( row[:ncols] )
     return sub
@@ -231,6 +325,21 @@ def token_from_login(user, passwd):
     data = obj_from_url(API_URL, auth=auth)
     return data['token']
 
+def load_to_ws(wname, otype, oname, obj):
+    if not _cmd_exists('ws-load'):
+        sys.stderr.write('ERROR: missing workspace client\n')
+    tmp_ws = 'tmp_'+random_str()+'.txt'
+    json.dump(obj, open(tmp_ws, 'w'))
+    ws_cmd = "ws-load %s %s %s -w %s"%(otype, oname, tmp_ws, wname)
+    process = subprocess.Popen(ws_cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
+    output, error = process.communicate()
+    os.remove(tmp_ws)
+    if error:
+        sys.stderr.write(error)
+        sys.exit(1)
+    else:
+        sys.stdout.write("%s saved in workspace %s as type %s\n"%(oname, wname, otype))
+
 def random_str(size=8):
     chars = string.ascii_letters + string.digits
     return ''.join(random.choice(chars) for x in range(size))
@@ -246,3 +355,6 @@ def execute_r(cmd, debug=False):
         if error:
             sys.stderr.write(error)
             sys.exit(1)
+
+def _cmd_exists(cmd):
+    return subprocess.call("type %s"%cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE) == 0

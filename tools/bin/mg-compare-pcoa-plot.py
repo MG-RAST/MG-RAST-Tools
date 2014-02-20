@@ -14,7 +14,7 @@ VERSION
     %s
 
 SYNOPSIS
-    mg-compare-pcoa-plot [ --help, --input <input file or stdin>, --format <cv: 'text' or 'biom'>, --plot <filename for png>, --distance <cv: bray-curtis, euclidean, maximum, manhattan, canberra, minkowski, difference>, --metadata <metadata field>, --color_group <json string or filepath>, --color_pos <integer>, --color_auto <boolean>, --rlib <R lib path>, --height <image height in inches>, --width <image width in inches>, --dpi <image DPI>, --three <boolean>, --label <boolean> ]
+    mg-compare-pcoa-plot [ --help, --input <input file or stdin>, --format <cv: 'text' or 'biom'>, --plot <filename for png>, --distance <cv: bray-curtis, euclidean, maximum, manhattan, canberra, minkowski, difference>, --metadata <metadata field>, --groups <json string or filepath>, --group_pos <integer>, --color_auto <boolean>, --rlib <R lib path>, --height <image height in inches>, --width <image width in inches>, --dpi <image DPI>, --three <boolean>, --name <boolean>, --label <boolean> ]
 
 DESCRIPTION
     Tool to generate PCoA vizualizations from metagenome abundance profiles.
@@ -22,9 +22,10 @@ DESCRIPTION
 
 posthelp = """
 Input
-    Tab-delimited table of abundance profiles, metagenomes in columns and annotation in rows.
-    OR
-    BIOM format of abundance profiles.
+    1. Tab-delimited table of abundance profiles, metagenomes in columns and annotation in rows.
+       OR
+       BIOM format of abundance profiles.
+    2. Groups in JSON format - either as input string or filename
 
 Output
     PNG file of PCoA.
@@ -44,19 +45,20 @@ def main(args):
     OptionParser.format_epilog = lambda self, formatter: self.epilog
     parser = OptionParser(usage='', description=prehelp%VERSION, epilog=posthelp%AUTH_LIST)
     parser.add_option("", "--input", dest="input", default='-', help="input: filename or stdin (-), default is stdin")
-    parser.add_option("", "--format", dest="format", default='text', help="input format: 'text' for tabbed table, 'biom' for BIOM format, default is text")
+    parser.add_option("", "--format", dest="format", default='biom', help="input format: 'text' for tabbed table, 'biom' for BIOM format, default is biom")
     parser.add_option("", "--plot", dest="plot", default=None, help="filename for output plot")
     parser.add_option("", "--distance", dest="distance", default='bray-curtis', help="distance metric, one of: bray-curtis, euclidean, maximum, manhattan, canberra, minkowski, difference, default is bray-curtis")
     parser.add_option("", "--metadata", dest="metadata", default=None, help="metadata field to color by, only for 'biom' input")
-    parser.add_option("", "--color_group", dest="color_group", default=None, help="list of color groups in JSON or tabbed format - either as input string or filename")
-    parser.add_option("", "--color_pos", dest="color_pos", type="int", default=1, help="position of color group to use, default is 1 (first)")
+    parser.add_option("", "--groups", dest="groups", default=None, help="list of groups in JSON or tabbed format - either as input string or filename")
+    parser.add_option("", "--group_pos", dest="group_pos", type="int", default=1, help="position of group to use, default is 1 (first)")
     parser.add_option("", "--color_auto", dest="color_auto", action="store_true", default=False, help="auto-create colors based on like group names, default is use group name as color")
     parser.add_option("", "--rlib", dest="rlib", default=None, help="R lib path")
+    parser.add_option("", "--three", dest="three", action="store_true", default=False, help="create 3-D PCoA, default is 2-D")
+    parser.add_option("", "--name", dest="name", action="store_true", default=False, help="label columns by name (biom only), default is by id")
+    parser.add_option("", "--label", dest="label", action="store_true", default=False, help="label image rows, default is off")
     parser.add_option("", "--height", dest="height", type="float", default=10, help="image height in inches, default is 6")
     parser.add_option("", "--width", dest="width", type="float", default=10, help="image width in inches, default is 6")
     parser.add_option("", "--dpi", dest="dpi", type="int", default=300, help="image DPI, default is 300")
-    parser.add_option("", "--three", dest="three", action="store_true", default=False, help="create 3-D PCoA, default is 2-D")
-    parser.add_option("", "--label", dest="label", action="store_true", default=False, help="label image rows, default is off")
     
     # get inputs
     (opts, args) = parser.parse_args()
@@ -75,31 +77,22 @@ def main(args):
         sys.stderr.write("ERROR: missing path to R libs\n")
         return 1
     if opts.metadata:
-        opts.color_pos = 1
         opts.color_auto = True
     
-    # parse input for R
+    # parse inputs
     tmp_in  = 'tmp_'+random_str()+'.txt'
     tmp_hdl = open(tmp_in, 'w')
     mg_list = []
-    gcolors = []
+    groups  = []
     try:
         indata = sys.stdin.read() if opts.input == '-' else open(opts.input, 'r').read()
         if opts.format == 'biom':
             try:
-                indata = json.loads(indata)
-                biom_to_tab(indata, tmp_hdl)
-                # get mg list and metadata value list
+                indata  = json.loads(indata)
+                mg_list = map(lambda x: x['id'], indata['columns'])
+                biom_to_tab(indata, tmp_hdl, col_name=opts.name)
                 if opts.metadata:
-                    for c in indata['columns']:
-                        mg_list.append(c['id'])
-                        value = 'null'
-                        for v in c['metadata'].itervalues():
-                            if ('data' in v) and (opts.metadata in v['data']):
-                                value = v['data'][opts.metadata]
-                        gcolors.append([value])
-                else:
-                    mg_list = map(lambda x: x['id'], indata['columns'])
+                    groups = metadata_from_biom(indata, opts.metadata)
             except:
                 sys.stderr.write("ERROR: input BIOM data not correct format\n")
                 return 1
@@ -111,55 +104,58 @@ def main(args):
         return 1
     tmp_hdl.close()
     
-    # get color groups if not in BIOM metadata and option used
-    if (not gcolors) and opts.color_group:
+    # get groups if not in BIOM metadata and option used
+    if (len(groups) == 0) and opts.groups:
         # is it json ?
+        ## example of 2 group sets in json format
+        ## [ {"group1": ["mg_id_1", "mg_id_2"], "group2": ["mg_id_3", "mg_id_4", "mg_id_5"]},
+        ##   {"group1": ["mg_id_1", "mg_id_2", "mg_id_3"], "group2": ["mg_id_4", "mg_id_5"]} ]
         try:
-            cdata = json.load(open(opts.color_group, 'r')) if os.path.isfile(opts.color_group) else json.loads(opts.color_group)
-            for mg in mg_list:
-                c_set = []
-                for cd in cdata:
-                    found_c = None
-                    for c in cd.iterkeys():
-                        if mg in cd[c]:
-                            found_c = c
-                            break
-                    if found_c:
-                        c_set.append(found_c)
-                    else:
-                        sys.stderr.write("ERROR: metagenome %s not in a group\n"%mg)
-                        return 1
-                gcolors.append(c_set)                    
+            gdata = json.load(open(opts.groups, 'r')) if os.path.isfile(opts.groups) else json.loads(opts.groups)
+            if opts.group_pos > len(gdata):
+                sys.stderr.write("ERROR: position (%d) of group is out of bounds\n"%opts.group_pos)
+                return 1
+            for m in mg_list:
+                found_g = None
+                for g, mgs in gdata[opts.group_pos-1].iteritems():
+                    if m in mgs:
+                        found_g = g
+                        break
+                if found_g:
+                    groups.append(found_g)
+                else:
+                    sys.stderr.write("ERROR: metagenome %s not in a group\n"%m)
+                    return 1                  
         # no - its tabbed
         except:
-            ctext = open(opts.color_group, 'r').read() if os.path.isfile(opts.color_group) else opts.color_group
-            cdata = {}
-            for line in ctext.strip().split("\n")[1:]:
-                parts = line.strip().split("\t")
-                cdata[parts[0]] = parts[1:]
-            for mg in mg_list:
-                if mg in cdata:
-                    gcolors.append( cdata[mg] )
-                else:
-                    sys.stderr.write("ERROR: metagenome %s not in a group\n"%mg)
+            gtext = open(opts.groups, 'r').read() if os.path.isfile(opts.groups) else opts.groups
+            grows, gcols, gdata = tab_to_matrix(gtext)
+            if opts.group_pos > len(gdata[0]):
+                sys.stderr.write("ERROR: position (%d) of group is out of bounds\n"%opts.group_pos)
+            for m in mg_list:
+                try:
+                    midx = gcols.index(m)
+                    groups.append(gdata[midx][opts.group_pos-1])
+                except:
+                    sys.stderr.write("ERROR: metagenome %s not in a group\n"%m)
                     return 1
-
-    # print color groups to file for R input
-    tmp_clr = None
-    if gcolors:
-        tmp_clr = 'tmp_'+random_str()+'.txt'
-        clr_hdl = open(tmp_clr, 'w')
-        for i in range(len(gcolors[0])):
-            clr_hdl.write("\t%d"%i)
-        clr_hdl.write("\n")
-        for i, mg in enumerate(mg_list):
-            clr_hdl.write( "%s\t%s\n"%(mg, "\t".join(gcolors[i])) )
-        clr_hdl.close()
+    
+    # print groups to file for R input
+    tmp_group = None
+    if len(groups) == len(mg_list):
+        tmp_group = 'tmp_'+random_str()+'.txt'
+        hdl_group = open(tmp_group, 'w')
+        hdl_group.write("\tgroup\n")
+        for i, m in enumerate(mg_list):
+            hdl_group.write("%s\t%s\n"%(m, ''.join([x if ord(x) < 128 else '?' for x in groups[i]])))
+        hdl_group.close()
+    elif len(groups) > 0:
+        sys.stderr.write("Warning: Not all metagenomes in a group\n")
     
     # build R cmd
     three = 'c(1,2,3)' if opts.three else 'c(1,2)'
     label = 'TRUE' if opts.label else 'FALSE'
-    table = '"%s"'%tmp_clr if tmp_clr else 'NA'
+    table = '"%s"'%tmp_group if tmp_group else 'NA'
     color = 'TRUE' if opts.color_auto else 'FALSE'
     r_cmd = """source("%s/plot_mg_pcoa.r")
 suppressMessages( plot_mg_pcoa(
@@ -169,18 +165,18 @@ suppressMessages( plot_mg_pcoa(
     dist_metric="%s",
     label_points=%s,
     color_table=%s,
-    color_column=%d,
+    color_column=1,
     auto_colors=%s,
     image_height_in=%.1f,
     image_width_in=%.1f,
     image_res_dpi=%d
-))"""%(opts.rlib, tmp_in, opts.plot, three, opts.distance, label, table, opts.color_pos, color, opts.height, opts.width, opts.dpi)
+))"""%(opts.rlib, tmp_in, opts.plot, three, opts.distance, label, table, color, opts.height, opts.width, opts.dpi)
     execute_r(r_cmd)
     
     # cleanup
     os.remove(tmp_in)
-    if tmp_clr:
-        os.remove(tmp_clr)
+    if tmp_group:
+        os.remove(tmp_group)
     
     return 0
     
