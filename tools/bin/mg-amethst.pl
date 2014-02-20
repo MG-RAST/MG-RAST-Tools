@@ -20,7 +20,7 @@ my $clientgroup = $ENV{'AWE_CLIENT_GROUP'};
 my $shocktoken=$ENV{'GLOBUSONLINE'} || $ENV{'KB_AUTH_TOKEN'};
 
 
-
+##############################################
 
 sub process_pair {
 	my ($cmd1, $cmd2, $sum_cmd) = @_;
@@ -67,7 +67,7 @@ sub process_pair {
 	
 }
 
-
+##################################################
 
 my ($h, $help_text) = &parse_options (
 	'name' => 'mg-amethst -- wrapper for amethst',
@@ -89,6 +89,11 @@ if ($h->{'help'} || keys(%$h)==0) {
 	print $help_text;
 	exit(0);
 }
+
+print "Configuration:\n";
+print "aweserverurl: ".($aweserverurl || 'undef') ."\n";
+print "shockurl: ". ($shockurl || 'undef') ."\n";
+print "clientgroup: ". ($clientgroup || 'undef') ."\n\n";
 
 #$h->{'input'} || die "no input defined";
 #$h->{'output'} || die "no output defined";
