@@ -204,7 +204,7 @@ for (my $i = 0 ; $i < @tasks ; ++$i) {
 	{
 		"task_id" => "0_amethst",
 		"task_template" => "amethst",
-		"INPUT" => ["shock", "[INPUT]", $input_filename],
+		"CMDFILE" => ["shock", "[CMDFILE]", $input_filename],
 		"OUTPUT" => $output_file
 	}
 	];
@@ -231,13 +231,13 @@ for (my $i = 0 ; $i < @tasks ; ++$i) {
 	
 	#define and upload job input files
 	my $job_input = {};
-	$job_input->{'INPUT'}->{'data'} = $pair_file;
+	$job_input->{'CMDFILE'}->{'data'} = $pair_file;
 	$shock->upload_temporary_files($job_input);
 
 	
 	
 	# create job with the input defined above
-	my $workflow = $awe_job->create(%$job_input, 'OUTPUT' => $h->{'output'});#define workflow output
+	my $workflow = $awe_job->create(%$job_input);#define workflow output
 
 	print "AWE job ready for submission:\n";
 	print $json->pretty->encode( $workflow )."\n";
