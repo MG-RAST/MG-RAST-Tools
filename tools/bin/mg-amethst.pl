@@ -256,4 +256,4 @@ for (my $i = 0 ; $i < @tasks ; ++$i) {
 	
 }
 
-print "finished\n";"
+print "finished\n";
