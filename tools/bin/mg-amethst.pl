@@ -133,15 +133,6 @@ close(FILE);
 
 
 
-foreach my $task (@tasks) {
-	my ($pair_file, $matrix_file, $group_file, $tree_file) = @{$task};
-	
-	print "got: $pair_file, $matrix_file, $group_file, $tree_file\n";
-	
-}
-
-
-exit(0);
 
 ############################################
 # connect to AWE server and check the clients
@@ -162,6 +153,20 @@ my $shock = new SHOCK::Client($shockurl, $shocktoken); # shock production
 unless (defined $shock) {
 	die;
 }
+
+
+
+
+foreach my $task (@tasks) {
+	my ($pair_file, $matrix_file, $group_file, $tree_file) = @{$task};
+	
+	print "got:\n $pair_file\n $matrix_file, $group_file, $tree_file\n";
+	
+}
+
+
+exit(0);
+
 
 ##############
 
