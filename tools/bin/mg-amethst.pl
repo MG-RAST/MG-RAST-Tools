@@ -185,6 +185,10 @@ foreach my $task (@tasks) {
 	}
 }
 
+
+my $tasks = [];
+my $job_input = {};
+
 # create and sumbit workflows
 for (my $i = 0 ; $i < @tasks ; ++$i) {
 	my $task = $tasks[$i];
@@ -199,64 +203,71 @@ for (my $i = 0 ; $i < @tasks ; ++$i) {
 	
 	my $output_file = $matrix_file.'.'.$group_file.'_results.zip';
 	
-	my $tasks =
-	[
+	push (@{$tasks},
 	{
 		"task_id" => "0_amethst",
 		"task_template" => "amethst",
-		"CMDFILE" => ["shock", "[CMDFILE]", $input_filename],
+		"CMDFILE" => ["shock", "[CMDFILE_$i]", $input_filename],
 		"OUTPUT" => $output_file
 	}
-	];
-	
-	
-	
-	my $awe_job = AWE::Job->new(
-	'info' => {
-		"pipeline"=> "amethst",
-		"name"=> "amethst-job_".int(rand(100000)),
-		"project"=> "project",
-		"user"=> "wgerlach",
-		"clientgroups"=> $clientgroup,
-		"noretry"=> JSON::true
-	},
-	'shockhost' => $shockurl,
-	'task_templates' => $task_tmpls,
-	'tasks' => $tasks
 	);
 	
-	my $json = JSON->new;
-	print "AWE job without input:\n".$json->pretty->encode( $awe_job->hash() )."\n";
 	
+	$job_input->{'CMDFILE_'.$i}->{'data'} = $pair_file;
 	
-	#define and upload job input files
-	my $job_input = {};
-	$job_input->{'CMDFILE'}->{'data'} = $pair_file;
-	$shock->upload_temporary_files($job_input);
-
-	
-	
-	# create job with the input defined above
-	my $workflow = $awe_job->create(%$job_input);#define workflow output
-
-	print "AWE job ready for submission:\n";
-	print $json->pretty->encode( $workflow )."\n";
-	
-	exit(0);
-	print "submit job to AWE server...\n";
-	my $submission_result = $awe->submit_job('json_data' => $json->encode($workflow));
-	
-	my $job_id = $submission_result->{'data'}->{'id'} || die "no job_id found";
-	
-	
-	print "result from AWE server:\n".$json->pretty->encode( $submission_result )."\n";
-	
-	print "job submitted: $job_id\n";
-	
-	unless (defined($h->{'nowait'})) {
-		AWE::Job::wait_and_download_job_results ('awe' => $awe, 'shock' => $shock, 'jobs' => [$job_id], 'clientgroup' => $clientgroup);
-	}
-	
+		
 }
+
+
+
+
+
+my $awe_job = AWE::Job->new(
+'info' => {
+	"pipeline"=> "amethst",
+	"name"=> "amethst-job_".int(rand(100000)),
+	"project"=> "project",
+	"user"=> "wgerlach",
+	"clientgroups"=> $clientgroup,
+	"noretry"=> JSON::true
+},
+'shockhost' => $shockurl,
+'task_templates' => $task_tmpls,
+'tasks' => $tasks
+);
+
+my $json = JSON->new;
+print "AWE job without input:\n".$json->pretty->encode( $awe_job->hash() )."\n";
+
+
+#define and upload job input files
+
+
+$shock->upload_temporary_files($job_input);
+
+
+# create job with the input defined above
+my $workflow = $awe_job->create(%$job_input);#define workflow output
+
+print "AWE job ready for submission:\n";
+print $json->pretty->encode( $workflow )."\n";
+
+exit(0);
+print "submit job to AWE server...\n";
+my $submission_result = $awe->submit_job('json_data' => $json->encode($workflow));
+
+my $job_id = $submission_result->{'data'}->{'id'} || die "no job_id found";
+
+
+print "result from AWE server:\n".$json->pretty->encode( $submission_result )."\n";
+
+print "job submitted: $job_id\n";
+
+unless (defined($h->{'nowait'})) {
+	AWE::Job::wait_and_download_job_results ('awe' => $awe, 'shock' => $shock, 'jobs' => [$job_id], 'clientgroup' => $clientgroup);
+}
+
+
+
 
 print "finished\n";
