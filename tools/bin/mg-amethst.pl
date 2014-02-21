@@ -105,10 +105,7 @@ print "clientgroup: ". ($clientgroup || 'undef') ."\n\n";
 $h->{'cmdfile'} || die "no cmdfile defined";
 
 
-$shocktoken || die "no shocktoken defined";
-if ($shocktoken eq '') {
-	die "no shocktoken defined";
-}
+
 
 my @tasks=();
 
@@ -245,9 +242,13 @@ my $json = JSON->new;
 print "AWE job without input:\n".$json->pretty->encode( $awe_job->hash() )."\n";
 
 
-#define and upload job input files
 
 
+$shocktoken || die "no shocktoken defined";
+if ($shocktoken eq '') {
+	die "no shocktoken defined";
+}
+#upload job input files
 $shock->upload_temporary_files($job_input);
 
 
