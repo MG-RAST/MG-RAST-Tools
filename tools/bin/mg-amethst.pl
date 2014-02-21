@@ -113,6 +113,17 @@ open FILE, $h->{'cmdfile'} or die $!;
 while (my $line = <FILE>) {
 	
 	if ($line =~ /^\#job/) {
+		my ($analysis) = $line =~ /^\#job\s*(\S+)/;
+		
+		unless (defined($analysis)) {
+			die "analysis filename (after keyword job) not defined";
+		}
+		my $analysis_filename = $analysis.'.results.tgz';
+	
+		if (-e $analysis_filename) {
+			die "analysis results file \"$analysis_filename\" already exists";
+		}
+	
 		my $cmd1 =  <FILE>;
 		my $cmd2 =  <FILE>;
 		my $sum_cmd =  <FILE>;
@@ -127,7 +138,7 @@ while (my $line = <FILE>) {
 		#print $sum_cmd."\n";
 	
 		my @input_files = process_pair($cmd1, $cmd2, $sum_cmd);
-		push(@tasks, [$pair_file, @input_files]);
+		push(@tasks, [$analysis_filename, $pair_file, @input_files]);
 		
 	}
 	
@@ -166,7 +177,7 @@ my $task_tmpls;
 my $task_tmpls_json = <<EOF;
 {
 	"amethst" : {
-		"cmd" : "AMETHST.pl -f @[CMDFILE] -z",
+		"cmd" : "AMETHST.pl -f @[CMDFILE] -z [OUTPUT]",
 		"inputs" : ["[CMDFILE]"],
 		"outputs" : ["[OUTPUT]"]
 	}
@@ -176,16 +187,6 @@ EOF
 $task_tmpls = decode_json($task_tmpls_json);
 
 
-#check if output file already exists
-foreach my $task (@tasks) {
-	my ($pair_file, $matrix_file, $group_file, $tree_file) = @{$task};
-	
-	my $output_file = $matrix_file.'.'.$group_file.'_results.zip';
-	
-	if (-e $output_file) {
-		die "output file $output_file already exists\n";
-	}
-}
 
 
 my $tasks = [];
@@ -195,7 +196,7 @@ my $job_input = {};
 for (my $i = 0 ; $i < @tasks ; ++$i) {
 	my $task = $tasks[$i];
 	
-	my ($pair_file, $matrix_file, $group_file, $tree_file) = @{$task};
+	my ($analysis_filename, $pair_file, $matrix_file, $group_file, $tree_file) = @{$task};
 	
 	
 	my $input_filename = basename($h->{'cmdfile'}).'_'.$i.'.txt';
@@ -203,14 +204,12 @@ for (my $i = 0 ; $i < @tasks ; ++$i) {
 	print "got:\n $pair_file\n $matrix_file, $group_file, $tree_file\n";
 	
 	
-	my $output_file = $matrix_file.'.'.$group_file.'_results.zip';
-	
 	push (@{$tasks},
 	{
-		"task_id" => "0_amethst",
+		"task_id" => "amethst_".$i,
 		"task_template" => "amethst",
 		"CMDFILE" => ["shock", "[CMDFILE_$i]", $input_filename],
-		"OUTPUT" => $output_file
+		"OUTPUT" => $analysis_filename
 	}
 	);
 	
