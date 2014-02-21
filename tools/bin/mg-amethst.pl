@@ -105,6 +105,11 @@ print "clientgroup: ". ($clientgroup || 'undef') ."\n\n";
 $h->{'cmdfile'} || die "no cmdfile defined";
 
 
+$shocktoken || die "no shocktoken defined";
+if ($shocktoken eq '') {
+	die "no shocktoken defined";
+}
+
 my @tasks=();
 
 open FILE, $h->{'cmdfile'} or die $!;
