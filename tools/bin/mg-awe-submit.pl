@@ -7,7 +7,7 @@ use warnings;
 
 #https://github.com/MG-RAST/Shock/blob/master/libs/shock.pm
 use SHOCK::Client;
-use awe;
+use AWE::Client;
 
 use JSON;
 
@@ -89,7 +89,7 @@ sub wait_for_job {
 
 
 sub getCompletedJobs {
-	my $awe = new AWE($aweserverurl, $shocktoken);
+	my $awe = new AWE::Client($aweserverurl, $shocktoken);
 	unless (defined $awe) {
 		die;
 	}
@@ -142,7 +142,7 @@ sub getAWE_results_and_cleanup {
 	my @completed_jobs = getCompletedJobs();
 	
 	
-	my $awe = new AWE($aweserverurl, $shocktoken);
+	my $awe = new AWE::Client($aweserverurl, $shocktoken);
 	unless (defined $awe) {
 		die;
 	}
@@ -166,7 +166,7 @@ sub getAWE_results_and_cleanup {
 
 sub getJobStates {
 	
-	my $awe = new AWE($aweserverurl, $shocktoken);
+	my $awe = new AWE::Client($aweserverurl, $shocktoken);
 	unless (defined $awe) {
 		die;
 	}
@@ -307,7 +307,7 @@ if (defined($h->{"status"})) {
 	showAWEstatus();
 	exit(0);
 } elsif (defined($h->{"show_clients"})) {
-	my $awe = new AWE($aweserverurl, $shocktoken);
+	my $awe = new AWE::Client($aweserverurl, $shocktoken);
 	unless (defined $awe) {
 		die;
 	}
@@ -354,7 +354,7 @@ if (defined($h->{"status"})) {
 } elsif (defined($h->{"resume_clients"})) {
 	my @clients = split(',', $h->{"resume_clients"});
 	
-	my $awe = new AWE($aweserverurl, $shocktoken);
+	my $awe = new AWE::Client($aweserverurl, $shocktoken);
 	unless (defined $awe) {
 		die;
 	}
@@ -387,7 +387,7 @@ if (defined($h->{"status"})) {
 	############################################
 	# connect to AWE server and check the clients
 	
-	my $awe = new AWE($aweserverurl, $shocktoken);
+	my $awe = new AWE::Client($aweserverurl, $shocktoken);
 	unless (defined $awe) {
 		die;
 	}
@@ -409,7 +409,7 @@ if (defined($h->{"status"})) {
 	exit(0);
 
 } elsif (defined($h->{"delete_jobs"})) {
-	my $awe = new AWE($aweserverurl, $shocktoken);
+	my $awe = new AWE::Client($aweserverurl, $shocktoken);
 	unless (defined $awe) {
 		die;
 	}
@@ -424,7 +424,7 @@ if (defined($h->{"status"})) {
 	} else {
 		
 		print "connect to SHOCK\n";
-		my $shock = new Shock($shockurl, $shocktoken); # shock production
+		my $shock = new SHOCK::Client($shockurl, $shocktoken); # shock production
 		unless (defined $shock) {
 			die;
 		}
@@ -435,7 +435,7 @@ if (defined($h->{"status"})) {
 	}
 	exit(0);
 } elsif (defined($h->{"resume_jobs"})) {
-	my $awe = new AWE($aweserverurl, $shocktoken);
+	my $awe = new AWE::Client($aweserverurl, $shocktoken);
 	unless (defined $awe) {
 		die;
 	}
@@ -449,7 +449,7 @@ if (defined($h->{"status"})) {
 	
 	exit(0);
 } elsif (defined($h->{"suspend_jobs"})) {
-	my $awe = new AWE($aweserverurl, $shocktoken);
+	my $awe = new AWE::Client($aweserverurl, $shocktoken);
 	unless (defined $awe) {
 		die;
 	}
@@ -463,7 +463,7 @@ if (defined($h->{"status"})) {
 	
 	exit(0);
 } elsif (defined($h->{"resubmit_jobs"})) {
-	my $awe = new AWE($aweserverurl, $shocktoken);
+	my $awe = new AWE::Client($aweserverurl, $shocktoken);
 	unless (defined $awe) {
 		die;
 	}
@@ -481,7 +481,7 @@ if (defined($h->{"status"})) {
 	
 	my @queries = split(',', $h->{"shock_query"});
 	
-	my $shock = new Shock($shockurl, $shocktoken);
+	my $shock = new SHOCK::Client($shockurl, $shocktoken);
 	unless (defined $shock) {
 		die;
 	}
@@ -495,7 +495,7 @@ if (defined($h->{"status"})) {
 	
 	my @nodes = split(',', $h->{"shock_view"});
 	
-	my $shock = new Shock($shockurl, $shocktoken);
+	my $shock = new SHOCK::Client($shockurl, $shocktoken);
 	unless (defined $shock) {
 		die;
 	}
@@ -511,7 +511,7 @@ if (defined($h->{"status"})) {
 	
 } elsif (defined($h->{"shock_clean"})) {
 	
-	my $shock = new Shock($shockurl, $shocktoken);
+	my $shock = new SHOCK::Client($shockurl, $shocktoken);
 	unless (defined $shock) {
 		die;
 	}
@@ -548,12 +548,12 @@ if (defined($h->{"status"})) {
 	
 	my @jobs = split(/,/,$h->{"download_jobs"});
 	
-	my $awe = new AWE($aweserverurl, $shocktoken);
+	my $awe = new AWE::Client($aweserverurl, $shocktoken);
 	unless (defined $awe) {
 		die;
 	}
 	
-	my $shock = new Shock($shockurl, $shocktoken); # shock production
+	my $shock = new SHOCK::Client($shockurl, $shocktoken); # shock production
 	unless (defined $shock) {
 		die;
 	}
@@ -571,7 +571,7 @@ if (defined($h->{"status"})) {
 		
 	my @jobs = split(/,/,$h->{"check_jobs"});
 	
-	my $awe = new AWE($aweserverurl, $shocktoken);
+	my $awe = new AWE::Client($aweserverurl, $shocktoken);
 	unless (defined $awe) {
 		die;
 	}
@@ -589,7 +589,7 @@ if (defined($h->{"status"})) {
 	
 	my @jobs = split(/,/,$h->{"show_jobs"});
 	
-	my $awe = new AWE($aweserverurl, $shocktoken);
+	my $awe = new AWE::Client($aweserverurl, $shocktoken);
 	unless (defined $awe) {
 		die;
 	}
@@ -635,7 +635,7 @@ if (defined($h->{"status"})) {
 	############################################
 	# connect to AWE server and check the clients
 	
-	my $awe = new AWE($aweserverurl, $shocktoken);
+	my $awe = new AWE::Client($aweserverurl, $shocktoken);
 	unless (defined $awe) {
 		die;
 	}
@@ -647,7 +647,7 @@ if (defined($h->{"status"})) {
 	#connect to SHOCK server
 	
 	print "connect to SHOCK\n";
-	my $shock = new Shock($shockurl, $shocktoken); # shock production
+	my $shock = new SHOCK::Client($shockurl, $shocktoken); # shock production
 	unless (defined $shock) {
 		die;
 	}
