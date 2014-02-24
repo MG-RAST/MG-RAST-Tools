@@ -8,6 +8,7 @@ use warnings;
 #https://github.com/MG-RAST/Shock/blob/master/libs/shock.pm
 use SHOCK::Client;
 use AWE::Client;
+use AWE::Job;
 
 use JSON;
 
