@@ -118,7 +118,7 @@ while (my $line = <FILE>) {
 		unless (defined($analysis)) {
 			die "analysis filename (after keyword job) not defined";
 		}
-		my $analysis_filename = $analysis.'.results.tgz';
+		my $analysis_filename = $analysis.'.RESULTS.tar.gz';
 	
 		if (-e $analysis_filename) {
 			die "analysis results file \"$analysis_filename\" already exists";
