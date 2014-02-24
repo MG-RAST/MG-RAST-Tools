@@ -257,7 +257,7 @@ my $workflow = $awe_job->create(%$job_input);#define workflow output
 print "AWE job ready for submission:\n";
 print $json->pretty->encode( $workflow )."\n";
 
-exit(0);
+#exit(0);
 print "submit job to AWE server...\n";
 my $submission_result = $awe->submit_job('json_data' => $json->encode($workflow));
 
