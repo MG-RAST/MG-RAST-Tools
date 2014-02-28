@@ -107,14 +107,21 @@ sub pretty {
 	my ($self, $hash) = @_;
 	
 	return $self->json->pretty->encode ($hash);
-	
 }
 
 
 sub request {
 	#print 'request: '.join(',',@_)."\n";
-	my ($self, $version, $method, $resource, $query, $headers) = @_;
+	my ($self, $version, $method, $resource, $query, $headers, $returntype) = @_;
 	
+	
+	unless (defined $returntype) {
+		$returntype = 'json';
+	}
+	
+	unless ($returntype eq 'json' || $returntype eq 'stream') {
+		die "return type \"$returntype\" unknown";
+	}
 	
 	my $my_url = $self->create_url($version, $resource, (defined($query)?%$query:()));
 	
@@ -131,10 +138,11 @@ sub request {
 	#print 'method_args: '.join(',', @method_args)."\n";
 	
 	my $response_content = undef;
-    
+    my $response_object = undef;
+	
     eval {
 		
-        my $response_object = undef;
+       
 		
         if ($method eq 'GET') {
 			$response_object = $self->agent->get(@method_args );
@@ -146,8 +154,13 @@ sub request {
 			die "not implemented yet";
 		}
 		
+		#print "content: ".$response_object->content."\n";
 		
-		$response_content = $self->json->decode( $response_object->content );
+		if ($returntype eq 'json') {
+			$response_content = $self->json->decode( $response_object->content );
+		} else {
+			$response_content = {}; # fake it
+		}
         
     };
     
@@ -162,8 +175,11 @@ sub request {
 		#my $jhash = $self->json->decode( $response_content );
 		
         #return $jhash;
-
-        return $response_content;
+		if ($returntype eq 'json') {
+			return $response_content;
+		} else {
+			return $response_object->content;
+		}
     }
 	
 }
@@ -204,6 +220,12 @@ sub download {
     my $content = undef;
     eval {
         my $get = undef;
+		
+		
+		if (-e $path) {
+			die "error: file \"$path\" already exists.";
+		}
+		
         open(OUTF, ">$path") || die "Can not open file $path: $!\n";
 		
 		

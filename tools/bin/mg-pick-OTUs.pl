@@ -5,7 +5,7 @@ use warnings;
 use File::Basename;
 use Pod::Usage;
 
-use shock;
+use SHOCK::Client;
 use awe;
 
 use JSON;
@@ -142,7 +142,7 @@ $awe->checkClientGroup($clientgroup) == 0 or exit(1);
 
 
 print "connect to SHOCK\n";
-my $shock = new Shock($shockurl, $shocktoken);
+my $shock = new SHOCK::Client($shockurl, $shocktoken);
 unless (defined $shock) {
 	die;
 }
