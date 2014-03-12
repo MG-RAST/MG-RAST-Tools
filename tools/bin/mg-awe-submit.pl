@@ -269,6 +269,7 @@ my ($h, $help_text) = &parse_options (
 		[ 'wait_completed'				, "wait until any job is in state completed"],
 		[ 'output_files=s'				, "specify extra output files for --cmd"],
 		[ 'clientgroup=s',				, "clientgroup"],
+		[ 'aweserver=s',				, "AWE serverl url"],
 		[ 'help|h'						, "", { hidden => 1  }]
 	]
 );
@@ -280,6 +281,9 @@ if ($h->{'help'} || keys(%$h)==0) {
 	exit(0);
 }
 
+if (defined($h->{'aweserver'})) {
+	$aweserverurl = $h->{'aweserver'};
+}
 
 if (defined($h->{'clientgroup'})) {
 	$clientgroup = $h->{'clientgroup'};
@@ -604,14 +608,29 @@ if (defined($h->{"status"})) {
 		my $edges = {};
 		my $id_to_name = {};
 		
+		my $task_state = {};
+		
 		
 		foreach my $task (@{$job_obj->{'data'}->{'tasks'}}) {
 			my ($task_id) = $task->{'taskid'} =~ /(\d+)$/;
-			my $task_name = $task->{'cmd'}->{'name'};
+			my $task_name = $task->{'cmd'}->{'name'} || die "no name found";
+			
 			
 			print "found $task_id $task_name\n";
-			$id_to_name->{$task_id} = $task_name || die "no name found";
-			$id_to_name->{$task_id} =~ s/\-/\_/g;
+			$task_name =~ s/[\-\.]/\_/g;
+			$task_name .= '_'.$task_id;
+			
+			$task_state->{$task_name}  = $task->{'state'} || 'unknown';
+			
+			
+			
+			if (defined $id_to_name->{$task_id}) {
+				die "tasid already defined";
+			}
+			$id_to_name->{$task_id} = $task_name;
+			
+			
+			
 			
 			my $inputs = $task->{'inputs'};
 			
@@ -630,6 +649,27 @@ if (defined($h->{"status"})) {
 		
 		my @graph = ('digraph G {');
 		
+		
+		#https://github.com/MG-RAST/AWE/blob/master/lib/core/task.go
+		foreach my $t (keys(%$task_state)) {
+			my $state =$task_state->{$t};
+			my $color = 'white';
+			if ($state eq 'completed') {
+				$color = 'green';
+			} elsif ($state eq 'suspended') {
+				$color = 'red';
+			} elsif ($state eq 'in-progress') {
+				$color = 'darkorchid1'
+			} elsif ($state eq 'queued') {
+				$color = 'cadetblue1'
+			} elsif ($state eq 'pending') {
+				$color = 'cadetblue1'
+			}
+			
+			
+			push (@graph, "\t".$t.' [style=filled, fillcolor='.$color.']');
+		}
+		
 		foreach my $from (keys(%{$edges})) {
 			
 			my $tos_ref  = $edges->{$from};
@@ -637,12 +677,12 @@ if (defined($h->{"status"})) {
 			
 			foreach my $to (@tos) {
 				print "$from -> $to\n";
-				my $from_name = ($id_to_name->{$from} || 'undef').''. $from;
-				my $to_name = $id_to_name->{$to}.''.$to;
+				my $from_name = $id_to_name->{$from};
+				my $to_name = $id_to_name->{$to};
 
 				
 				foreach my $label (keys(%{$tos_ref->{$to}})) {
-					
+					$label =~ s/\./\_/g;
 										
 					my $e = "\t$from_name -> $to_name [taillabel = \"$label\"];";
 					print $e."\n";
