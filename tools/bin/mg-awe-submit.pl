@@ -37,21 +37,7 @@ my @awe_job_states = ('in-progress', 'completed', 'queued', 'pending', 'deleted'
 
 
 
-sub shock_upload {
-	my ($shock) = shift(@_);
-	my @other_args = @_;
-	
-	my $shock_data = $shock->upload(@other_args); # "test.txt"
-	unless (defined $shock_data) {
-		die;
-	}
-	#print Dumper($shock_data);
-	unless (defined $shock_data->{'id'}) {
-		die;
-	}
-	
-	return $shock_data->{id};
-}
+
 
 sub wait_for_job {
 	
@@ -275,6 +261,7 @@ my ($h, $help_text) = &parse_options (
 		[ 'shock_clean'					, "delete all temporary nodes from SHOCK server"],
 		[ 'shock_query=s'				, "query SHOCK node"],
 		[ 'shock_view=s'                , "view SHOCK node"],
+		[ 'draw=s'						, "uses dot (GraphViz) to draw workflow graph"],
 		'',
 		'Options:',
 		[ 'out_dir=s'						, "specify download directory (default uses job name)"],
@@ -600,15 +587,87 @@ if (defined($h->{"status"})) {
 		print Dumper($job_obj);
 	}
 	
-	#my $ret = AWE::Job::check_jobs('awe' => $awe,  'jobs' => \@jobs, 'clientgroup' => $clientgroup);
+	exit(0);
+} elsif (defined($h->{"draw"})) {
 	
-	#if ($ret ==0) {
-	#	print "all jobs completed :-) \n";
-	#	exit(0);
-	#}
+	my @jobs = split(/,/,$h->{"draw"});
 	
-	#print "jobs not completed :-( \n";
-	#exit(1);
+	my $awe = new AWE::Client($aweserverurl, $shocktoken);
+	unless (defined $awe) {
+		die;
+	}
+	
+	foreach my $job (@jobs) {
+		my $job_obj = $awe->getJobStatus($job);
+		print Dumper($job_obj);
+		
+		my $edges = {};
+		my $id_to_name = {};
+		
+		
+		foreach my $task (@{$job_obj->{'data'}->{'tasks'}}) {
+			my ($task_id) = $task->{'taskid'} =~ /(\d+)$/;
+			my $task_name = $task->{'cmd'}->{'name'};
+			
+			print "found $task_id $task_name\n";
+			$id_to_name->{$task_id} = $task_name || die "no name found";
+			$id_to_name->{$task_id} =~ s/\-/\_/g;
+			
+			my $inputs = $task->{'inputs'};
+			
+			foreach my $input ( keys(%$inputs) ) {
+				my $origin = $inputs->{$input}->{'origin'};
+				if (defined $origin && $origin ne '') {
+					$edges->{$origin}->{$task_id}->{$input}=1;
+				}
+			}
+			
+			
+		}
+		
+		
+		print "edges: ".Dumper($edges)."\n";
+		
+		my @graph = ('digraph G {');
+		
+		foreach my $from (keys(%{$edges})) {
+			
+			my $tos_ref  = $edges->{$from};
+			my @tos = keys(%{$tos_ref});
+			
+			foreach my $to (@tos) {
+				print "$from -> $to\n";
+				my $from_name = ($id_to_name->{$from} || 'undef').''. $from;
+				my $to_name = $id_to_name->{$to}.''.$to;
+
+				
+				foreach my $label (keys(%{$tos_ref->{$to}})) {
+					
+										
+					my $e = "\t$from_name -> $to_name [taillabel = \"$label\"];";
+					print $e."\n";
+					push (@graph, $e);
+				}
+			}
+			
+			
+		}
+		push (@graph, '}');
+		
+		
+		open FILE, '>'.$job.'.dot' or die $!;
+		print FILE join("\n", @graph)."\n";
+		close FILE;
+		
+		my $cmd = 'dot -Tpng '.$job.'.dot -o '.$job.'.png';
+		print "cmd: $cmd\n";
+		system($cmd);
+		
+		#exit(0);
+		
+		
+	}
+	
 	exit(0);
 	
 } elsif (defined($h->{"get_all"})) {
