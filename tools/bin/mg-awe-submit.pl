@@ -115,7 +115,7 @@ sub getCompletedJobs {
 	
 	print "\n** job states **\n";
 	print "$_: ".($states->{$_}||'0')."\n" for @awe_job_states;
-	if (keys($states) > 6) { # in case Wei introduces new states.. ;-)
+	if (keys(%$states) > 6) { # in case Wei introduces new states.. ;-)
 		die;
 	}
 	return @completed_jobs;
@@ -215,8 +215,8 @@ sub showAWEstatus {
 		
 	}
 	
-	if (keys($states) > 7) { # in case Wei introduces new states.. ;-)
-		print 'keys: '.join(',',keys($states));
+	if (keys(%$states) > 7) { # in case Wei introduces new states.. ;-)
+		print 'keys: '.join(',',keys(%$states));
 		die;
 	}
 	
@@ -683,7 +683,7 @@ if (defined($h->{"status"})) {
     unless (-s $h->{"draw_from_file"}) {
         die;
     }
-    open(IN, "<".$h->{"draw_from_file"} or die "Couldn't open file: $!";
+    open(IN, "<".$h->{"draw_from_file"}) or die "Couldn't open file: $!";
     $job_obj = $json->decode(join("", <IN>)); 
     close(IN);
     
