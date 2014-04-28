@@ -223,7 +223,75 @@ sub showAWEstatus {
 }
 
 
+sub drawWorkflow {
+    my ($job_obj, $outname) = @_;
 
+	my $edges = {};
+	my $id_to_name = {};
+	my $task_state = {};
+	my $tasks = {};
+	    
+	foreach my $task (@{$job_obj->{'data'}->{'tasks'}}) {
+		my ($task_id) = $task->{'taskid'} =~ /(\d+)$/;
+		my $task_name = $task->{'cmd'}->{'name'} || die "no name found";
+		$tasks->{$task_id}->{'name'} = $task_name;
+		$tasks->{$task_id}->{'state'} = $task->{'state'} || 'unknown';
+		print "found $task_id $task_name\n";
+		
+		my $inputs = $task->{'inputs'};
+		foreach my $input ( keys(%$inputs) ) {
+			my $origin = $inputs->{$input}->{'origin'};
+			if (defined $origin && $origin ne '') {
+				$edges->{$origin}->{$task_id}->{$input}=1;
+			}
+		}
+	}
+    
+	print "edges: ".Dumper($edges)."\n";
+	my @graph = ('digraph G {');
+	
+	foreach my $t (keys(%$tasks)) {
+		my $state =$tasks->{$t}->{'state'};
+		my $name =$tasks->{$t}->{'name'};
+		my $color = 'white';
+		if ($state eq 'completed') {
+			$color = 'green';
+		} elsif ($state eq 'suspended') {
+			$color = 'red';
+		} elsif ($state eq 'in-progress') {
+			$color = 'darkorchid1'
+		} elsif ($state eq 'queued') {
+			$color = 'cadetblue1'
+		} elsif ($state eq 'pending') {
+			$color = 'cadetblue1'
+		}
+		$name .= " ($t)";
+		push (@graph, "\t".$t.' [label="'.$name.'", style=filled, fillcolor='.$color.']');
+	}
+	
+	foreach my $from (keys(%{$edges})) {
+		my $tos_ref  = $edges->{$from};
+		my @tos = keys(%{$tos_ref});
+		
+		foreach my $to (@tos) {
+			print "$from -> $to\n";
+			foreach my $label (keys(%{$tos_ref->{$to}})) {
+				my $e = "\t$from -> $to [taillabel = \"$label\"];";
+				print $e."\n";
+				push (@graph, $e);
+			}
+		}	
+	}
+	
+	push (@graph, '}');
+	open FILE, '>'.$outname.'.dot' or die $!;
+	print FILE join("\n", @graph)."\n";
+	close FILE;
+	
+	my $cmd = 'dot -Tpng '.$outname.'.dot -o '.$outname.'.png';
+	print "cmd: $cmd\n";
+	system($cmd);
+}
 
 
 
@@ -261,7 +329,8 @@ my ($h, $help_text) = &parse_options (
 		[ 'shock_clean'					, "delete all temporary nodes from SHOCK server"],
 		[ 'shock_query=s'				, "query SHOCK node"],
 		[ 'shock_view=s'                , "view SHOCK node"],
-		[ 'draw=s'						, "uses dot (GraphViz) to draw workflow graph"],
+		[ 'draw_from_ids=s'				, "uses dot (GraphViz) to draw workflow graph from one or more job ids"],
+		[ 'draw_from_file=s'			, "uses dot (GraphViz) to draw workflow graph from a file"],
 		'',
 		'Options:',
 		[ 'out_dir=s'						, "specify download directory (default uses job name)"],
@@ -592,10 +661,9 @@ if (defined($h->{"status"})) {
 	}
 	
 	exit(0);
-} elsif (defined($h->{"draw"})) {
-	
-	my @jobs = split(/,/,$h->{"draw"});
-	
+} elsif (defined($h->{"draw_from_ids"})) {
+
+	my @jobs = split(/,/,$h->{"draw_from_ids"});
 	my $awe = new AWE::Client($aweserverurl, $shocktoken);
 	unless (defined $awe) {
 		die;
@@ -603,119 +671,25 @@ if (defined($h->{"status"})) {
 	
 	foreach my $job (@jobs) {
 		my $job_obj = $awe->getJobStatus($job);
-		print Dumper($job_obj);
-		
-		my $edges = {};
-		my $id_to_name = {};
-		
-		my $task_state = {};
-		
-		my $tasks = {};
-		
-		foreach my $task (@{$job_obj->{'data'}->{'tasks'}}) {
-			my ($task_id) = $task->{'taskid'} =~ /(\d+)$/;
-			
-			
-			my $task_name = $task->{'cmd'}->{'name'} || die "no name found";
-			
-			$tasks->{$task_id}->{'name'} = $task_name;
-			$tasks->{$task_id}->{'state'} = $task->{'state'} || 'unknown';
-			
-			print "found $task_id $task_name\n";
-			#$task_name =~ s/[\-\.]/\_/g;
-			#$task_name .= '_'.$task_id;
-			
-			#$task_state->{$task_name}  = $task->{'state'} || 'unknown';
-			
-			
-			
-			#if (defined $id_to_name->{$task_id}) {
-			#	die "tasid already defined";
-			#}
-			#$id_to_name->{$task_id} = $task_name;
-			
-			
-			
-			
-			my $inputs = $task->{'inputs'};
-			
-			foreach my $input ( keys(%$inputs) ) {
-				my $origin = $inputs->{$input}->{'origin'};
-				if (defined $origin && $origin ne '') {
-					$edges->{$origin}->{$task_id}->{$input}=1;
-				}
-			}
-			
-			
-		}
-		
-		
-		print "edges: ".Dumper($edges)."\n";
-		
-		my @graph = ('digraph G {');
-		
-		
-		#https://github.com/MG-RAST/AWE/blob/master/lib/core/task.go
-		foreach my $t (keys(%$tasks)) {
-			my $state =$tasks->{$t}->{'state'};
-			my $name =$tasks->{$t}->{'name'};
-			my $color = 'white';
-			if ($state eq 'completed') {
-				$color = 'green';
-			} elsif ($state eq 'suspended') {
-				$color = 'red';
-			} elsif ($state eq 'in-progress') {
-				$color = 'darkorchid1'
-			} elsif ($state eq 'queued') {
-				$color = 'cadetblue1'
-			} elsif ($state eq 'pending') {
-				$color = 'cadetblue1'
-			}
-			
-			$name .= " ($t)";
-			push (@graph, "\t".$t.' [label="'.$name.'", style=filled, fillcolor='.$color.']');
-		}
-		
-		foreach my $from (keys(%{$edges})) {
-			
-			my $tos_ref  = $edges->{$from};
-			my @tos = keys(%{$tos_ref});
-			
-			foreach my $to (@tos) {
-				print "$from -> $to\n";
-				#my $from_name = $id_to_name->{$from};
-				#my $to_name = $id_to_name->{$to};
-
-				
-				foreach my $label (keys(%{$tos_ref->{$to}})) {
-					#$label =~ s/\./\_/g;
-										
-					my $e = "\t$from -> $to [taillabel = \"$label\"];";
-					print $e."\n";
-					push (@graph, $e);
-				}
-			}
-			
-			
-		}
-		push (@graph, '}');
-		
-		
-		open FILE, '>'.$job.'.dot' or die $!;
-		print FILE join("\n", @graph)."\n";
-		close FILE;
-		
-		my $cmd = 'dot -Tpng '.$job.'.dot -o '.$job.'.png';
-		print "cmd: $cmd\n";
-		system($cmd);
-		
-		#exit(0);
-		
-		
+		drawWorkflow($job_obj, $job);
 	}
-	
 	exit(0);
-	
+
+} elsif (defined($h->{"draw_from_file"})) {
+    
+    my $json = JSON->new;
+    my $job_obj = {};
+    
+    unless (-s $h->{"draw_from_file"}) {
+        die;
+    }
+    open(IN, "<".$h->{"draw_from_file"} or die "Couldn't open file: $!";
+    $job_obj = $json->decode(join("", <IN>)); 
+    close(IN);
+    
+	drawWorkflow($job_obj, $h->{"draw_from_file"});
+	exit(0);
+
 } elsif (defined($h->{"get_all"})) {
 	#getAWE_results_and_cleanup();
 	
