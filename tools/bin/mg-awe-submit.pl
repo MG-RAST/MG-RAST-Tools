@@ -6,9 +6,9 @@ use warnings;
 
 
 #https://github.com/MG-RAST/Shock/blob/master/libs/shock.pm
-use SHOCK::Client;
-use AWE::Client;
-use AWE::Job;
+#use SHOCK::Client;
+#use AWE::Client;
+#use AWE::Job;
 
 use JSON;
 
@@ -224,14 +224,14 @@ sub showAWEstatus {
 
 
 sub drawWorkflow {
-    my ($job_obj, $outname) = @_;
+    my ($job_obj, $outname, $nolabel) = @_;
 
 	my $edges = {};
 	my $id_to_name = {};
 	my $task_state = {};
 	my $tasks = {};
 	    
-	foreach my $task (@{$job_obj->{'data'}->{'tasks'}}) {
+	foreach my $task (@{$job_obj->{'tasks'}}) {
 		my ($task_id) = $task->{'taskid'} =~ /(\d+)$/;
 		my $task_name = $task->{'cmd'}->{'name'} || die "no name found";
 		$tasks->{$task_id}->{'name'} = $task_name;
@@ -244,6 +244,11 @@ sub drawWorkflow {
 			if (defined $origin && $origin ne '') {
 				$edges->{$origin}->{$task_id}->{$input}=1;
 			}
+		}
+		foreach my $origin ( @{$task->{'dependsOn'}} ) {
+		    unless (exists $edges->{$origin}->{$task_id}) {
+		        $edges->{$origin}->{$task_id}->{'virtual'}=1;
+	        }
 		}
 	}
     
@@ -276,7 +281,12 @@ sub drawWorkflow {
 		foreach my $to (@tos) {
 			print "$from -> $to\n";
 			foreach my $label (keys(%{$tos_ref->{$to}})) {
-				my $e = "\t$from -> $to [taillabel = \"$label\"];";
+				my $e = "";
+				if (($label eq 'virtual') || $nolabel) {
+				    $e = "\t$from -> $to;";
+				} else {
+				    $e = "\t$from -> $to [taillabel = \"$label\"];";
+				}
 				print $e."\n";
 				push (@graph, $e);
 			}
@@ -671,7 +681,7 @@ if (defined($h->{"status"})) {
 	
 	foreach my $job (@jobs) {
 		my $job_obj = $awe->getJobStatus($job);
-		drawWorkflow($job_obj, $job);
+		drawWorkflow($job_obj->{'data'}, $job);
 	}
 	exit(0);
 
@@ -687,7 +697,7 @@ if (defined($h->{"status"})) {
     $job_obj = $json->decode(join("", <IN>)); 
     close(IN);
     
-	drawWorkflow($job_obj, $h->{"draw_from_file"});
+	drawWorkflow($job_obj, $h->{"draw_from_file"}, 1);
 	exit(0);
 
 } elsif (defined($h->{"get_all"})) {
