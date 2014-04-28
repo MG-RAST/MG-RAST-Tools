@@ -610,24 +610,29 @@ if (defined($h->{"status"})) {
 		
 		my $task_state = {};
 		
+		my $tasks = {};
 		
 		foreach my $task (@{$job_obj->{'data'}->{'tasks'}}) {
 			my ($task_id) = $task->{'taskid'} =~ /(\d+)$/;
+			
+			
 			my $task_name = $task->{'cmd'}->{'name'} || die "no name found";
 			
+			$tasks->{$task_id}->{'name'} = $task_name;
+			$tasks->{$task_id}->{'state'} = $task->{'state'} || 'unknown';
 			
 			print "found $task_id $task_name\n";
-			$task_name =~ s/[\-\.]/\_/g;
-			$task_name .= '_'.$task_id;
+			#$task_name =~ s/[\-\.]/\_/g;
+			#$task_name .= '_'.$task_id;
 			
-			$task_state->{$task_name}  = $task->{'state'} || 'unknown';
+			#$task_state->{$task_name}  = $task->{'state'} || 'unknown';
 			
 			
 			
-			if (defined $id_to_name->{$task_id}) {
-				die "tasid already defined";
-			}
-			$id_to_name->{$task_id} = $task_name;
+			#if (defined $id_to_name->{$task_id}) {
+			#	die "tasid already defined";
+			#}
+			#$id_to_name->{$task_id} = $task_name;
 			
 			
 			
@@ -651,8 +656,9 @@ if (defined($h->{"status"})) {
 		
 		
 		#https://github.com/MG-RAST/AWE/blob/master/lib/core/task.go
-		foreach my $t (keys(%$task_state)) {
-			my $state =$task_state->{$t};
+		foreach my $t (keys(%$tasks)) {
+			my $state =$tasks->{$t}->{'state'};
+			my $name =$tasks->{$t}->{'name'};
 			my $color = 'white';
 			if ($state eq 'completed') {
 				$color = 'green';
@@ -666,8 +672,8 @@ if (defined($h->{"status"})) {
 				$color = 'cadetblue1'
 			}
 			
-			
-			push (@graph, "\t".$t.' [style=filled, fillcolor='.$color.']');
+			$name .= " ($t)";
+			push (@graph, "\t".$t.' [label="'.$name.'", style=filled, fillcolor='.$color.']');
 		}
 		
 		foreach my $from (keys(%{$edges})) {
@@ -677,14 +683,14 @@ if (defined($h->{"status"})) {
 			
 			foreach my $to (@tos) {
 				print "$from -> $to\n";
-				my $from_name = $id_to_name->{$from};
-				my $to_name = $id_to_name->{$to};
+				#my $from_name = $id_to_name->{$from};
+				#my $to_name = $id_to_name->{$to};
 
 				
 				foreach my $label (keys(%{$tos_ref->{$to}})) {
-					$label =~ s/\./\_/g;
+					#$label =~ s/\./\_/g;
 										
-					my $e = "\t$from_name -> $to_name [taillabel = \"$label\"];";
+					my $e = "\t$from -> $to [taillabel = \"$label\"];";
 					print $e."\n";
 					push (@graph, $e);
 				}
