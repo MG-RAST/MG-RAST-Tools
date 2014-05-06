@@ -12,6 +12,8 @@ use Data::Dumper;
 use Pod::Usage;
 use JSON;
 
+
+
 =head1 NAME
 
 m5nr-tools
@@ -109,6 +111,7 @@ my $batch = 100;
 my $options = {sequence => 1, annotation => 1};
 my $sources = {};
 my $verbose = 0 ;
+my $debug   = 0 ;
 
 GetOptions( "verbose!"   => \$verb,
             "api=s"      => \$api,
@@ -118,7 +121,8 @@ GetOptions( "verbose!"   => \$verb,
             "sequence=s" => \$seq,
 	        "source=s"   => \$src,
 	        "option=s"   => \$opt,
-	        "help!"      => \$help
+	        "debug+"     => \$debug, 
+	        "help!"      => \$help,
  	  );
 
 if ($help) {
@@ -139,22 +143,27 @@ $json->max_size(0);
 $json->allow_nonref;
 
 
+print STDERR "Get sources!\n" if ($debug); 
+
 my $smap = {};
 eval {
     %$smap = map { $_->{source}, $_ } @{ get_data('GET', 'sources') };
 };
+
+print STDERR "Received sources!\n" if ($debug) ;
+
 
 unless (exists($options->{$opt}) || $seq || $sim) {
     print STDERR "One of the following paramters are required: option, sequence, or sim\n";
     help();
     exit 1;
 }
-unless ($src) {
+unless ($src or $options->{sequence} ) {
     print STDERR "Source is required\n";
     help();
     exit 1;
 }
-unless (exists $smap->{$src}) {
+unless (exists $smap->{$src} or $options->{sequence}) {
     print STDERR "Invalid source: $src\n";
     print STDERR "Use one of: ".join(", ", keys %$smap)."\n";
     help();
@@ -178,7 +187,8 @@ elsif ($seq) {
 }
 elsif ($md5 && ($opt eq 'sequence')) {
     foreach my $m (@{ list_from_input($md5) }) {
-        foreach my $d ( @{ get_data("GET", "md5/".$m, {'sequence' => '1'}) } ) {
+		unless($m) { print STDERR "Warning: Empty entry in list\n" ; next }
+        foreach my $d ( @{ get_data("GET", "md5/".$m, {'sequence' => '1' , 'format' => 'json'} ) } ) {
             print STDOUT ">".$d->{md5}."\n".$d->{sequence}."\n";
         }
     }
@@ -193,7 +203,12 @@ elsif ($md5) {
     }
 }
 elsif($acc) {
+    print STDERR "Retrieving annotations for accession IDs ($acc)\n" if ($debug);
     my $accs = list_from_input($acc);
+    print STDERR "Got " . scalar @$accs . " IDs\n" if ($debug);
+
+    print STDERR "Size:\t" . length("@$accs") ."\n" if ($debug);
+    exit;
     my $iter = natatime $batch, @$accs;
     while (my @curr = $iter->()) {
         foreach my $d ( @{ get_data("POST", "accession", {'limit' => $batch*1000,'source' => $src,'data' => \@curr,'order' => 'accession'}) } ) {
@@ -218,6 +233,7 @@ sub list_from_input {
         @list = split(/,/, $input);
     }
     my %set = map {$_, 1} @list;
+	print STDERR "Query size = " . scalar (keys %set) . "\n" ;
     return [keys %set];
 }
 
@@ -298,11 +314,12 @@ sub get_data {
     my ($method, $resource, $params) = @_;
     
     my $data = undef;
+    my $res  = undef;
     eval {
-        my $res = undef;
+    	
         if ($method eq 'GET') {
             my $opts = ($params && (scalar(keys %$params) > 0)) ? '?'.join('&', map {$_.'='.$params->{$_}} keys %$params) : '';
-	    print STDOUT "Retrieving data from $api/m5nr/$resource$opts\n";
+	    	print STDERR "Retrieving data from $api/m5nr/$resource$opts\n";
             $res = $agent->get($api.'/m5nr/'.$resource.$opts);
         }
         if ($method eq 'POST') {
@@ -314,6 +331,7 @@ sub get_data {
     
     if ($@ || (! ref($data))) {
         print STDERR "Error accessing M5NR API: ".$@."\n";
+		print STDERR $res->content ;
         exit 1;
     } elsif (exists($data->{ERROR}) && $data->{ERROR}) {
         print STDERR "Error: ".$data->{ERROR}."\n";
