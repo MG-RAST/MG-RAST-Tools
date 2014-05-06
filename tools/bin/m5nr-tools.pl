@@ -197,7 +197,7 @@ elsif ($md5) {
     my $md5s = list_from_input($md5);
     my $iter = natatime $batch, @$md5s;
     while (my @curr = $iter->()) {
-        foreach my $d ( @{ get_data("POST", "md5", {'limit' => $batch*1000,'source' => $src,'data' => \@curr,'order' => 'md5'}) } ) {
+        foreach my $d ( @{ get_data("POST", "md5", {'limit' => $batch*1000,'source' => $src,'data' => \@curr}) } ) {
             print STDOUT $d->{accession}."\t".$d->{md5}."\t".$d->{function}.(exists($d->{organism}) ? "\t".$d->{organism} : '')."\n";
         }
     }
@@ -209,7 +209,7 @@ elsif($acc) {
     print STDERR "Array size:\t" . length("@$accs") ."\n" if ($debug);
     my $iter = natatime $batch, @$accs;
     while (my @curr = $iter->()) {
-        foreach my $d ( @{ get_data("POST", "accession", {'limit' => $batch*1000,'source' => $src,'data' => \@curr,'order' => 'accession'}) } ) {
+        foreach my $d ( @{ get_data("POST", "accession", {'limit' => $batch*1000,'source' => $src,'data' => \@curr}) } ) {
             print STDOUT $d->{accession}."\t".$d->{md5}."\t".$d->{function}.(exists($d->{organism}) ? "\t".$d->{organism} : '')."\n";
         }
     }

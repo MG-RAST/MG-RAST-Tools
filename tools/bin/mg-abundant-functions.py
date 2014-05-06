@@ -47,16 +47,19 @@ def main(args):
     parser.add_option("", "--source", dest="source", default='Subsystems', help="datasource to filter results by, default is Subsystems")
     parser.add_option("", "--filter_name", dest="filter_name", default=None, help="function name to filter by")
     parser.add_option("", "--filter_level", dest="filter_level", default=None, help="function level to filter by")
-    parser.add_option("", "--top", dest="top", default=10, help="display only the top N taxa, default is 10")
-    parser.add_option("", "--evalue", dest="evalue", default=5, help="negative exponent value for maximum e-value cutoff, default is 5")
-    parser.add_option("", "--identity", dest="identity", default=60, help="percent value for minimum % identity cutoff, default is 60")
-    parser.add_option("", "--length", dest="length", default=15, help="value for minimum alignment length cutoff, default is 15")
+    parser.add_option("", "--top", dest="top", type="int", default=10, help="display only the top N taxa, default is 10")
+    parser.add_option("", "--evalue", dest="evalue", type="int", default=5, help="negative exponent value for maximum e-value cutoff, default is 5")
+    parser.add_option("", "--identity", dest="identity", type="int", default=60, help="percent value for minimum % identity cutoff, default is 60")
+    parser.add_option("", "--length", dest="length", type="int", default=15, help="value for minimum alignment length cutoff, default is 15")
     
     # get inputs
     (opts, args) = parser.parse_args()
     opts.top = int(opts.top)
     if not opts.id:
         sys.stderr.write("ERROR: id required\n")
+        return 1
+    if (opts.filter_name and (not opts.filter_level)) or ((not opts.filter_name) and opts.filter_level):
+        sys.stderr.write("ERROR: both --filter_level and --filter_name need to be used together\n")
         return 1
     
     # get auth
