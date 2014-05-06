@@ -206,9 +206,7 @@ elsif($acc) {
     print STDERR "Retrieving annotations for accession IDs ($acc)\n" if ($debug);
     my $accs = list_from_input($acc);
     print STDERR "Got " . scalar @$accs . " IDs\n" if ($debug);
-
-    print STDERR "Size:\t" . length("@$accs") ."\n" if ($debug);
-    exit;
+    print STDERR "Array size:\t" . length("@$accs") ."\n" if ($debug);
     my $iter = natatime $batch, @$accs;
     while (my @curr = $iter->()) {
         foreach my $d ( @{ get_data("POST", "accession", {'limit' => $batch*1000,'source' => $src,'data' => \@curr,'order' => 'accession'}) } ) {
@@ -225,15 +223,25 @@ sub list_from_input {
     my ($input) = @_;
 
     my @list = ();
+	my %set;
+	
     if (-s $input) {
-        @list = `cat $input`;
-        chomp @list;
+		print STDERR "Reading input from $input.\n" ;
+		open(FILE , $input) or die "Can't open file $input!\n" ;
+		while (my $line = <FILE>){
+			chomp $line ;
+			$set{$line}++
+		}
+		
+        # @list = `cat $input`;
+   #      chomp @list;
     }
     else {
         @list = split(/,/, $input);
+		%set = map {$_, 1} @list;
     }
-    my %set = map {$_, 1} @list;
-	print STDERR "Query size = " . scalar (keys %set) . "\n" ;
+   
+	print STDERR "Query size = " . scalar (keys %set) . "\n" if ($debug);
     return [keys %set];
 }
 
