@@ -9,7 +9,94 @@ use Getopt::Long;
 use Digest::MD5;
 use LWP::UserAgent;
 use Data::Dumper;
+use Pod::Usage;
 use JSON;
+
+
+
+=head1 NAME
+
+m5nr-tools
+
+=head1 VERSION
+
+1
+
+=head1 SYNOPSIS
+
+m5nr-tools [--help, --verbose, --api <api url>, --source <source name>, --sim <similarity file>, --acc <accession ids>, --md5 <md5 checksums>, --sequence <aa sequence>, --option <cv: sequence or annotation>]
+
+=head1 DESCRIPTION
+
+Tool for retreiving M5NR annotations for inputed accession ids, md5 checksums, or protein sequence.  Option to annotate a blast m8 formatted similarity file.
+
+Parameters:
+
+=over 8
+
+=item --api B<api_url>
+
+url of m5nr API
+
+=item --source B<source_name>
+
+source for annotation
+
+=back
+
+Options:
+
+=over 8
+
+=item --help
+
+display this help message
+
+=item --verbose
+
+run in a verbose mode
+
+=item --sim B<similarity_file>
+
+file in blast m8 format to be annotated
+
+=item --acc B<accession_ids>
+
+file or comma seperated list of protein ids
+
+=item --md5 B<md5_checksums>
+
+file or comma seperated list of md5sums
+
+=item --sequence B<aa_sequence>
+
+protein sequence, returns md5sum of sequence
+
+=item --option B<output_type>
+
+output type, one of: sequence or annotation
+note: sequence output only available for --md5 input
+
+=back
+
+Output:
+
+M5NR annotations based on input options.
+
+=head1 EXAMPLES
+
+m5nr-tools --api http://kbase.us/services/communities/1 --option annotation --source RefSeq --md5 0b95101ffea9396db4126e4656460ce5,068792e95e38032059ba7d9c26c1be78,0b96c92ce600d8b2427eedbc221642f1
+
+=head1 SEE ALSO
+
+-
+
+=head1 AUTHORS
+
+Jared Bischof, Travis Harrison, Folker Meyer, Tobias Paczian, Andreas Wilke
+
+=cut
+
 
 my $api = '';
 my $sim = '';
@@ -23,6 +110,8 @@ my $verb = 0;
 my $batch = 100;
 my $options = {sequence => 1, annotation => 1};
 my $sources = {};
+my $verbose = 0 ;
+my $debug   = 0 ;
 
 GetOptions( "verbose!"   => \$verb,
             "api=s"      => \$api,
@@ -32,12 +121,18 @@ GetOptions( "verbose!"   => \$verb,
             "sequence=s" => \$seq,
 	        "source=s"   => \$src,
 	        "option=s"   => \$opt,
-	        "help!"      => \$help
+	        "debug+"     => \$debug, 
+	        "help!"      => \$help,
  	  );
+
+if ($help) {
+    help();
+    exit 0;
+}
 
 unless ($api) {
     print STDERR "Missing required API url\n";
-    help($options, {});
+    help();
     exit 1;
 }
 
@@ -47,32 +142,38 @@ $json = $json->utf8();
 $json->max_size(0);
 $json->allow_nonref;
 
-my $smap = get_data('GET', 'sources');
 
-if ($help) {
-    help($options, $smap);
-    exit 0;
-}
+print STDERR "Get sources!\n" if ($debug); 
+
+my $smap = {};
+eval {
+    %$smap = map { $_->{source}, $_ } @{ get_data('GET', 'sources') };
+};
+
+print STDERR "Received sources!\n" if ($debug) ;
+
+
 unless (exists($options->{$opt}) || $seq || $sim) {
     print STDERR "One of the following paramters are required: option, sequence, or sim\n";
-    help($options, $smap);
+    help();
     exit 1;
 }
-unless ($src) {
+unless ($src or $options->{sequence} ) {
     print STDERR "Source is required\n";
-    help($options, $smap);
+    help();
     exit 1;
 }
-unless (exists $smap->{$src}) {
+unless (exists $smap->{$src} or $options->{sequence}) {
     print STDERR "Invalid source: $src\n";
-    help($options, $smap);
+    print STDERR "Use one of: ".join(", ", keys %$smap)."\n";
+    help();
     exit 1;
 }
 
 if ($sim) {
     unless (-s $sim) {
-        print STDERR "File missing: $sim\n";
-        help($options, $smap);
+        print STDERR "Similarity file missing: $sim\n";
+        help();
         exit 1;
     }
     my ($total, $count) = process_sims($sim, $src, $batch);
@@ -86,15 +187,9 @@ elsif ($seq) {
 }
 elsif ($md5 && ($opt eq 'sequence')) {
     foreach my $m (@{ list_from_input($md5) }) {
-        foreach my $d ( @{ get_data("GET", "md5/".$m, {'sequence' => '1'}) } ) {
+		unless($m) { print STDERR "Warning: Empty entry in list\n" ; next }
+        foreach my $d ( @{ get_data("GET", "md5/".$m, {'sequence' => '1' , 'format' => 'json'} ) } ) {
             print STDOUT ">".$d->{md5}."\n".$d->{sequence}."\n";
-        }
-    }
-}
-elsif($acc && ($opt eq 'sequence')) {
-    foreach my $a (@{ list_from_input($acc) }) {
-        foreach my $d ( @{ get_data("GET", "accession/".$a, {'sequence' => '1'}) } ) {
-            print STDOUT ">".$d->{id}."\n".$d->{sequence}."\n";
         }
     }
 }
@@ -102,22 +197,25 @@ elsif ($md5) {
     my $md5s = list_from_input($md5);
     my $iter = natatime $batch, @$md5s;
     while (my @curr = $iter->()) {
-        foreach my $d ( @{ get_data("POST", "md5", {'limit' => $batch*1000,'source' => $src,'data' => \@curr,'order' => 'md5'}) } ) {
+        foreach my $d ( @{ get_data("POST", "md5", {'limit' => $batch*1000,'source' => $src,'data' => \@curr}) } ) {
             print STDOUT $d->{accession}."\t".$d->{md5}."\t".$d->{function}.(exists($d->{organism}) ? "\t".$d->{organism} : '')."\n";
         }
     }
 }
 elsif($acc) {
+    print STDERR "Retrieving annotations for accession IDs ($acc)\n" if ($debug);
     my $accs = list_from_input($acc);
+    print STDERR "Got " . scalar @$accs . " IDs\n" if ($debug);
+    print STDERR "Array size:\t" . length("@$accs") ."\n" if ($debug);
     my $iter = natatime $batch, @$accs;
     while (my @curr = $iter->()) {
-        foreach my $d ( @{ get_data("POST", "accession", {'limit' => $batch*1000,'source' => $src,'data' => \@curr,'order' => 'accession'}) } ) {
+        foreach my $d ( @{ get_data("POST", "accession", {'limit' => $batch*1000,'source' => $src,'data' => \@curr}) } ) {
             print STDOUT $d->{accession}."\t".$d->{md5}."\t".$d->{function}.(exists($d->{organism}) ? "\t".$d->{organism} : '')."\n";
         }
     }
 }
 else {
-    &help($options, $smap);
+    help();
     exit 1;
 }
 
@@ -125,14 +223,25 @@ sub list_from_input {
     my ($input) = @_;
 
     my @list = ();
+	my %set;
+	
     if (-s $input) {
-        @list = `cat $input`;
-        chomp @list;
+		print STDERR "Reading input from $input.\n" ;
+		open(FILE , $input) or die "Can't open file $input!\n" ;
+		while (my $line = <FILE>){
+			chomp $line ;
+			$set{$line}++
+		}
+		
+        # @list = `cat $input`;
+   #      chomp @list;
     }
     else {
         @list = split(/,/, $input);
+		%set = map {$_, 1} @list;
     }
-    my %set = map {$_, 1} @list;
+   
+	print STDERR "Query size = " . scalar (keys %set) . "\n" if ($debug);
     return [keys %set];
 }
 
@@ -213,10 +322,12 @@ sub get_data {
     my ($method, $resource, $params) = @_;
     
     my $data = undef;
+    my $res  = undef;
     eval {
-        my $res = undef;
+    	
         if ($method eq 'GET') {
             my $opts = ($params && (scalar(keys %$params) > 0)) ? '?'.join('&', map {$_.'='.$params->{$_}} keys %$params) : '';
+	    	print STDERR "Retrieving data from $api/m5nr/$resource$opts\n";
             $res = $agent->get($api.'/m5nr/'.$resource.$opts);
         }
         if ($method eq 'POST') {
@@ -228,6 +339,7 @@ sub get_data {
     
     if ($@ || (! ref($data))) {
         print STDERR "Error accessing M5NR API: ".$@."\n";
+		print STDERR $res->content ;
         exit 1;
     } elsif (exists($data->{ERROR}) && $data->{ERROR}) {
         print STDERR "Error: ".$data->{ERROR}."\n";
@@ -238,22 +350,9 @@ sub get_data {
 }
 
 sub help {
-    my ($options, $smap) = @_ ;
-
-    my $opts = join(", ", keys %$options);
-    my $srcs = join(", ", sort keys %$smap);
-
-    print STDERR qq(Usage: $0
-  --api       <api url>          required: url of m5nr API, required
-  --sim       <similarity file>  file in blast m8 format to be annotated
-  --acc       <accession ids>    file or comma seperated list of protein ids
-  --md5       <md5sums>          file or comma seperated list of md5sums
-  --sequence  <aa sequence>      protein sequence, returns md5sum of sequence
-  --source    <source name>      required: source for annotation
-  --option    <output option>    output type, one of: $opts
-  --verbose                      verbose output
-  --help                         show this
-
-  Sources: $srcs
-);
+    pod2usage( { -exitval => 0,
+                 -output  => \*STDOUT,
+                 -verbose => 2,
+		         -noperldoc => 1
+               } );
 }
