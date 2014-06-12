@@ -5,6 +5,10 @@
 *\#*
 *\~*
 
+*.out
+*.err
+*.gz
+
 # os x files
 *.DS_Store
 
