@@ -1,10 +1,11 @@
+#!/usr/bin/env python
 # -*- coding: utf-8 -*-
 # <nbformat>3.0</nbformat>
 
 # <codecell>
 
 # function to get python struct from API url
-import urllib2, json, sys
+import urllib2, json
 from operator import itemgetter
 from prettytable import PrettyTable
 def obj_from_url(url, data=None):
@@ -19,8 +20,6 @@ def obj_from_url(url, data=None):
 mg = 'mgm4447943.3'
 api = 'http://api.metagenomics.anl.gov/1'
 hypo = ['hypothetical', 'hyphothetical', 'putative']
-if len(sys.argv) > 1:
-    mg = sys.argv[1]
 
 # <codecell>
 
@@ -29,17 +28,7 @@ seed_func = obj_from_url(api+'/matrix/function?id='+mg+'&source=SEED')
 
 # <codecell>
 
-# get BIOM dump for SEED md5s
-seed_md5 = obj_from_url(api+'/matrix/feature?id='+mg+'&source=SEED')
-
-# <codecell>
-
-# set of seed md5
-md5_set = set( map(lambda x: x['id'], seed_md5['rows']) )
-
-# <codecell>
-
-# top 10 seed functions (not hypothetical)
+# top 5 seed functions (not hypothetical)
 num = 0
 seed_top = []
 for s in sorted(seed_func['data'], key=itemgetter(2), reverse=True):
@@ -48,7 +37,7 @@ for s in sorted(seed_func['data'], key=itemgetter(2), reverse=True):
     for h in hypo:
         if h in name:
             skip = True
-    if not skip and num < 10:
+    if not skip and num < 5:
         seed_top.append([name, s[2]])
         num += 1
 
@@ -63,15 +52,15 @@ print x
 
 # <codecell>
 
-# for each of the top seed hits retrieve the md5s / only keep those in metagenome
+# for each of the top seed hits retrieve the md5s
 for i, x in enumerate(seed_top):
     url = api+'/m5nr/function/'+x[0].replace(' ', '%20')+'?exact=1&source=SEED&limit=100000'
     print url
     annot = obj_from_url(url)
     md5s = set()
     for a in annot['data']:
-        if a['md5'] in md5_set:
-            md5s.add(a['md5'])
+        if "md5" in a.keys():
+            md5s.add(a["md5"]) 
     seed_top[i].append(list(md5s))
 
 # <codecell>
@@ -88,9 +77,6 @@ print x
 # retrieve unique functions for each md5 set in GenBank space
 for i, x in enumerate(seed_top):
     print x[0]
-    if len(x[2]) == 0:
-        seed_top[i].append([])
-        continue
     data = {'source': 'GenBank', 'data': x[2], 'limit': 100000}
     annot = obj_from_url(api+'/m5nr/md5', json.dumps(data, separators=(',',':')))
     if 'ERROR' in annot:
