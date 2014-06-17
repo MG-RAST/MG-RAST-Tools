@@ -1,5 +1,6 @@
 # git ignore file 
 *.pyc
+.ipynb_checkpoints
 
 # ignore files with # and ~
 *\#*
