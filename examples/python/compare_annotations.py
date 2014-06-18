@@ -1,3 +1,4 @@
+#!/usr/bin/env python
 # -*- coding: utf-8 -*-
 # <nbformat>3.0</nbformat>
 
@@ -39,7 +40,7 @@ md5_set = set( map(lambda x: x['id'], seed_md5['rows']) )
 
 # <codecell>
 
-# top 10 seed functions (not hypothetical)
+# top 5 seed functions (not hypothetical)
 num = 0
 seed_top = []
 for s in sorted(seed_func['data'], key=itemgetter(2), reverse=True):
@@ -48,7 +49,7 @@ for s in sorted(seed_func['data'], key=itemgetter(2), reverse=True):
     for h in hypo:
         if h in name:
             skip = True
-    if not skip and num < 10:
+    if not skip and num < 5:
         seed_top.append([name, s[2]])
         num += 1
 
@@ -70,8 +71,8 @@ for i, x in enumerate(seed_top):
     annot = obj_from_url(url)
     md5s = set()
     for a in annot['data']:
-        if a['md5'] in md5_set:
-            md5s.add(a['md5'])
+        if "md5" in a.keys():
+            md5s.add(a["md5"]) 
     seed_top[i].append(list(md5s))
 
 # <codecell>
