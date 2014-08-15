@@ -160,7 +160,7 @@ sub getJobStates {
 	
 	$awe->checkClientGroup($clientgroup);
 	
-	my $jobs = $awe->getJobQueue('info.clientgroups' => $clientgroup);
+	my $jobs = $awe->getJobQueue('info.clientgroups' => $clientgroup, limit => 1000);
 	
 	#print Dumper($jobs);
 	unless (defined $jobs) {
@@ -196,6 +196,30 @@ sub showAWEstatus {
 	
 	
 	my $states = getJobStates() || die "states undefined";
+	
+	my $awe = new AWE::Client($aweserverurl, $shocktoken);
+	
+	my $jobs = $awe->getJobQueue('info.clientgroups' => $clientgroup, 'limit' => 1000);
+	
+	#print Dumper($jobs);
+	unless (defined $jobs) {
+		die;
+	}
+	unless (defined $jobs->{data}) {
+		die;
+	}
+	
+	my @jobs = @{$jobs->{data}};
+	
+	my @sorted_jobs = sort { $a->{"info"}->{"submittime"} cmp $b->{"info"}->{"submittime"} } @jobs;
+	foreach my $job (@sorted_jobs){
+		
+		my $job_id = $job->{id};
+		if ($job->{state} ne "deleted") {
+			print $job_id."\t".$job->{"info"}->{"submittime"}."\t".lc($job->{state})."\t".$job->{"info"}->{"name"}."\n";
+		}
+	}
+	
 	
 	
 	print "\n\n** job states **\n";
