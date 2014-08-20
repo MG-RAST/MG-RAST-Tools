@@ -77,6 +77,7 @@ plot_mg_pcoa <<- function(
   
   # import DATA the data (from tab text)
   data_matrix <- data.matrix(read.table(table_in, row.names=1, header=TRUE, sep="\t", comment.char="", quote="", check.names=FALSE))
+  
   # convert data to a matR collection
   data_collection <- suppressWarnings(as(data_matrix, "collection")) # take the input data and create a matR object with it
   
@@ -104,25 +105,42 @@ plot_mg_pcoa <<- function(
       color_levels <- col.wheel(num_levels)
       #levels(column_factors) <- color_levels
       #my_data.color[,color_column]<-as.character(column_factors)
+
+      par( mai = c(0,0,0,0) )
+      par( oma = c(0,0,0,0) )
       plot.new()
-      legend_len <- length(color_levels)
-      cex_val <- 1.0
-      if (legend_len > 5) {
-          cex_val <- 0.7
-      }
-      if (legend_len > 20) {
-            cex_val <- 0.5
-      }
-      if (legend_len > 50) {
-            cex_val <- 0.3
-      }
-      legend( x="center", legend=column_levels, pch=15, col=color_levels, cex=cex_val )
+      par_legend <- par_fetch()
+
+      par_legend.test <<- par_legend
+      
+      par_legend_cex <- calculate_cex(column_levels, par_legend$my_pin, par_legend$my_mai, reduce_by=0.40)
+
+      par_legend_cex.test <<- par_legend_cex
+      
+      ## legend_len <- length(color_levels)
+      ## cex_val <- 1.0
+      ## if (legend_len > 5) {
+      ##     cex_val <- 0.7
+      ## }
+      ## if (legend_len > 20) {
+      ##       cex_val <- 0.5
+      ## }
+      ## if (legend_len > 50) {
+      ##       cex_val <- 0.3
+      ## }
+
+      legend( x="center", legend=column_levels, pch=16, col=color_levels, cex=par_legend_cex )
       
       dev.off()
     }else{
       pcoa_colors <- color_matrix
     }
-    plot_colors <- pcoa_colors[,color_column]    
+    plot_colors <- pcoa_colors[,color_column]
+    #plot_colors <- pcoa_colors[,color_column,drop=FALSE]
+    #plot_colors <- plot_colors[ colnames(data_matrix),,drop=FALSE ]
+
+    
+    plot_colors.test <<- plot_colors
   }else{
     # use color list if the option is selected
     if ( identical( is.na(color_list), FALSE ) ){
@@ -194,10 +212,9 @@ plot_mg_pcoa <<- function(
 ######## SUBS
 
 ############################################################################
-# $ # Color methods adapted from https://stat.ethz.ch/pipermail/r-help/2002-May/022037.html
+### Color methods adapted from https://stat.ethz.ch/pipermail/r-help/2002-May/022037.html
 ############################################################################
-
-# $ # create optimal contrast color selection using a color wheel
+# create optimal contrast color selection using a color wheel
 col.wheel <- function(num_col, my_cex=0.75) {
   cols <- rainbow(num_col)
   col_names <- vector(mode="list", length=num_col)
@@ -208,7 +225,7 @@ col.wheel <- function(num_col, my_cex=0.75) {
 }
 
 # $ # The inverse function to col2rgb()
-rgb2col <<- function(rgb) {
+rgb2col <- function(rgb) {
   rgb <- as.integer(rgb)
   class(rgb) <- "hexmode"
   rgb <- as.character(rgb)
@@ -238,4 +255,81 @@ create_colors <- function(color_matrix, color_mode = "auto"){ # function to auto
   }
   return(my_data.color)
 }
+############################################################################
+############################################################################
 
+############################################################################
+### SUB: Sub to provide scaling for title and legened cex
+############################################################################
+calculate_cex <- function(my_labels, my_pin, my_mai, reduce_by=0.30, debug){
+  
+  # get figure width and height from pin
+  my_width <- my_pin[1]
+  my_height <- my_pin[2]
+  
+  # get margine from mai
+  my_margin_bottom <- my_mai[1]
+  my_margin_left <- my_mai[2]
+  my_margin_top <- my_mai[3]
+  my_margin_right <- my_mai[4]
+  
+  #if(debug==TRUE){
+  #  print(paste("my_pin: ", my_pin, sep=""))
+  #  print(paste("my_mai: ", my_mai, sep=""))
+  #}
+  
+  # find the longest label (in inches), and figure out the maximum amount of length scaling that is possible
+  label_width_max <- 0
+  for (i in 1:length(my_labels)){  
+    label_width <- strwidth(my_labels[i],'inches')
+    if ( label_width > label_width_max){ label_width_max<-label_width  }
+  }
+  label_width_scale_max <- ( my_width - ( my_margin_right + my_margin_left ) )/label_width_max
+  ## if(debug==TRUE){ 
+  ##                 cat(paste("\n", "my_width: ", my_width, "\n", 
+  ##                           "label_width_max: ", label_width_max, "\n",
+  ##                           "label_width_scale_max: ", label_width_scale_max, "\n",
+  ##                           sep=""))  
+  ##                 }
+  
+  
+  # find the number of labels, and figure out the maximum height scaling that is possible
+  label_height_max <- 0
+  for (i in 1:length(my_labels)){  
+    label_height <- strheight(my_labels[i],'inches')
+    if ( label_height > label_height_max){ label_height_max<-label_height  }
+  }
+  adjusted.label_height_max <- ( label_height_max + label_height_max*0.4 ) # fudge factor for vertical space between legend entries
+  label_height_scale_max <- ( my_height - ( my_margin_top + my_margin_bottom ) ) / ( adjusted.label_height_max*length(my_labels) )
+  ## if(debug==TRUE){ 
+  ##                 cat(paste("\n", "my_height: ", my_height, "\n", 
+  ##                           "label_height_max: ", label_height_max, "\n", 
+  ##                           "length(my_labels): ", length(my_labels), "\n",
+  ##                           "label_height_scale_max: ", label_height_scale_max, "\n",
+  ##                           sep="" )) 
+  ##                 }
+  
+  # max possible scale is the smaller of the two 
+  scale_max <- min(label_width_scale_max, label_height_scale_max)
+  # adjust by buffer
+  #scale_max <- scale_max*(100-buffer/100) 
+  adjusted_scale_max <- ( scale_max * (1-reduce_by) )
+  #if(debug==TRUE){ print(cat("\n", "adjusted_scale_max: ", adjusted_scale_max, "\n", sep=""))  }
+  return(adjusted_scale_max)
+  
+}
+
+##################################################################
+##################################################################
+
+##################################################################
+### SUB(3): Fetch par values of the current frame - use to scale cex
+##################################################################
+par_fetch <- function(){
+    my_pin<-par('pin')
+    my_mai<-par('mai')
+    my_mar<-par('mar')
+    return(list("my_pin"=my_pin, "my_mai"=my_mai, "my_mar"=my_mar))    
+}
+##################################################################
+##################################################################
