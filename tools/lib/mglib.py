@@ -73,6 +73,10 @@ def obj_from_url(url, auth=None, data=None, debug=False):
 
 # print to stdout results of MG-RAST API
 def stdout_from_url(url, auth=None, data=None, debug=False):
+    file_from_url(url, sys.stdout, auth=auth, data=data, debug=debug)
+
+# print to file results of MG-RAST API
+def file_from_url(url, handle, auth=None, data=None, debug=False):
     header = {'Accept': 'text/plain'}
     if auth:
         header['Auth'] = auth
@@ -101,7 +105,7 @@ def stdout_from_url(url, auth=None, data=None, debug=False):
         chunk = res.read(8192)
         if not chunk:
             break
-        safe_print(chunk)
+        handle.write(chunk)
 
 # safe handeling of stdout for pipeing
 def safe_print(text):
