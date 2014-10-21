@@ -37,20 +37,11 @@ AUTHORS
 
 # download a file
 def file_download(auth, info, dirpath="."):
-    fhandle = open(os.path.join(dirpath, file_name(info)), 'w')
-    sys.stdout.write("Downloading %s for %s ... "%(file_name(info), info['id']))
+    fhandle = open(os.path.join(dirpath, info['file_name']), 'w')
+    sys.stdout.write("Downloading %s for %s ... "%(info['file_name'], info['id']))
     file_from_url(info['url'], fhandle, auth=auth)
     fhandle.close()
     sys.stdout.write("Done\n")
-
-# get correct name - deal with subset files
-def file_name(info):
-    if (info['data_type'] == "passed") or (info['data_type'] == "removed"):
-        return info['stage_id']+'.'+info['stage_name']+'.fna'
-    elif info['stage_name'] == "upload":
-        return info['stage_id']+'.'+info['stage_name']+'.'+info['file_format']
-    else:
-        return info['file_name']
 
 def main(args):
     OptionParser.format_description = lambda self, formatter: self.description
@@ -102,7 +93,7 @@ def main(args):
         for mg, files in all_files.iteritems():
             for f in files:
                 fsize = f['file_size'] if f['file_size'] else 0
-                safe_print("%s\t%s\t%s\t%s\t%d\n"%(mg, file_name(f), f['file_id'], f['file_md5'], fsize))
+                safe_print("%s\t%s\t%s\t%s\t%d\n"%(mg, f['file_name'], f['file_id'], f['file_md5'], fsize))
         sys.stdout.close()
         return 0
     
