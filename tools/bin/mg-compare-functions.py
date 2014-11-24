@@ -75,8 +75,14 @@ def main(args):
     token = get_auth_token(opts)
     
     # build url
+    id_list = []
     if os.path.isfile(opts.ids):
-        id_list = kbids_to_mgids( open(opts.ids,'r').read().strip().split('\n') )
+        id_str = open(opts.ids,'r').read()
+        try:
+            id_obj  = json.loads(id_str)
+            id_list = kbids_to_mgids( id_obj['elements'].keys() )
+        except:
+            id_list = kbids_to_mgids( id_str.strip().split('\n') )
     else:
         id_list = kbids_to_mgids( opts.ids.strip().split(',') )
     params = [ ('group_level', opts.level), 

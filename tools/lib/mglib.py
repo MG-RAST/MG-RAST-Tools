@@ -14,6 +14,7 @@ sys.stdout = os.fdopen(sys.stdout.fileno(), 'w', 0)
 
 VERSION = '1'
 API_URL = "http://api.metagenomics.anl.gov/"+VERSION
+SHOCK_URL = "http://shock.metagenomics.anl.gov"
 AUTH_LIST = "Jared Bischof, Travis Harrison, Folker Meyer, Tobias Paczian, Andreas Wilke"
 SEARCH_FIELDS = ["function", "organism", "md5", "name", "metadata", "biome", "feature", "material", "country", "location", "longitude", "latitude", "created", "env_package_type", "project_id", "project_name", "PI_firstname", "PI_lastname", "sequence_type", "seq_method", "collection_date"]
 
@@ -328,6 +329,37 @@ def token_from_login(user, passwd):
     auth = 'kbgo4711'+base64.b64encode('%s:%s' %(user, passwd)).replace('\n', '')
     data = obj_from_url(API_URL, auth=auth)
     return data['token']
+
+def login_from_token(token):
+    parts = {}
+    for part in token.strip().split('|'):
+        key, val = part.split('=')
+        parts[key] = val
+    return parts['un']
+
+def png_shock_ref(png_file, ref_file, token):
+    try:
+        import shock
+    except:
+        sys.stderr.write("ERROR: missing shock library\n")
+        sys.exit(1)
+    shock_client = shock.Client(SHOCK_URL, token)
+    attr = {'type': 'image', 'file_format': 'png', 'name': png_file}
+    node = shock_client.upload(attr=json.dumps(attr), data=png_file)
+    shock_client.delete_acl(node['id'], 'read', login_from_token(token))
+    wref = {
+        'name': png_file,
+        'dataType': 'image',
+        'fileType': 'png',
+        'created': node['created_on'],
+        'ref': {
+            'ID': node['id'],
+            'URL': "%s/node/%s"%(SHOCK_URL, node['id'])
+        }
+    }
+    ref_hdl = open(ref_file, 'w')
+    ref_hdl.write(json.dumps(wref)+"\n")
+    ref_hdl.close()
 
 def load_to_ws(wname, otype, oname, obj):
     if not _cmd_exists('ws-load'):
