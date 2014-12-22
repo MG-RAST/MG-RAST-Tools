@@ -80,7 +80,10 @@ def main(args):
         id_str = open(opts.ids,'r').read()
         try:
             id_obj  = json.loads(id_str)
-            id_list = kbids_to_mgids( id_obj['elements'].keys() )
+            if 'elements' in id_obj:
+                id_list = kbids_to_mgids( id_obj['elements'].keys() )
+            elif 'members' in id_obj:
+                id_list = kbids_to_mgids( map(lambda x: x['ID'], id_obj['members']) )
         except:
             id_list = kbids_to_mgids( id_str.strip().split('\n') )
     else:
