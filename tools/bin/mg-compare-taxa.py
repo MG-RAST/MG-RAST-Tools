@@ -53,6 +53,7 @@ def main(args):
     parser.add_option("", "--intersect_source", dest="intersect_source", default='Subsystems', help="function datasource for insersection, default is Subsystems")
     parser.add_option("", "--intersect_level", dest="intersect_level", default=None, help="function level for insersection")
     parser.add_option("", "--intersect_name", dest="intersect_name", default=None, help="function name(s) for insersection, file or comma seperated list")
+    parser.add_option("", "--output", dest="output", default='-', help="output: filename or stdout (-), default is stdout")
     parser.add_option("", "--format", dest="format", default='biom', help="output format: 'text' for tabbed table, 'biom' for BIOM format, default is biom")
     parser.add_option("", "--evalue", type="int", dest="evalue", default=5, help="negative exponent value for maximum e-value cutoff, default is 5")
     parser.add_option("", "--identity", type="int", dest="identity", default=60, help="percent value for minimum % identity cutoff, default is 60")
@@ -150,14 +151,20 @@ def main(args):
                 sub_ann.add(ann[opts.level])
     
     # output data
+    if (not opts.output) or (opts.output == '-'):
+        out_hdl = sys.stdout
+    else:
+        out_hdl = open(opts.output, 'w')
+    
     if opts.format == 'biom':
-        safe_print(json.dumps(biom)+"\n")
+        out_hdl.write(json.dumps(biom)+"\n")
     elif opts.format == 'text':
-        biom_to_tab(biom, sys.stdout, rows=sub_ann)
+        biom_to_tab(biom, out_hdl, rows=sub_ann)
     else:
         sys.stderr.write("ERROR: invalid format type, use one of: text, biom\n")
         return 1
     
+    our_hdl.close()
     return 0
     
 
