@@ -153,7 +153,7 @@ def main(args):
     # output data
     if (not opts.output) or (opts.output == '-'):
         out_hdl = sys.stdout
-    else
+    else:
         out_hdl = open(opts.output, 'w')
     
     if opts.format == 'biom':
