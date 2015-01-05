@@ -14,7 +14,7 @@ VERSION
     %s
 
 SYNOPSIS
-    mg-compare-normalize [ --help, --input <input file or stdin>, --format <cv: 'text' or 'biom'>, --output <input file or stdout> ]
+    mg-compare-normalize [ --help, --input <input file or stdin>, --format <cv: 'text' or 'biom'>, --output <output file or stdout> ]
 
 DESCRIPTION
     Calculate normalized values from abundance profiles for multiple metagenomes.
