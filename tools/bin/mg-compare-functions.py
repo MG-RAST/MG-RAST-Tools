@@ -167,7 +167,7 @@ def main(args):
         sys.stderr.write("ERROR: invalid format type, use one of: text, biom\n")
         return 1
     
-    our_hdl.close()
+    out_hdl.close()
     return 0
     
 
