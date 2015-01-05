@@ -14,7 +14,7 @@ VERSION
     %s
 
 SYNOPSIS
-    mg-compare-normalize [ --help, --input <input file or stdin>, --format <cv: 'text' or 'biom'>, --output <cv: 'text' or 'biom'> ]
+    mg-compare-normalize [ --help, --input <input file or stdin>, --format <cv: 'text' or 'biom'>, --output <input file or stdout> ]
 
 DESCRIPTION
     Calculate normalized values from abundance profiles for multiple metagenomes.
@@ -46,8 +46,8 @@ def main(args):
     parser.add_option("", "--url", dest="url", default=API_URL, help="communities API url")
     parser.add_option("", "--rlib", dest="rlib", default=None, help="R lib path")
     parser.add_option("", "--input", dest="input", default='-', help="input: filename or stdin (-), default is stdin")
-    parser.add_option("", "--format", dest="format", default='biom', help="input format: 'text' for tabbed table, 'biom' for BIOM format, default is biom")
-    parser.add_option("", "--output", dest="output", default='biom', help="output format: 'text' for tabbed table, 'biom' for BIOM format, default is biom")
+    parser.add_option("", "--output", dest="output", default='-', help="output: filename or stdout (-), default is stdout")
+    parser.add_option("", "--format", dest="format", default='biom', help="input / output format: 'text' for tabbed table, 'biom' for BIOM format, default is biom")
     
     # get inputs
     (opts, args) = parser.parse_args()
@@ -55,10 +55,7 @@ def main(args):
         sys.stderr.write("ERROR: input data missing\n")
         return 1
     if opts.format not in ['text', 'biom']:
-        sys.stderr.write("ERROR: invalid input format\n")
-        return 1
-    if opts.output not in ['text', 'biom']:
-        sys.stderr.write("ERROR: invalid output format\n")
+        sys.stderr.write("ERROR: invalid format\n")
         return 1
     if (not opts.rlib) and ('KB_PERL_PATH' in os.environ):
         opts.rlib = os.environ['KB_PERL_PATH']
@@ -111,7 +108,12 @@ suppressMessages( MGRAST_preprocessing(
     
     # output data
     os.remove(tmp_in)
-    if biom and (opts.output == 'biom'):
+    if (not opts.output) or (opts.output == '-'):
+        out_hdl = sys.stdout
+    else:
+        out_hdl = open(opts.output, 'w')
+    
+    if biom and (opts.format == 'biom'):
         # may have rows removed
         new_rows = []
         for r in biom['rows']:
@@ -123,11 +125,13 @@ suppressMessages( MGRAST_preprocessing(
         biom['id'] = biom['id']+'_normalized'
         biom['matrix_type'] = 'dense'
         biom['matrix_element_type'] = 'float'
-        safe_print(json.dumps(biom)+'\n')
+        out_hdl.write(json.dumps(biom)+"\n")
     else:
-        safe_print( "\t%s\n" %"\t".join(norm['columns']) )
+        out_hdl.write( "\t%s\n" %"\t".join(norm['columns']) )
         for i, d in enumerate(norm['data']):
-            safe_print( "%s\t%s\n" %(norm['rows'][i], "\t".join(map(str, d))) )
+            out_hdl.write( "%s\t%s\n" %(norm['rows'][i], "\t".join(map(str, d))) )
+    
+    out_hdl.close()
     return 0
     
 
