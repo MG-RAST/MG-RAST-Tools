@@ -50,19 +50,19 @@ def main(args):
     parser.add_option("", "--input", dest="input", default='-', help="input: filename or stdin (-), default is stdin")
     parser.add_option("", "--format", dest="format", default='biom', help="input format: 'text' for tabbed table, 'biom' for BIOM format, default is biom")
     parser.add_option("", "--plot", dest="plot", default=None, help="filename for output plot")
-    parser.add_option("", "--reference", dest="reference", action="store_true", default=False, help="plot saved as shock reference object")
+    parser.add_option("", "--reference", dest="reference", type="int", default=0, help="plot saved as shock reference object: 1=true, 0=false")
     parser.add_option("", "--distance", dest="distance", default='bray-curtis', help="distance metric, one of: bray-curtis, euclidean, maximum, manhattan, canberra, minkowski, difference, default is bray-curtis")
     parser.add_option("", "--metadata", dest="metadata", default=None, help="metadata field to color by, only for 'biom' input")
     parser.add_option("", "--groups", dest="groups", default=None, help="list of groups in JSON or tabbed format - either as input string or filename")
     parser.add_option("", "--group_pos", dest="group_pos", type="int", default=1, help="position of group to use, default is 1 (first)")
-    parser.add_option("", "--color_auto", dest="color_auto", action="store_true", default=False, help="auto-create colors based on like group names, default is use group name as color")
+    parser.add_option("", "--color_auto", dest="color_auto", type="int", default=0, help="auto-create colors based on like group names, default is use group name as color: 1=true, 0=false")
     parser.add_option("", "--rlib", dest="rlib", default=None, help="R lib path")
-    parser.add_option("", "--three", dest="three", action="store_true", default=False, help="create 3-D PCoA, default is 2-D")
-    parser.add_option("", "--name", dest="name", action="store_true", default=False, help="label columns by name (biom only), default is by id")
-    parser.add_option("", "--label", dest="label", action="store_true", default=False, help="label image rows, default is off")
     parser.add_option("", "--height", dest="height", type="float", default=10, help="image height in inches, default is 6")
     parser.add_option("", "--width", dest="width", type="float", default=10, help="image width in inches, default is 6")
     parser.add_option("", "--dpi", dest="dpi", type="int", default=300, help="image DPI, default is 300")
+    parser.add_option("", "--three", dest="three", type="int", default=0, help="create 3-D PCoA, default is 2-D: 1=true, 0=false")
+    parser.add_option("", "--name", dest="name", type="int", default=0, help="label columns by name, default is by id: 1=true, 0=false")
+    parser.add_option("", "--label", dest="label", type="int", default=0, help="label image rows, default is off: 1=true, 0=false")
     
     # get inputs
     (opts, args) = parser.parse_args()
@@ -81,7 +81,11 @@ def main(args):
         sys.stderr.write("ERROR: missing path to R libs\n")
         return 1
     if opts.metadata:
-        opts.color_auto = True
+        opts.color_auto = 1
+    for o in ['reference', 'color_auto', 'three', 'name', 'label']:
+        if getattr(opts, o) not in [0, 1]:
+            sys.stderr.write("ERROR: invalid value for '%s'\n"%o)
+            return 1
     
     # get auth
     token = get_auth_token(opts)
@@ -97,7 +101,8 @@ def main(args):
             try:
                 indata  = json.loads(indata)
                 mg_list = map(lambda x: x['id'], indata['columns'])
-                biom_to_tab(indata, tmp_hdl, col_name=opts.name)
+                col_name = True if opts.name == 1 else False
+                biom_to_tab(indata, tmp_hdl, col_name=col_name)
                 if opts.metadata:
                     groups = metadata_from_biom(indata, opts.metadata)
             except:
@@ -160,10 +165,10 @@ def main(args):
         sys.stderr.write("Warning: Not all metagenomes in a group\n")
     
     # build R cmd
-    three = 'c(1,2,3)' if opts.three else 'c(1,2)'
-    label = 'TRUE' if opts.label else 'FALSE'
+    three = 'c(1,2,3)' if opts.three == 1 else 'c(1,2)'
+    label = 'TRUE' if opts.label == 1 else 'FALSE'
     table = '"%s"'%tmp_group if tmp_group else 'NA'
-    color = 'TRUE' if opts.color_auto else 'FALSE'
+    color = 'TRUE' if opts.color_auto == 1 else 'FALSE'
     r_cmd = """source("%s/plot_mg_pcoa.r")
 suppressMessages( plot_mg_pcoa(
     table_in="%s",
@@ -181,7 +186,7 @@ suppressMessages( plot_mg_pcoa(
     execute_r(r_cmd)
     
     # shock ref
-    if opts.reference:
+    if opts.reference == 1:
         png_shock_ref(opts.plot, opts.plot+'.png', token)
     
     # cleanup
