@@ -14,7 +14,7 @@ VERSION
     %s
 
 SYNOPSIS
-    mg-compare-pcoa [ --help, --input <input file or stdin>, --format <cv: 'text' or 'biom'>, --distance <cv: bray-curtis, euclidean, maximum, manhattan, canberra, minkowski, difference>, --normalize <boolean>, --output <cv: 'text' or 'json'>, --name <boolean> ]
+    mg-compare-pcoa [ --help, --input <input file or stdin>, --output <output file or stdout>, --format <cv: 'text' or 'biom'>, --distance <cv: bray-curtis, euclidean, maximum, manhattan, canberra, minkowski, difference>, --name <boolean>, --normalize <boolean> ]
 
 DESCRIPTION
     Retrieve PCoA (Principal Coordinate Analysis) from abundance profiles for multiple metagenomes.
@@ -45,11 +45,11 @@ def main(args):
     parser = OptionParser(usage='', description=prehelp%VERSION, epilog=posthelp%AUTH_LIST)
     parser.add_option("", "--url", dest="url", default=API_URL, help="communities API url")
     parser.add_option("", "--input", dest="input", default='-', help="input: filename or stdin (-), default is stdin")
-    parser.add_option("", "--format", dest="format", default='biom', help="input format: 'text' for tabbed table, 'biom' for BIOM format, default is biom")
-    parser.add_option("", "--output", dest="output", default='json', help="output format: 'text' for tabbed table, 'json' for JSON format, default is json")
-    parser.add_option("", "--name", dest="name", action="store_true", default=False, help="label columns by name (biom only), default is by id")
+    parser.add_option("", "--output", dest="output", default='-', help="output: filename or stdout (-), default is stdout")
+    parser.add_option("", "--format", dest="format", default='biom', help="input / output format: 'text' for tabbed table, 'biom' for BIOM / json format, default is biom")
     parser.add_option("", "--distance", dest="distance", default='bray-curtis', help="distance metric, one of: bray-curtis, euclidean, maximum, manhattan, canberra, minkowski, difference, default is bray-curtis")
-    parser.add_option("", "--normalize", dest="normalize", action="store_true", default=False, help="normalize the input data, default is off")
+    parser.add_option("", "--name", dest="name", type="int", default=0, help="label columns by name, default is by id: 1=true, 0=false")
+    parser.add_option("", "--normalize", dest="normalize", type="int", default=0, help="normalize the input data, default is off: 1=true, 0=false")
     
     # get inputs
     (opts, args) = parser.parse_args()
@@ -58,9 +58,6 @@ def main(args):
         return 1
     if opts.format not in ['text', 'biom']:
         sys.stderr.write("ERROR: invalid input format\n")
-        return 1
-    if opts.output not in ['text', 'json']:
-        sys.stderr.write("ERROR: invalid output format\n")
         return 1
     
     # parse inputs
@@ -72,7 +69,8 @@ def main(args):
         if opts.format == 'biom':
             try:
                 biom = json.loads(indata)
-                rows, cols, data = biom_to_matrix(biom, col_name=opts.name)
+                col_name = True if opts.name == 1 else False
+                rows, cols, data = biom_to_matrix(biom, col_name=col_name)
             except:
                 sys.stderr.write("ERROR: input BIOM data not correct format\n")
                 return 1
@@ -83,17 +81,24 @@ def main(args):
         return 1
     
     # retrieve data
-    raw  = '0' if opts.normalize else '1'
+    raw  = '0' if opts.normalize == 1 else '1'
     post = {"raw": raw, "distance": opts.distance, "columns": cols, "rows": rows, "data": data}
     pcoa = obj_from_url(opts.url+'/compute/pcoa', data=json.dumps(post, separators=(',',':')))
     
     # output data
-    if opts.output == 'json':
-        safe_print(json.dumps(pcoa, separators=(', ',': '), indent=4)+'\n')
+    if (not opts.output) or (opts.output == '-'):
+        out_hdl = sys.stdout
     else:
-        safe_print("ID\tPC1\tPC2\tPC3\tPC4\n")
+        out_hdl = open(opts.output, 'w')
+    
+    if opts.format == 'biom':
+        out_hdl.write(json.dumps(pcoa)+"\n")
+    else:
+        out_hdl.write("ID\tPC1\tPC2\tPC3\tPC4\n")
         for d in pcoa['data']:
-            safe_print( "%s\t%s\n" %(d['id'], "\t".join(map(str, d['pco'][0:4]))) )
+            out_hdl.write( "%s\t%s\n" %(d['id'], "\t".join(map(str, d['pco'][0:4]))) )
+    
+    out_hdl.close()
     return 0
     
 

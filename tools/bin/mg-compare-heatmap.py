@@ -14,7 +14,7 @@ VERSION
     %s
 
 SYNOPSIS
-    mg-compare-heatmap [ --help, --input <input file or stdin>, --format <cv: 'text' or 'biom'>, --name <boolean>, --cluster <cv: ward, single, complete, mcquitty, median, centroid>, --distance <cv: bray-curtis, euclidean, maximum, manhattan, canberra, minkowski, difference>, --normalize <boolean> ]
+    mg-compare-heatmap [ --help, --input <input file or stdin>, --output <output file or stdout>, --format <cv: 'text' or 'biom'>, --cluster <cv: ward, single, complete, mcquitty, median, centroid>, --distance <cv: bray-curtis, euclidean, maximum, manhattan, canberra, minkowski, difference>, --name <boolean>, --normalize <boolean> ]
 
 DESCRIPTION
     Retrieve Dendogram Heatmap from abundance profiles for multiple metagenomes.
@@ -45,11 +45,12 @@ def main(args):
     parser = OptionParser(usage='', description=prehelp%VERSION, epilog=posthelp%AUTH_LIST)
     parser.add_option("", "--url", dest="url", default=API_URL, help="communities API url")
     parser.add_option("", "--input", dest="input", default='-', help="input: filename or stdin (-), default is stdin")
+    parser.add_option("", "--output", dest="output", default='-', help="output: filename or stdout (-), default is stdout")
     parser.add_option("", "--format", dest="format", default='biom', help="input format: 'text' for tabbed table, 'biom' for BIOM format, default is biom")
-    parser.add_option("", "--name", dest="name", action="store_true", default=False, help="label columns by name (biom only), default is by id")
     parser.add_option("", "--cluster", dest="cluster", default='ward', help="cluster function, one of: ward, single, complete, mcquitty, median, centroid, default is ward")
     parser.add_option("", "--distance", dest="distance", default='bray-curtis', help="distance function, one of: bray-curtis, euclidean, maximum, manhattan, canberra, minkowski, difference, default is bray-curtis")
-    parser.add_option("", "--normalize", dest="normalize", action="store_true", default=False, help="normalize the input data, default is off")
+    parser.add_option("", "--name", dest="name", type="int", default=0, help="label columns by name, default is by id: 1=true, 0=false")
+    parser.add_option("", "--normalize", dest="normalize", type="int", default=0, help="normalize the input data, default is off: 1=true, 0=false")
 
     # get inputs
     (opts, args) = parser.parse_args()
@@ -85,7 +86,13 @@ def main(args):
     hmap = obj_from_url(opts.url+'/compute/heatmap', data=json.dumps(post, separators=(',',':')))
     
     # output data
-    safe_print(json.dumps(hmap, separators=(', ',': '), indent=4)+'\n')
+    if (not opts.output) or (opts.output == '-'):
+        out_hdl = sys.stdout
+    else:
+        out_hdl = open(opts.output, 'w')
+    
+    out_hdl.write(json.dumps(hmap)+"\n")
+    out_hdl.close()
     return 0
 
 if __name__ == "__main__":
