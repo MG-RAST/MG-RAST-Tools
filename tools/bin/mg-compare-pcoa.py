@@ -14,7 +14,7 @@ VERSION
     %s
 
 SYNOPSIS
-    mg-compare-pcoa [ --help, --input <input file or stdin>, --output <output file or stdout>, --format <cv: 'text' or 'biom'>, --distance <cv: bray-curtis, euclidean, maximum, manhattan, canberra, minkowski, difference>, --name <boolean>, --normalize <boolean> ]
+    mg-compare-pcoa [ --help, --input <input file or stdin>, --output <output file or stdout>, --format <cv: 'text' or 'biom'>, --distance <cv: bray-curtis, euclidean, maximum, manhattan, canberra, minkowski, difference>, --metadata <metadata field>, --name <boolean>, --normalize <boolean> ]
 
 DESCRIPTION
     Retrieve PCoA (Principal Coordinate Analysis) from abundance profiles for multiple metagenomes.
@@ -47,6 +47,7 @@ def main(args):
     parser.add_option("", "--input", dest="input", default='-', help="input: filename or stdin (-), default is stdin")
     parser.add_option("", "--output", dest="output", default='-', help="output: filename or stdout (-), default is stdout")
     parser.add_option("", "--format", dest="format", default='biom', help="input / output format: 'text' for tabbed table, 'biom' for BIOM / json format, default is biom")
+    parser.add_option("", "--metadata", dest="metadata", default=None, help="metadata field to group by, only for 'biom' input")
     parser.add_option("", "--distance", dest="distance", default='bray-curtis', help="distance metric, one of: bray-curtis, euclidean, maximum, manhattan, canberra, minkowski, difference, default is bray-curtis")
     parser.add_option("", "--name", dest="name", type="int", default=0, help="label columns by name, default is by id: 1=true, 0=false")
     parser.add_option("", "--normalize", dest="normalize", type="int", default=0, help="normalize the input data, default is off: 1=true, 0=false")
@@ -64,6 +65,7 @@ def main(args):
     rows = []
     cols = []
     data = []
+    groups = []
     try:
         indata = sys.stdin.read() if opts.input == '-' else open(opts.input, 'r').read()
         if opts.format == 'biom':
@@ -71,6 +73,8 @@ def main(args):
                 biom = json.loads(indata)
                 col_name = True if opts.name == 1 else False
                 rows, cols, data = biom_to_matrix(biom, col_name=col_name)
+                if opts.metadata:
+                    groups = metadata_from_biom(biom, opts.metadata)
             except:
                 sys.stderr.write("ERROR: input BIOM data not correct format\n")
                 return 1
@@ -79,6 +83,12 @@ def main(args):
     except:
         sys.stderr.write("ERROR: unable to load input data\n")
         return 1
+    
+    # get group map
+    gmap = {}
+    for i, g in enumerate(groups):
+        if g != 'null':
+            gmap[cols[i]] = g
     
     # retrieve data
     raw  = '0' if opts.normalize == 1 else '1'
@@ -92,11 +102,13 @@ def main(args):
         out_hdl = open(opts.output, 'w')
     
     if opts.format == 'biom':
+        for i in range(len(pcoa['data'])):
+            pcoa['data'][i]['group'] = gmap[ pcoa['data'][i]['id'] ] if pcoa['data'][i]['id'] in gmap else ""
         out_hdl.write(json.dumps(pcoa)+"\n")
     else:
-        out_hdl.write("ID\tPC1\tPC2\tPC3\tPC4\n")
+        out_hdl.write("ID\tGroup\tPC1\tPC2\tPC3\tPC4\n")
         for d in pcoa['data']:
-            out_hdl.write( "%s\t%s\n" %(d['id'], "\t".join(map(str, d['pco'][0:4]))) )
+            out_hdl.write( "%s\t%s\t%s\n" %(d['id'], gmap[d['id']] if (d['id'] in gmap) else "", "\t".join(map(str, d['pco'][0:4]))) )
     
     out_hdl.close()
     return 0
