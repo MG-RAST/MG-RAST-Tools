@@ -108,7 +108,7 @@ def file_from_url(url, handle, auth=None, data=None, debug=False):
             break
         handle.write(chunk)
 
-# safe handeling of stdout for pipeing
+# safe handling of stdout for piping
 def safe_print(text):
     text = "".join([x if ord(x) < 128 else '?' for x in text])
     try:
