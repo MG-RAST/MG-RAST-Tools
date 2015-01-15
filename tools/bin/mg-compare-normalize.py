@@ -47,6 +47,7 @@ def main(args):
     parser.add_option("", "--rlib", dest="rlib", default=None, help="R lib path")
     parser.add_option("", "--input", dest="input", default='-', help="input: filename or stdin (-), default is stdin")
     parser.add_option("", "--output", dest="output", default='-', help="output: filename or stdout (-), default is stdout")
+    parser.add_option("", "--outdir", dest="outdir", default=None, help="ouput is placed in dir as filenmae.obj, fielname.type, only for 'biom' input")
     parser.add_option("", "--format", dest="format", default='biom', help="input / output format: 'text' for tabbed table, 'biom' for BIOM format, default is biom")
     
     # get inputs
@@ -125,7 +126,22 @@ suppressMessages( MGRAST_preprocessing(
         biom['id'] = biom['id']+'_normalized'
         biom['matrix_type'] = 'dense'
         biom['matrix_element_type'] = 'float'
-        out_hdl.write(json.dumps(biom)+"\n")
+        matrix_type = None
+        if biom['type'].startswith('Taxon'):
+            matrix_type = "Communities.TaxonomicMatrix"
+        elif biom['type'].startswith('Function'):
+            matrix_type = "Communities.FunctionalMatrix"
+        if opts.outdir and matrix_type:
+            if not os.path.isdir(opts.outdir):
+                os.mkdir(opts.outdir)
+            ohdl = open(os.path.join(opts.outdir, opts.output+'.obj'), 'w')
+            thdl = open(os.path.join(opts.outdir, opts.output+'.type'), 'w')
+            ohdl.write(json.dumps(biom)+"\n")
+            thdl.write(matrix_type)
+            ohdl.close()
+            thdl.close()
+        else:
+            out_hdl.write(json.dumps(biom)+"\n")
     else:
         out_hdl.write( "\t%s\n" %"\t".join(norm['columns']) )
         for i, d in enumerate(norm['data']):
