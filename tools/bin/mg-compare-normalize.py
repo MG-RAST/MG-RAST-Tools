@@ -101,7 +101,8 @@ suppressMessages( MGRAST_preprocessing(
 ))"""%(opts.rlib, tmp_in, tmp_out)
         execute_r(r_cmd)
         nrows, ncols, ndata = tab_to_matrix(open(tmp_out, 'r').read())
-        norm = {"columns": ncols, "rows": nrows, "data": ndata}
+        num_data = map(lambda x: map(float, x), ndata)
+        norm = {"columns": ncols, "rows": nrows, "data": num_data}
         os.remove(tmp_out)
     else:
         post = {"columns": cols, "rows": rows, "data": data}
@@ -148,6 +149,8 @@ suppressMessages( MGRAST_preprocessing(
             out_hdl.write( "%s\t%s\n" %(norm['rows'][i], "\t".join(map(str, d))) )
     
     out_hdl.close()
+    if os.stat(opts.output).st_size == 0:
+        os.remove(opts.output);
     return 0
     
 
