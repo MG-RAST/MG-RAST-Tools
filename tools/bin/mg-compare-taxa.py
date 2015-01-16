@@ -71,6 +71,9 @@ def main(args):
     if (opts.intersect_name and (not opts.intersect_level)) or ((not opts.intersect_name) and opts.intersect_level):
         sys.stderr.write("ERROR: both --intersect_level and --intersect_name need to be used together\n")
         return 1
+    if opts.format not in ['text', 'biom']:
+        sys.stderr.write("ERROR: invalid input format\n")
+        return 1
     
     # get auth
     token = get_auth_token(opts)
@@ -158,13 +161,10 @@ def main(args):
     
     if opts.format == 'biom':
         out_hdl.write(json.dumps(biom)+"\n")
-    elif opts.format == 'text':
-        biom_to_tab(biom, out_hdl, rows=sub_ann)
     else:
-        sys.stderr.write("ERROR: invalid format type, use one of: text, biom\n")
-        return 1
+        biom_to_tab(biom, out_hdl, rows=sub_ann)
     
-    our_hdl.close()
+    out_hdl.close()
     return 0
     
 
