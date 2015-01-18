@@ -28,7 +28,7 @@ Output
     2. BIOM format of taxanomic abundance profiles.
 
 EXAMPLES
-    mg-compare-taxa --ids "kb|mg.286,kb|mg.287,kb|mg.288,kb|mg.289" --level class --source RefSeq --format text --evalue 8
+    mg-compare-taxa --ids "mgm4441679.3,mgm4441680.3,mgm4441681.3,mgm4441682.3" --level class --source RefSeq --format text --evalue 8
 
 SEE ALSO
     -
@@ -85,13 +85,13 @@ def main(args):
         try:
             id_obj  = json.loads(id_str)
             if 'elements' in id_obj:
-                id_list = kbids_to_mgids( id_obj['elements'].keys() )
+                id_list = id_obj['elements'].keys()
             elif 'members' in id_obj:
-                id_list = kbids_to_mgids( map(lambda x: x['ID'], id_obj['members']) )
+                id_list = map(lambda x: x['ID'], id_obj['members'])
         except:
-            id_list = kbids_to_mgids( id_str.strip().split('\n') )
+            id_list = id_str.strip().split('\n')
     else:
-        id_list = kbids_to_mgids( opts.ids.strip().split(',') )
+        id_list = opts.ids.strip().split(',')
     params = [ ('group_level', opts.level), 
                ('source', opts.source),
                ('evalue', opts.evalue),

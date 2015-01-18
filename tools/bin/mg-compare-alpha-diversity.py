@@ -25,7 +25,7 @@ Output
     Tab-delimited list of metagenome IDs and their alpha diversity scores.
 
 EXAMPLES
-    mg-compare-alpha-diversity --ids "kb|mg.286,kb|mg.287,kb|mg.288,kb|mg.289" --level class --source RefSeq
+    mg-compare-alpha-diversity --ids "mgm4441679.3,mgm4441680.3,mgm4441681.3,mgm4441682.3" --level class --source RefSeq
 
 SEE ALSO
     -
@@ -56,7 +56,7 @@ def main(args):
     token = get_auth_token(opts)
     
     # build url / retrieve data / output data
-    id_list = kbids_to_mgids( opts.ids.split(',') )
+    id_list = opts.ids.split(',')
     params  = [ ('level', opts.level), ('source', opts.source) ]
     for i in id_list:
         url  = opts.url+'/compute/alphadiversity/'+i+'?'+urllib.urlencode(params, True)
