@@ -46,8 +46,9 @@ def main(args):
     parser.add_option("", "--user", dest="user", default=None, help="OAuth username")
     parser.add_option("", "--passwd", dest="passwd", default=None, help="OAuth password")
     parser.add_option("", "--token", dest="token", default=None, help="OAuth token")
-    parser.add_option("", "--level", dest="level", default='species', help="taxon level to retrieve abundances for, default is species")
+    parser.add_option("", "--level", dest="level", default='genus', help="taxon level to retrieve abundances for, default is genus")
     parser.add_option("", "--source", dest="source", default='SEED', help="taxon datasource to filter results by, default is SEED")
+    parser.add_option("", "--hit_type", dest="hit_type", default='lca', help="Set of organisms to search results by, one of: all, single, lca")
     parser.add_option("", "--filter_level", dest="filter_level", default=None, help="taxon level to filter by")
     parser.add_option("", "--filter_name", dest="filter_name", default=None, help="taxon name to filter by, file or comma seperated list")
     parser.add_option("", "--intersect_source", dest="intersect_source", default='Subsystems', help="function datasource for insersection, default is Subsystems")
@@ -55,7 +56,7 @@ def main(args):
     parser.add_option("", "--intersect_name", dest="intersect_name", default=None, help="function name(s) for insersection, file or comma seperated list")
     parser.add_option("", "--output", dest="output", default='-', help="output: filename or stdout (-), default is stdout")
     parser.add_option("", "--format", dest="format", default='biom', help="output format: 'text' for tabbed table, 'biom' for BIOM format, default is biom")
-    parser.add_option("", "--evalue", type="int", dest="evalue", default=5, help="negative exponent value for maximum e-value cutoff, default is 5")
+    parser.add_option("", "--evalue", type="int", dest="evalue", default=15, help="negative exponent value for maximum e-value cutoff, default is 15")
     parser.add_option("", "--identity", type="int", dest="identity", default=60, help="percent value for minimum % identity cutoff, default is 60")
     parser.add_option("", "--length", type="int", dest="length", default=15, help="value for minimum alignment length cutoff, default is 15")
     parser.add_option("", "--temp", dest="temp", default=None, help="filename to temporarly save biom output at each iteration")
@@ -94,6 +95,7 @@ def main(args):
         id_list = opts.ids.strip().split(',')
     params = [ ('group_level', opts.level), 
                ('source', opts.source),
+               ('hit_type', opts.hit_type),
                ('evalue', opts.evalue),
                ('identity', opts.identity),
                ('length', opts.length),
