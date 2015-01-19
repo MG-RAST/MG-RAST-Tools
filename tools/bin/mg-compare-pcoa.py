@@ -30,7 +30,7 @@ Output
     Tab-delimited table of first 4 principal components for each metagenome.
 
 EXAMPLES
-    mg-compare-taxa --ids "kb|mg.286,kb|mg.287,kb|mg.288,kb|mg.289" --level class --source RefSeq --format text | mg-compare-pcoa --input - --format text --distance manhattan
+    mg-compare-taxa --ids "mgm4441679.3,mgm4441680.3,mgm4441681.3,mgm4441682.3" --level class --source RefSeq --format text | mg-compare-pcoa --input - --format text --distance manhattan
 
 SEE ALSO
     -

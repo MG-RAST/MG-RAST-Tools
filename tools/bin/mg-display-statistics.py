@@ -26,7 +26,7 @@ Output
     Tab-delimited table of numbers (with text header). Output varies based on type of statistic requested.
 
 EXAMPLES
-    mg-display-statistics --id "kb|mg.287" --stat sequence
+    mg-display-statistics --id "mgm4441680.3" --stat sequence
 
 SEE ALSO
     -
@@ -84,8 +84,6 @@ def main(args):
     token = get_auth_token(opts)
     
     # build call url
-    if opts.id.startswith('kb|'):
-        opts.id = kbid_to_mgid(opts.id)
     url = opts.url+'/metagenome/'+opts.id+'?verbosity=stats'
 
     # retrieve / output data

@@ -26,7 +26,7 @@ Output
     Tab-delimited list of annotations: feature list, function, abundance for function, avg evalue for function, organism
 
 EXAMPLES
-    mg-get-annotation-set --id "kb|mg.287" --top 5 --level genus --source SEED
+    mg-get-annotation-set --id "mgm4441680.3" --top 5 --level genus --source SEED
 
 SEE ALSO
     -
@@ -112,8 +112,6 @@ def main(args):
     
     # get auth
     token = get_auth_token(opts)
-    if opts.id.startswith('kb|'):
-        opts.id = kbid_to_mgid(opts.id)
     
     # get top taxa
     top_taxa = []

@@ -10,7 +10,7 @@ import random
 import subprocess
 
 # don't buffer stdout
-sys.stdout = os.fdopen(sys.stdout.fileno(), 'w', 0)
+#sys.stdout = os.fdopen(sys.stdout.fileno(), 'w', 0)
 
 VERSION = '1'
 API_URL = "http://api.metagenomics.anl.gov/"+VERSION

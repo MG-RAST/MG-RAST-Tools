@@ -25,7 +25,7 @@ Output
     Tab-delimited list of taxon and abundance sorted by abundance (largest first). 'top' option controls number of rows returned.
 
 EXAMPLES
-    mg-abundant-taxa --id "kb|mg.287" --level genus --source RefSeq --top 20 --evalue 8
+    mg-abundant-taxa --id "mgm4441680.3" --level genus --source RefSeq --top 20 --evalue 8
 
 SEE ALSO
     -
@@ -66,8 +66,6 @@ def main(args):
     token = get_auth_token(opts)
     
     # build url
-    if opts.id.startswith('kb|'):
-        opts.id = kbid_to_mgid(opts.id)
     params = [ ('id', opts.id),
                ('group_level', opts.level),
                ('source', opts.source),

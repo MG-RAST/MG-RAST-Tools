@@ -25,7 +25,7 @@ Output
     Tab-delimited list of: m5nr id, dna sequence, semicolon seperated list of annotations, sequence id
 
 EXAMPLES
-    mg-get-sequences-for-taxon --id "kb|mg.287" --name Lachnospiraceae --level family --source RefSeq --evalue 8
+    mg-get-sequences-for-taxon --id "mgm4441680.3" --name Lachnospiraceae --level family --source RefSeq --evalue 8
 
 SEE ALSO
     -
@@ -60,8 +60,6 @@ def main(args):
     token = get_auth_token(opts)
     
     # build url
-    if opts.id.startswith('kb|'):
-        opts.id = kbid_to_mgid(opts.id)
     params = [ ('source', opts.source),
                ('evalue', opts.evalue),
                ('identity', opts.identity),
