@@ -91,7 +91,7 @@ def main(args):
     else:
         out_hdl = open(opts.output, 'w')
     
-    out_hdl.write(json.dumps(hmap)+"\n")
+    out_hdl.write(json.dumps(hmap, separators=(', ',': '), indent=4)+"\n")
     out_hdl.close()
     return 0
 
