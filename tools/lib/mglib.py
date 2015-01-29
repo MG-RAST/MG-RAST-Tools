@@ -30,6 +30,7 @@ def async_rest_api(url, auth=None, data=None, debug=False, delay=15):
         time.sleep(delay)
         result = obj_from_url(submit['url'], debug=debug)
     if 'ERROR' in result['data']:
+        sys.stderr.write("URL: %s\n" %url)
         sys.stderr.write("ERROR: %s\n" %result['data']['ERROR'])
         sys.exit(1)
     return result['data']
@@ -50,24 +51,29 @@ def obj_from_url(url, auth=None, data=None, debug=False):
         req = urllib2.Request(url, data, headers=header)
         res = urllib2.urlopen(req)
     except urllib2.HTTPError, error:
+        sys.stderr.write("URL: %s\n" %url)
         try:
             eobj = json.loads(error.read())
             sys.stderr.write("ERROR (%s): %s\n" %(error.code, eobj['ERROR']))
-            sys.exit(1)
         except:
             sys.stderr.write("ERROR (%s): %s\n" %(error.code, error.read()))
+        finally:
             sys.exit(1)
     if not res:
+        sys.stderr.write("URL: %s\n" %url)
         sys.stderr.write("ERROR: no results returned\n")
         sys.exit(1)
     obj = json.loads(res.read())
     if obj is None:
+        sys.stderr.write("URL: %s\n" %url)
         sys.stderr.write("ERROR: return structure not valid json format\n")
         sys.exit(1)
     if len(obj.keys()) == 0:
+        sys.stderr.write("URL: %s\n" %url)
         sys.stderr.write("ERROR: no data available\n")
         sys.exit(1)
     if 'ERROR' in obj:
+        sys.stderr.write("URL: %s\n" %url)
         sys.stderr.write("ERROR: %s\n" %obj['ERROR'])
         sys.exit(1)
     return obj
