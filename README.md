@@ -18,7 +18,7 @@ Repository of scripts and libraries for using the MG-RAST API and MG-RAST data
 
 -   Shock libs - <https://github.com/MG-RAST/Shock/tree/master/libs>
 
-### Python
+### Python / Perl
 
-In order for some scripts to run properly you have to add the lib directory to your PYTHONPATH.
-Please add the lib directory to your PYTHONPATH or exectute the set_env.sh script inside this directory.
+In order for some scripts to run properly you have to add the lib directory to your PYTHONPATH and PERL5LIB.
+Please add the lib directory to your PYTHONPATH and PERL5LIB, or source the set_env.sh script inside this directory.
