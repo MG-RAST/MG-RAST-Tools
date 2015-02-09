@@ -41,6 +41,11 @@ OUT_OBJ = {}
 
 # output annotations
 def output_annotation(md5s, func_md5, func_acc, amatrix, ematrix, otu, otu_num):
+    # check for data
+    func_len = len(func_md5)
+    if func_len == 0:
+        return
+    
     # set out object
     otu_obj = None
     if FORMAT == 'json':
@@ -58,6 +63,8 @@ def output_annotation(md5s, func_md5, func_acc, amatrix, ematrix, otu, otu_num):
     sum_confidence = 0
     func_num = 1
     for f in sorted(func_md5.iterkeys()):
+        if len(func_md5[f]) == 0:
+            continue        
         # get abund / evalue
         abund = 0
         sum_evalue = 0.0
@@ -86,8 +93,8 @@ def output_annotation(md5s, func_md5, func_acc, amatrix, ematrix, otu, otu_num):
     
     # populate json object
     if FORMAT == 'json':
-        otu_obj['ave_coverage'] = sum_coverage / float(len(func_md5))
-        otu_obj['ave_confidence'] = sum_confidence / float(len(func_md5))
+        otu_obj['ave_coverage'] = sum_coverage / float(func_len)
+        otu_obj['ave_confidence'] = sum_confidence / float(func_len)
         OUT_OBJ['otus'].append(otu_obj)
 
 # get annotations for taxa
