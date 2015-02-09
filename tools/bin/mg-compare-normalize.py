@@ -85,10 +85,19 @@ def main(args):
                 tmp_hdl.write(indata)
             else:
                 rows, cols, data = tab_to_matrix(indata)
+                data = map(lambda x: map(float, x), data) # floatify it
     except:
         sys.stderr.write("ERROR: unable to load input data\n")
         return 1
-    tmp_hdl.close()
+    finally:
+        tmp_hdl.close()
+    
+    # check values to see if already normalized, otherwise R fails badly
+    maxval = max( map(max, data) )
+    if maxval <= 1:
+        os.remove(tmp_in)
+        sys.stderr.write("ERROR: data is already normalized.\n")
+        return 1
     
     # retrieve data
     norm = None
