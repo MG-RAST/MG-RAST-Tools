@@ -146,6 +146,7 @@ def sparse_to_dense(sMatrix, rmax, cmax):
     return dMatrix
 
 # transform BIOM format to tabbed table
+# returns max value of matrix
 def biom_to_tab(biom, hdl, rows=None, use_id=True, col_name=False):
     if biom['matrix_type'] == 'sparse':
         matrix = sparse_to_dense(biom['data'], biom['shape'][0], biom['shape'][1])
@@ -155,6 +156,7 @@ def biom_to_tab(biom, hdl, rows=None, use_id=True, col_name=False):
         hdl.write( "\t%s\n" %"\t".join([c['name'] for c in biom['columns']]) )
     else:
         hdl.write( "\t%s\n" %"\t".join([c['id'] for c in biom['columns']]) )
+    rowmax = []
     for i, row in enumerate(matrix):
         name = biom['rows'][i]['id']
         if (not use_id) and ('ontology' in biom['rows'][i]['metadata']):
@@ -162,12 +164,14 @@ def biom_to_tab(biom, hdl, rows=None, use_id=True, col_name=False):
         if rows and (name not in rows):
             continue
         try:
-            hdl.write( "%s\t%s\n" %(name, "\t".join([str(r) for r in row])) )
+            rowmax.append(max(row))
+            hdl.write( "%s\t%s\n" %(name, "\t".join(map(str, row))) )
         except:
             try:
                 hdl.close()
             except:
                 pass
+    return max(rowmax)
 
 # retrieve a list of metadata values from biom file columns for given term
 # order is same as columns
