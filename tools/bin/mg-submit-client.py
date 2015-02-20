@@ -47,7 +47,7 @@ Output
     List contents of inbox 
 
 EXAMPLES
-    submit-client view
+    submit-client view all
 
 SEE ALSO
     -
@@ -159,7 +159,7 @@ def validate(format, files):
                 info = obj_from_url(API_URL+"/inbox/stats/"+f, auth=mgrast_auth['token'])
                 print info['status']
             else:
-                sys.stderr.write("ERROR: %s is not a fastq or fasta file\n"%f)
+                sys.stderr.write("ERROR: %s (%s) is not a fastq or fasta file\n"%(data['filename'], f))
         elif format == 'metadata':
             if data['stats_info']['file_type'] == 'excel':
                 info = obj_from_url(API_URL+"/metadata/validate", data='{"node_id":"'+f+'"}', auth=mgrast_auth['token'])
@@ -168,7 +168,7 @@ def validate(format, files):
                 else:
                     print "%s (%s) is an invaild metadata file:\n%s"%(data['filename'], f, info['message'])
             else:
-                sys.stderr.write("ERROR: %s is not a spreadsheet file\n"%f)
+                sys.stderr.write("ERROR: %s (%s) is not a spreadsheet file\n"%(data['filename'], f))
 
 def compute(action, files, retain, joinfile):
     if action = "sff2fastq":
@@ -194,7 +194,20 @@ def delete(files):
         print result['status']
 
 def submit(files, project):
-    pass
+    data = []
+    jobs = []
+    for f in files:
+        x = obj_from_url(API_URL+"/inbox/"+f, auth=mgrast_auth['token'])['files'][0]
+        if ('data_type' in x) and (x['data_type'] == format):
+            data.append(x)
+        else:
+            sys.stderr.write("ERROR: %s (%s) is not a valid sequence file\n"%(x['filename'], f))
+            sys.exit(1)
+    for d in data:
+        # reserve job
+        # create job
+        # add to project
+        # submit job
 
 def submitall(project):
     pass
