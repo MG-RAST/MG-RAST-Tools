@@ -138,7 +138,7 @@ def post_node(url, keyname, filename, attr, auth=None):
     try:
         req = requests.post(url, headers=headers, data=mdata, allow_redirects=True)
         rj = req.json()
-    except Exception as ex:
+    except:
         sys.stderr.write("Unable to connect to Shock server")
         sys.exit(1)
     if not (req.ok):
