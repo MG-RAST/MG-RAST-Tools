@@ -12,13 +12,13 @@ from mglib import *
 
 prehelp = """
 NAME
-    submit-client
+    mg-inbox
 
 VERSION
     %s
 
 SYNOPSIS
-    submit-client
+    mg-inbox
         --help
         login <user> <password>
         view all
@@ -45,7 +45,7 @@ Output
     List contents of inbox 
 
 EXAMPLES
-    submit-client view all
+    mg-inbox view all
 
 SEE ALSO
     -
