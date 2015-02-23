@@ -5,7 +5,6 @@ import sys
 import json
 import time
 import base64
-import urllib
 from operator import itemgetter
 from optparse import OptionParser
 from prettytable import PrettyTable
@@ -34,7 +33,6 @@ SYNOPSIS
         compute pairjoin_demultiplex <pair1 seq file id> <pair2 seq file id> <index file id> [--retain, --joinfile <filename>]
         delete <file id> <file id> ...
         submit --project <project id> <file id> <file id> ...
-        submitall --project <project id>
 
 DESCRIPTION
     Retrieve metadata for a metagenome.
@@ -153,7 +151,7 @@ def validate(format, files):
     for f in files:
         data = obj_from_url(API_URL+"/inbox/"+f, auth=mgrast_auth['token'])['files'][0]
         if ('data_type' in data) and (data['data_type'] == format):
-            print "%s (%s) is a vaild %s file"%(data['filename'], f, format)
+            print "%s (%s) is a valid %s file"%(data['filename'], f, format)
         elif format == 'sequence':
             if data['stats_info']['file_type'] in ['fasta', 'fastq']:
                 info = obj_from_url(API_URL+"/inbox/stats/"+f, auth=mgrast_auth['token'])
@@ -164,14 +162,14 @@ def validate(format, files):
             if data['stats_info']['file_type'] == 'excel':
                 info = obj_from_url(API_URL+"/metadata/validate", data='{"node_id":"'+f+'"}', auth=mgrast_auth['token'])
                 if info['is_valid'] == 1:
-                    print "%s (%s) is a vaild metadata file"%(data['filename'], f)
+                    print "%s (%s) is a valid metadata file"%(data['filename'], f)
                 else:
-                    print "%s (%s) is an invaild metadata file:\n%s"%(data['filename'], f, info['message'])
+                    print "%s (%s) is an invalid metadata file:\n%s"%(data['filename'], f, info['message'])
             else:
                 sys.stderr.write("ERROR: %s (%s) is not a spreadsheet file\n"%(data['filename'], f))
 
 def compute(action, files, retain, joinfile):
-    if action = "sff2fastq":
+    if action == "sff2fastq":
         data = {"sff_file": files[0]}
     elif action == "demultiplex":
         data = {"seq_file": files[0], "barcode_file": files[1]}
@@ -184,7 +182,7 @@ def compute(action, files, retain, joinfile):
         if joinfile:
             data['output'] = joinfile
     else:
-        sys.stderr.write("ERROR: invalid compute option. use one of: %s\n"%", ".join(valid_compute))
+        sys.stderr.write("ERROR: invalid compute option. use one of: %s\n"%", ".join(compute_options))
     info = obj_from_url(API_URL+"/inbox/"+action, data=json.dumps(data), auth=mgrast_auth['token'])
     print info['status']
 
@@ -194,23 +192,28 @@ def delete(files):
         print result['status']
 
 def submit(files, project):
-    data = []
-    jobs = []
+    info = []
     for f in files:
         x = obj_from_url(API_URL+"/inbox/"+f, auth=mgrast_auth['token'])['files'][0]
         if ('data_type' in x) and (x['data_type'] == format):
-            data.append(x)
+            info.append(x)
         else:
             sys.stderr.write("ERROR: %s (%s) is not a valid sequence file\n"%(x['filename'], f))
             sys.exit(1)
-    for d in data:
+    for i in info:
         # reserve job
+        data = {"input_id": i['id'], "name": os.path.splitext(i['filename'])[0]}
+        rjob = obj_from_url(API_URL+"/job/reserve", data=json.dumps(data), auth=mgrast_auth['token'])
         # create job
+        data = {"input_id": i['id'], "metagenome_id": rjob['metagenome_id']}
+        obj_from_url(API_URL+"/job/create", data=json.dumps(data), auth=mgrast_auth['token'])
         # add to project
+        data = {"project_id": project, "metagenome_id": rjob['metagenome_id']}
+        obj_from_url(API_URL+"/job/addproject", data=json.dumps(data), auth=mgrast_auth['token'])
         # submit job
-
-def submitall(project):
-    pass
+        data = {"input_id": i['id'], "metagenome_id": rjob['metagenome_id']}
+        sjob = obj_from_url(API_URL+"/job/submit", data=json.dumps(data), auth=mgrast_auth['token'])
+        print "metagenome %s created for file %s (%s). submission id is: %s"%(rjob['metagenome_id'], i['filename'], i['id'], sjob['id'])
 
 def main(args):
     global mgrast_auth, API_URL, SHOCK_URL
@@ -257,15 +260,15 @@ def main(args):
         sys.stderr.write("ERROR: %s missing file or name\n"%action)
         return 1
     elif action == "validate":
-        if (len(args) < 2) or (args[1] not in valid_validate):
-            sys.stderr.write("ERROR: invalid validate option. use one of: %s\n"%", ".join(valid_validate))
+        if (len(args) < 2) or (args[1] not in validate_options):
+            sys.stderr.write("ERROR: invalid validate option. use one of: %s\n"%", ".join(validate_options))
             return 1
         if len(args) < 3:
             sys.stderr.write("ERROR: validate missing file\n")
             return 1
     elif action == "compute":
-        if (len(args) < 2) or (args[1] not in valid_compute):
-            sys.stderr.write("ERROR: invalid compute option. use one of: %s\n"%", ".join(valid_compute))
+        if (len(args) < 2) or (args[1] not in compute_options):
+            sys.stderr.write("ERROR: invalid compute option. use one of: %s\n"%", ".join(compute_options))
             return 1
         if ( ((args[1] == "sff2fastq") and (len(args) != 3)) or
              ((args[1] in ["demultiplex", "pairjoin"]) and (len(args) != 4)) or
@@ -296,13 +299,11 @@ def main(args):
     elif action == "validate":
         validate(args[1], args[2:])
     elif action == "compute":
-        validate(args[1], args[2:], opts.retain, opts.joinfile)
+        compute(args[1], args[2:], opts.retain, opts.joinfile)
     elif action == "delete":
         delete(args[1:])
     elif action == "submit":
         submit(args[1:], opts.project)
-    elif action == "submitall":
-        submitall(opts.project)
     
     return 0
 
