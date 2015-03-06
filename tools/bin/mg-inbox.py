@@ -125,7 +125,7 @@ def view(vtype):
     pt.align['time'] = "l"
     print pt
 
-def upload(format, files):
+def upload(fformat, files):
     for f in files:
         attr = json.dumps({
             "type": "inbox",
@@ -134,7 +134,7 @@ def upload(format, files):
             "email": mgrast_auth['email']
         })
         # POST to shock
-        result = post_node(SHOCK_URL+"/node", format, f, attr, auth="mgrast "+mgrast_auth['token'])
+        result = post_node(SHOCK_URL+"/node", fformat, f, attr, auth="mgrast "+mgrast_auth['token'])
         # compute file info
         info = obj_from_url(API_URL+"/inbox/info/"+result['id'], auth=mgrast_auth['token'])
         print info['status']
@@ -147,18 +147,18 @@ def rename(fname, fid):
     result = obj_from_url(API_URL+"/inbox/"+fid, data='{"name":"'+fname+'"}', auth=mgrast_auth['token'], method='PUT')
     print result['status']
 
-def validate(format, files):
+def validate(fformat, files):
     for f in files:
         data = obj_from_url(API_URL+"/inbox/"+f, auth=mgrast_auth['token'])['files'][0]
-        if ('data_type' in data) and (data['data_type'] == format):
-            print "%s (%s) is a valid %s file"%(data['filename'], f, format)
-        elif format == 'sequence':
+        if ('data_type' in data) and (data['data_type'] == fformat):
+            print "%s (%s) is a valid %s file"%(data['filename'], f, fformat)
+        elif fformat == 'sequence':
             if data['stats_info']['file_type'] in ['fasta', 'fastq']:
                 info = obj_from_url(API_URL+"/inbox/stats/"+f, auth=mgrast_auth['token'])
                 print info['status']
             else:
                 sys.stderr.write("ERROR: %s (%s) is not a fastq or fasta file\n"%(data['filename'], f))
-        elif format == 'metadata':
+        elif fformat == 'metadata':
             if data['stats_info']['file_type'] == 'excel':
                 info = obj_from_url(API_URL+"/metadata/validate", data='{"node_id":"'+f+'"}', auth=mgrast_auth['token'])
                 if info['is_valid'] == 1:
@@ -195,7 +195,7 @@ def submit(files, project):
     info = []
     for f in files:
         x = obj_from_url(API_URL+"/inbox/"+f, auth=mgrast_auth['token'])['files'][0]
-        if ('data_type' in x) and (x['data_type'] == format):
+        if ('data_type' in x) and (x['data_type'] == 'sequence'):
             info.append(x)
         else:
             sys.stderr.write("ERROR: %s (%s) is not a valid sequence file\n"%(x['filename'], f))
