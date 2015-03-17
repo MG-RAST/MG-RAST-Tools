@@ -51,6 +51,7 @@ def main(args):
     parser.add_option("", "--evalue", dest="evalue", type="int", default=5, help="negative exponent value for maximum e-value cutoff, default is 5")
     parser.add_option("", "--identity", dest="identity", type="int", default=60, help="percent value for minimum % identity cutoff, default is 60")
     parser.add_option("", "--length", dest="length", type="int", default=15, help="value for minimum alignment length cutoff, default is 15")
+    parser.add_option("", "--version", type="int", dest="version", default=1, help="M5NR annotation version to use, default is 1")
     
     # get inputs
     (opts, args) = parser.parse_args()
@@ -72,6 +73,7 @@ def main(args):
                ('evalue', opts.evalue),
                ('identity', opts.identity),
                ('length', opts.length),
+               ('version', opts.version),
                ('result_type', 'abundance'),
                ('asynchronous', '1'),
                ('hide_metadata', '1') ]
@@ -87,7 +89,7 @@ def main(args):
         params = [ ('filter', opts.filter_name),
                    ('filter_level', opts.filter_level),
                    ('min_level', opts.level),
-                   ('version', '1') ]
+                   ('version', opts.version) ]
         url = opts.url+'/m5nr/taxonomy?'+urllib.urlencode(params, True)
         data = obj_from_url(url)
         sub_ann = set( map(lambda x: x[opts.level], data['data']) )
