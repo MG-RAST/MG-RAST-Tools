@@ -148,7 +148,7 @@ def main(args):
             for f in opts.filter_name.strip().split(','):
                 filter_list.append(f)
         # annotation mapping from m5nr
-        params = [ ('version', '1'),
+        params = [ ('version', opts.version),
                    ('min_level', opts.level),
                    ('source', opts.source) ]
         url = opts.url+'/m5nr/ontology?'+urllib.urlencode(params, True)
