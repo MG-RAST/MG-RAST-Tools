@@ -56,10 +56,10 @@ AUTHORS
 
 auth_file   = os.path.join(os.path.expanduser('~'), ".mgrast_auth")
 mgrast_auth = {}
-valid_actions    = ["login", "view", "upload", "validate", "compute", "delete", "submit", "submitall"]
+valid_actions    = ["login", "view", "upload", "rename", "validate", "compute", "delete", "submit", "submitall"]
 view_options     = ["all", "sequence"]
 validate_options = ["sequence", "metadata"]
-compute_options  = ["sff2fastq", "demultiplex", "pair_join", "pair_join_demultiplex"]
+compute_options  = ["sff2fastq", "demultiplex", "pairjoin", "pairjoin_demultiplex"]
 
 def get_auth():
     if not os.path.isfile(auth_file):
@@ -143,8 +143,9 @@ def upload(fformat, files):
             stats = obj_from_url(API_URL+"/inbox/stats/"+result['id'], auth=mgrast_auth['token'])
             print stats['status']
 
-def rename(fname, fid):
-    result = obj_from_url(API_URL+"/inbox/"+fid, data='{"name":"'+fname+'"}', auth=mgrast_auth['token'], method='PUT')
+def rename(fid, fname):
+    data = {"name": fname, "file": fid}
+    result = obj_from_url(API_URL+"/inbox/rename", data=json.dumps(data), auth=mgrast_auth['token'])
     print result['status']
 
 def validate(fformat, files):
@@ -160,11 +161,10 @@ def validate(fformat, files):
                 sys.stderr.write("ERROR: %s (%s) is not a fastq or fasta file\n"%(data['filename'], f))
         elif fformat == 'metadata':
             if data['stats_info']['file_type'] == 'excel':
-                info = obj_from_url(API_URL+"/metadata/validate", data='{"node_id":"'+f+'"}', auth=mgrast_auth['token'])
-                if info['is_valid'] == 1:
-                    print "%s (%s) is a valid metadata file"%(data['filename'], f)
-                else:
-                    print "%s (%s) is an invalid metadata file:\n%s"%(data['filename'], f, info['message'])
+                info = obj_from_url(API_URL+"/inbox/validate/"+f, auth=mgrast_auth['token'])
+                print info['status']
+                if info['status'].startswith('invalid'):
+                    print info['error']
             else:
                 sys.stderr.write("ERROR: %s (%s) is not a spreadsheet file\n"%(data['filename'], f))
 
@@ -296,6 +296,8 @@ def main(args):
             upload('bzip2', args[1:])
         else:
             upload('upload', args[1:])
+    elif action == "rename":
+        rename(args[1], args[2])
     elif action == "validate":
         validate(args[1], args[2:])
     elif action == "compute":
