@@ -3,6 +3,7 @@
 import sys
 from operator import itemgetter
 from optparse import OptionParser
+from prettytable import PrettyTable
 from mglib import *
 
 prehelp = """
@@ -89,12 +90,14 @@ def main(args):
     
     # just list
     if opts.list:
-        safe_print("Metagenome\tFile Name\tFile ID\tChecksum\tByte Size\n")
+        pt = PrettyTable(["Metagenome", "File Name", "File ID", "Checksum", "Byte Size"])
         for mg, files in all_files.iteritems():
             for f in files:
                 fsize = f['file_size'] if f['file_size'] else 0
-                safe_print("%s\t%s\t%s\t%s\t%d\n"%(mg, f['file_name'], f['file_id'], f['file_md5'], fsize))
-        sys.stdout.close()
+                pt.add_row([mg, f['file_name'], f['file_id'], f['file_md5'], fsize])
+        pt.align = "l"
+        pt.align['Byte Size'] = "r"
+        print pt
         return 0
     
     # download all in dirs by ID
@@ -109,6 +112,8 @@ def main(args):
         for f in files:
             if opts.file:
                 if f['file_id'] == opts.file:
+                    file_download(token, f, dirpath=mgdir)
+                elif f['file_name'] == opts.file:
                     file_download(token, f, dirpath=mgdir)
             else:
                 file_download(token, f, dirpath=mgdir)
