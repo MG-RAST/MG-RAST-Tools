@@ -149,6 +149,7 @@ def status(sid):
         print pt_mg
 
 def wait_on_complete(sid, json_out):
+    listed_mgs = set()
     incomplete = True
     data = None
     total_mg = 0
@@ -169,6 +170,9 @@ def wait_on_complete(sid, json_out):
         done_mg  = 0
         if total_mg > 0:
             for mg in data['status']['metagenomes']:
+                if mg['id'] not in listed_mgs:
+                    print "metagenome analysis started: "+mg['id']
+                    listed_mgs.add(mg['id'])
                 if mg['status'] == "completed":
                     done_mg += 1
             if total_mg == done_mg:
@@ -202,29 +206,34 @@ def delete(sid):
     data = obj_from_url(API_URL+"/submission/"+sid, auth=mgrast_auth['token'], method='DELETE')
     print data['status']
 
-def seqs_from_json(stype, json_in, tmp_dir):
+def seqs_from_json(json_in, tmp_dir):
     files = []
+    shock_auth = "OAuth "+mgrast_auth['token']
     try:
         seq_obj = json.load(open(json_in, 'r'))
     except:
         sys.stderr.write("ERROR: %s is invalid json\n"%json_in)
         sys.exit(1)
-    if (stype == 'simple') and ('handle' in seq_obj):
+    # simple type
+    if 'handle' in seq_obj:
+        stype = "simple"
         down_url  = "%s/node/%s?download"%(seq_obj['handle']['url'], seq_obj['handle']['id'])
         down_file = os.path.join(tmp_dir, seq_obj['handle']['file_name'])
         down_hdl  = open(down_file, 'w')
-        file_from_url(down_url, down_hdl, auth=mgrast_auth['token'])
+        file_from_url(down_url, down_hdl, sauth=shock_auth)
         down_hdl.close()
         files.append(down_file)
-    elif (stype == 'pairjoin') and ('handle_1' in seq_obj) and ('handle_2' in seq_obj):
+    # pairjoin type
+    elif ('handle_1' in seq_obj) and ('handle_2' in seq_obj):
+        stype = "pairjoin"
         down_url_1  = "%s/node/%s?download"%(seq_obj['handle_1']['url'], seq_obj['handle_1']['id'])
         down_url_2  = "%s/node/%s?download"%(seq_obj['handle_2']['url'], seq_obj['handle_2']['id'])
         down_file_1 = os.path.join(tmp_dir, seq_obj['handle_1']['file_name'])
         down_file_2 = os.path.join(tmp_dir, seq_obj['handle_2']['file_name'])
         down_hdl_1  = open(down_file_1, 'w')
         down_hdl_2  = open(down_file_2, 'w')
-        file_from_url(down_url_1, down_hdl_1, auth=mgrast_auth['token'])
-        file_from_url(down_url_2, down_hdl_2, auth=mgrast_auth['token'])
+        file_from_url(down_url_1, down_hdl_1, sauth=shock_auth)
+        file_from_url(down_url_2, down_hdl_2, sauth=shock_auth)
         down_hdl_1.close()
         down_hdl_2.close()
         files.append(down_file_1)
@@ -232,7 +241,7 @@ def seqs_from_json(stype, json_in, tmp_dir):
     else:
         sys.stderr.write("ERROR: input object %s is incorrect format\n"%json_in)
         sys.exit(1)
-    return files
+    return stype, files
 
 def submit(stype, files, opts):
     # so far simple only
@@ -270,7 +279,8 @@ def submit(stype, files, opts):
         data['barcode_count'] = opts.bcnum
     # submit it
     result = obj_from_url(API_URL+"/submission/submit", data=json.dumps(data), auth=mgrast_auth['token'])
-    if opts.synch:
+    if opts.synch or opts.json_out:
+        print "submission started: "+result['id']
         wait_on_complete(result['id'], opts.json_out)
     else:
         status(result['id'])
@@ -337,10 +347,16 @@ def main(args):
     
     # get inputs
     (opts, args) = parser.parse_args()
-    if len(args) < 1:
-        sys.stderr.write("ERROR: missing action\n")
-        return 1
-    action = args[0]
+    
+    # special case
+    json_submit = True if opts.json_in and os.path.isfile(opts.json_in) else False
+    if json_submit:
+        action = "submit"
+    else:
+        if len(args) < 1:
+            sys.stderr.write("ERROR: missing action\n")
+            return 1
+        action = args[0]
     API_URL = opts.mgrast_url
     SHOCK_URL = opts.shock_url
     
@@ -354,7 +370,7 @@ def main(args):
     elif (action in ["status", "delete"]) and (len(args) < 2):
         sys.stderr.write("ERROR: %s missing submission ID\n"%action)
         return 1
-    elif (action == "submit"):
+    elif (action == "submit") and (not json_submit):
         if not (opts.project_id or opts.project_name or opts.metadata):
             sys.stderr.write("ERROR: invalid submit, must have one of project_id, project_name, or metadata\n")
             return 1
@@ -364,10 +380,9 @@ def main(args):
         if (args[1] == "pairjoin_demultiplex") and (opts.bcnum < 2):
             sys.stderr.write("ERROR: pairjoin_demultiplex requires a minimum of 2 barcodes\n")
             return 1
-        if ( ((args[1] == "simple") and (len(args) < 3) and (not opts.json_in)) or
+        if ( ((args[1] == "simple") and (len(args) < 3)) or
              ((args[1] == "batch") and (len(args) != 3)) or
-             ((args[1] == "demultiplex") and (len(args) != 4)) or
-             ((args[1] == "pairjoin") and (len(args) != 4) and (not opts.json_in)) or
+             ((args[1] in ["demultiplex", "pairjoin"]) and (len(args) != 4)) or
              ((args[1] == "pairjoin_demultiplex") and (len(args) != 5)) ):
             sys.stderr.write("ERROR: submit %s missing file(s)\n"%args[1])
             return 1
@@ -391,13 +406,16 @@ def main(args):
     elif action == "delete":
         delete(args[1])
     elif action == "submit":
-        if (args[1] == "pairjoin") and (not opts.mg_name) and opts.json_out:
-            opts.mg_name = os.path.splitext(opts.json_out)[0]
-        if opts.json_in and (args[1] in ["simple", "pairjoin"]):
-            in_files = seqs_from_json(args[1], opts.json_in, opts.tmp_dir)
+        # process input json if exists
+        if json_submit:
+            stype, infiles = seqs_from_json(opts.json_in, opts.tmp_dir)
         else:
-            in_files = args[2:]
-        submit(args[1], in_files, opts)
+            stype, infiles = args[1], args[2:]
+        # get name from output json if used
+        if opts.json_out and (stype == "pairjoin") and (not opts.mgname):
+            opts.mgname = os.path.splitext(opts.json_out)[0]
+        # submit it
+        submit(stype, infiles, opts)
 
     return 0
 

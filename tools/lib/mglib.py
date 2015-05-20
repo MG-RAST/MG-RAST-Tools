@@ -94,10 +94,12 @@ def stdout_from_url(url, auth=None, data=None, debug=False):
     file_from_url(url, sys.stdout, auth=auth, data=data, debug=debug)
 
 # print to file results of MG-RAST or Shock API
-def file_from_url(url, handle, auth=None, data=None, debug=False):
+def file_from_url(url, handle, auth=None, sauth=None, data=None, debug=False):
     header = {'Accept': 'text/plain'}
     if auth:
         header['Auth'] = auth
+    if sauth:
+        header['Authorization'] = sauth
     if data:
         header['Content-Type'] = 'application/json'
     if debug:
@@ -364,7 +366,7 @@ def get_auth_token(opts):
         return os.environ['KB_AUTH_TOKEN']
     if opts.token:
         return opts.token
-    elif opts.user or opts.passwd:
+    elif hasattr(opts, 'user') and hasattr(opts, 'passwd') and (opts.user or opts.passwd):
         if opts.user and opts.passwd:
             return token_from_login(opts.user, opts.passwd)
         else:
