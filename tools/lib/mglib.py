@@ -93,7 +93,7 @@ def obj_from_url(url, auth=None, data=None, debug=False, method=None):
 def stdout_from_url(url, auth=None, data=None, debug=False):
     file_from_url(url, sys.stdout, auth=auth, data=data, debug=debug)
 
-# print to file results of MG-RAST API
+# print to file results of MG-RAST or Shock API
 def file_from_url(url, handle, auth=None, data=None, debug=False):
     header = {'Accept': 'text/plain'}
     if auth:
@@ -111,7 +111,10 @@ def file_from_url(url, handle, auth=None, data=None, debug=False):
     except urllib2.HTTPError, error:
         try:
             eobj = json.loads(error.read())
-            sys.stderr.write("ERROR (%s): %s\n" %(error.code, eobj['ERROR']))
+            if 'ERROR' in eobj:
+                sys.stderr.write("ERROR (%s): %s\n" %(error.code, eobj['ERROR']))
+            elif 'error' in eobj:
+                sys.stderr.write("ERROR (%s): %s\n" %(error.code, eobj['error'][0]))
             sys.exit(1)
         except:
             sys.stderr.write("ERROR (%s): %s\n" %(error.code, error.read()))
