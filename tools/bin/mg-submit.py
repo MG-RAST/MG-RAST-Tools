@@ -168,6 +168,7 @@ def wait_on_complete(sid, json_out):
         # check for metagenomes
         total_mg = len(data['status']['metagenomes'])
         done_mg  = 0
+        error_mg = 0
         if total_mg > 0:
             for mg in data['status']['metagenomes']:
                 if mg['id'] not in listed_mgs:
@@ -175,15 +176,23 @@ def wait_on_complete(sid, json_out):
                     listed_mgs.add(mg['id'])
                 if mg['status'] == "completed":
                     done_mg += 1
-            if total_mg == done_mg:
+                elif mg['status'] == "suspend":
+                    error_mg += 1
+            if total_mg == (done_mg + error_mg):
                 incomplete = False
     # display completed
     if json_out:
         mgs = []
         jhdl = open(json_out, 'w')
         for mg in data['status']['metagenomes']:
-            mgdata = obj_from_url(API_URL+"/metagenome/"+mg['id']+"?verbosity=full", auth=mgrast_auth['token'])
-            mgs.append(mgdata)
+            if mg['status'] == "completed":
+                print "metagenome analysis completed: "+mg['id']
+                mgdata = obj_from_url(API_URL+"/metagenome/"+mg['id']+"?verbosity=full", auth=mgrast_auth['token'])
+                mgs.append(mgdata)
+            elif mg['status'] == "suspend":
+                print "metagenome analysis failed: "+mg['id']
+                if "error" in mg:
+                    print "[error] "+mg['error']
         if len(mgs) == 1:
             # output single dict
             json.dump(mgs[0], jhdl)
