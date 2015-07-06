@@ -25,7 +25,7 @@ Output
     BLAST m8 format - tab-delimited list of: query sequence id, hit m5nr id, percentage identity, alignment length,	number of mismatches, number of gap openings, query start, query end, hit start, hit end, e-value, bit score, semicolon seperated list of annotations
 
 EXAMPLES
-    mg-get-similarity-for-taxon --id "kb|mg.287" --name Lachnospiraceae --level family --source RefSeq --evalue 8
+    mg-get-similarity-for-taxon --id "mgm4441680.3" --name Lachnospiraceae --level family --source RefSeq --evalue 8
 
 SEE ALSO
     -
@@ -60,8 +60,6 @@ def main(args):
     token = get_auth_token(opts)
     
     # build url
-    if opts.id.startswith('kb|'):
-        opts.id = kbid_to_mgid(opts.id)
     params = [ ('source', opts.source),
                ('evalue', opts.evalue),
                ('identity', opts.identity),

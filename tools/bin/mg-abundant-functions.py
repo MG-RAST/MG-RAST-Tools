@@ -25,7 +25,7 @@ Output
     Tab-delimited list of function and abundance sorted by abundance (largest first). 'top' option controls number of rows returned.
 
 EXAMPLES
-    mg-abundant-functions --id "kb|mg.287" --level level3 --source Subsystems --top 20 --evalue 8
+    mg-abundant-functions --id "mgm4441680.3" --level level3 --source Subsystems --top 20 --evalue 8
 
 SEE ALSO
     -
@@ -51,6 +51,7 @@ def main(args):
     parser.add_option("", "--evalue", dest="evalue", type="int", default=5, help="negative exponent value for maximum e-value cutoff, default is 5")
     parser.add_option("", "--identity", dest="identity", type="int", default=60, help="percent value for minimum % identity cutoff, default is 60")
     parser.add_option("", "--length", dest="length", type="int", default=15, help="value for minimum alignment length cutoff, default is 15")
+    parser.add_option("", "--version", type="int", dest="version", default=1, help="M5NR annotation version to use, default is 1")
     
     # get inputs
     (opts, args) = parser.parse_args()
@@ -66,14 +67,13 @@ def main(args):
     token = get_auth_token(opts)
     
     # build url
-    if opts.id.startswith('kb|'):
-        opts.id = kbid_to_mgid(opts.id)
     params = [ ('id', opts.id),
                ('group_level', opts.level), 
                ('source', opts.source),
                ('evalue', opts.evalue),
                ('identity', opts.identity),
                ('length', opts.length),
+               ('version', opts.version),
                ('result_type', 'abundance'),
                ('asynchronous', '1'),
                ('hide_metadata', '1') ]
@@ -89,7 +89,7 @@ def main(args):
         params = [ ('filter', opts.filter_name),
                    ('filter_level', opts.filter_level),
                    ('min_level', opts.level),
-                   ('version', '1'),
+                   ('version', opts.version),
                    ('source', opts.source) ]
         url = opts.url+'/m5nr/ontology?'+urllib.urlencode(params, True)
         data = obj_from_url(url)

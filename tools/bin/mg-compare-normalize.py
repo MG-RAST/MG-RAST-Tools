@@ -30,7 +30,7 @@ Output
     Tab-delimited table of abundance profiles, metagenomes in columns and annotation in rows.
 
 EXAMPLES
-    mg-compare-taxa --ids "kb|mg.286,kb|mg.287,kb|mg.288,kb|mg.289" --level class --source RefSeq --format text | mg-compare-normalize --input - --format text
+    mg-compare-taxa --ids "mgm4441679.3,mgm4441680.3,mgm4441681.3,mgm4441682.3" --level class --source RefSeq --format text | mg-compare-normalize --input - --format text
 
 SEE ALSO
     -
@@ -66,6 +66,7 @@ def main(args):
     rows = []
     cols = []
     data = []
+    maxval = 0
     tmp_in = 'tmp_'+random_str()+'.txt'
     tmp_hdl = open(tmp_in, 'w')
     try:
@@ -74,21 +75,30 @@ def main(args):
             try:
                 biom = json.loads(indata)
                 if opts.rlib:
-                    biom_to_tab(biom, tmp_hdl)
+                    maxval = biom_to_tab(biom, tmp_hdl)
                 else:
                     rows, cols, data = biom_to_matrix(biom)
             except:
                 sys.stderr.write("ERROR: input BIOM data not correct format\n")
                 return 1
         else:
+            rows, cols, data = tab_to_matrix(indata)
+            data = map(lambda x: map(float, x), data) # floatify it
             if opts.rlib:
                 tmp_hdl.write(indata)
-            else:
-                rows, cols, data = tab_to_matrix(indata)
     except:
         sys.stderr.write("ERROR: unable to load input data\n")
         return 1
-    tmp_hdl.close()
+    finally:
+        tmp_hdl.close()
+    
+    # check values to see if already normalized, otherwise R fails badly
+    if len(data) > 0:
+        maxval = max( map(max, data) )
+    if maxval <= 1:
+        os.remove(tmp_in)
+        sys.stderr.write("ERROR: data is already normalized.\n")
+        return 1
     
     # retrieve data
     norm = None

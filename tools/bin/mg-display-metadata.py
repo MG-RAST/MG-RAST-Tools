@@ -24,7 +24,7 @@ Output
     Tab-delimited table of metadata key-value pairs, either minimal or full metadata.
 
 EXAMPLES
-    mg-display-metadata --id "kb|mg.287" --verbosity full
+    mg-display-metadata --id "mgm4441680.3" --verbosity full
 
 SEE ALSO
     -
@@ -54,8 +54,6 @@ def main(args):
     token = get_auth_token(opts)
     
     # build call url
-    if opts.id.startswith('kb|'):
-        opts.id = kbid_to_mgid(opts.id)
     verb = opts.verbosity if opts.verbosity == 'mixs' else 'metadata'
     url  = opts.url+'/metagenome/'+opts.id+'?verbosity='+verb
 

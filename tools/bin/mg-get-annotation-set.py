@@ -15,7 +15,7 @@ VERSION
     %s
 
 SYNOPSIS
-    mg-get-annotation-set [ --help, --user <user>, --passwd <password>, --token <oAuth token>, --id <metagenome id>, --level <taxon level>, --top <top N abundant organsims>, --rest, --source <datasource>, --evalue <evalue negative exponent>, --identity <percent identity>, --length <alignment length> ]
+    mg-get-annotation-set [ --help, --user <user>, --passwd <password>, --token <oAuth token>, --id <metagenome id>, --level <taxon level>, --top <top N abundant organsims>, --rest <boolean>, --source <datasource>, --output <output file or stdout>, --format <cv: 'text' or 'json'>, --evalue <evalue negative exponent>, --identity <percent identity>, --length <alignment length> ]
 
 DESCRIPTION
     Retrieve functional annotations for given metagenome and organism.
@@ -26,7 +26,7 @@ Output
     Tab-delimited list of annotations: feature list, function, abundance for function, avg evalue for function, organism
 
 EXAMPLES
-    mg-get-annotation-set --id "kb|mg.287" --top 5 --level genus --source SEED
+    mg-get-annotation-set --id "mgm4441680.3" --top 5 --level genus --source SEED
 
 SEE ALSO
     -
@@ -35,17 +35,67 @@ AUTHORS
     %s
 """
 
+FORMAT  = 'text'
+OUT_HDL = None
+OUT_OBJ = {}
+
 # output annotations
-def output_annotation(md5s, func_md5, func_acc, amatrix, ematrix, otu):
+def output_annotation(md5s, func_md5, func_acc, amatrix, ematrix, otu, otu_num):
+    # check for data
+    func_len = len(func_md5)
+    if func_len == 0:
+        return
+    
+    # set out object
+    otu_obj = None
+    if FORMAT == 'json':
+        otu_obj = {
+            'id': "%s.otu.%d"%(OUT_OBJ['id'], otu_num),
+            'name': otu,
+            'source_id': otu,
+            'source': OUT_OBJ['source'],
+            'ave_coverage': 0,
+            'ave_confidence': 0,
+            'functions': []
+        }
+
+    sum_coverage = 0
+    sum_confidence = 0
+    func_num = 1
     for f in sorted(func_md5.iterkeys()):
+        if len(func_md5[f]) == 0:
+            continue        
+        # get abund / evalue
         abund = 0
-        evalue = 0.0
+        sum_evalue = 0.0
         for i, m in enumerate(md5s):
             if m in func_md5[f]:
                 abund += amatrix[i][0]
-                evalue += ematrix[i][0]
-        # output: feature list, function, abundance for function, avg evalue for function, organism
-        safe_print("%s\t%s\t%d\t%.2e\t%s\n" %(",".join(func_acc[f]), f, abund, 10**(evalue/len(func_md5[f])), otu))
+                sum_evalue += ematrix[i][0]
+        avg_evalue = 10**(sum_evalue / len(func_md5[f]))
+        # outputs
+        if FORMAT == 'json':
+            # set feature object
+            otu_obj['functions'].append({
+                'id': "%s.func.%d"%(otu_obj['id'], func_num),
+                'functional_role': f,
+                'abundance': abund,
+                'confidence': avg_evalue,
+                'reference_genes': list(func_acc[f])
+            })
+        else:
+            # output: feature list, function, abundance for function, avg evalue for function, organism
+            OUT_HDL.write("%s\t%s\t%d\t%.2e\t%s\n" %(",".join(func_acc[f]), f, abund, avg_evalue, otu))
+        # iterate
+        sum_coverage += abund
+        sum_confidence += avg_evalue
+        func_num += 1
+    
+    # populate json object
+    if FORMAT == 'json':
+        otu_obj['ave_coverage'] = sum_coverage / float(func_len)
+        otu_obj['ave_confidence'] = sum_confidence / float(func_len)
+        OUT_OBJ['otus'].append(otu_obj)
 
 # get annotations for taxa
 def annotations_for_taxa(opts, md5s, taxa, inverse=False):
@@ -87,18 +137,21 @@ def annotations_for_taxa(opts, md5s, taxa, inverse=False):
     return func_md5, func_acc
 
 def main(args):
+    global FORMAT, OUT_HDL, OUT_OBJ
     OptionParser.format_description = lambda self, formatter: self.description
     OptionParser.format_epilog = lambda self, formatter: self.epilog
     parser = OptionParser(usage='', description=prehelp%VERSION, epilog=posthelp%AUTH_LIST)
-    parser.add_option("", "--id", dest="id", default=None, help="KBase Metagenome ID, required")
+    parser.add_option("", "--id", dest="id", default=None, help="Metagenome ID, required")
     parser.add_option("", "--url", dest="url", default=API_URL, help="communities API url")
     parser.add_option("", "--user", dest="user", default=None, help="OAuth username")
     parser.add_option("", "--passwd", dest="passwd", default=None, help="OAuth password")
     parser.add_option("", "--token", dest="token", default=None, help="OAuth token")
-    parser.add_option("", "--level", dest="level", default='species', help="taxon level to group annotations by, default is species")
+    parser.add_option("", "--level", dest="level", default='genus', help="taxon level to group annotations by, default is genus")
     parser.add_option("", "--top", type="int", dest="top", default=10, help="produce annotations for top N abundant organisms, default is 10")
-    parser.add_option("", "--rest", dest="rest", action="store_true", default=False, help="lump together remaining organisms after top N, default is off")
+    parser.add_option("", "--rest", dest="rest", type="int", default=0, help="lump together remaining organisms after top N, default is off: 1=on, 0=off")
     parser.add_option("", "--source", dest="source", default='SEED', help="datasource to filter results by, default is SEED")
+    parser.add_option("", "--output", dest="output", default='-', help="output: filename or stdout (-), default is stdout")
+    parser.add_option("", "--format", dest="format", default='text', help="output format: 'text' for tabbed table, 'json' for JSON format, default is text")
     parser.add_option("", "--evalue", type="int", dest="evalue", default=5, help="negative exponent value for maximum e-value cutoff, default is 5")
     parser.add_option("", "--identity", type="int", dest="identity", default=60, help="percent value for minimum % identity cutoff, default is 60")
     parser.add_option("", "--length", type="int", dest="length", default=15, help="value for minimum alignment length cutoff, default is 15")
@@ -106,14 +159,23 @@ def main(args):
     # get inputs
     (opts, args) = parser.parse_args()
     opts.top = int(opts.top)
-    if not opts.id:
-        sys.stderr.write("ERROR: id required\n")
-        return 1
+    FORMAT = opts.format
     
     # get auth
     token = get_auth_token(opts)
-    if opts.id.startswith('kb|'):
-        opts.id = kbid_to_mgid(opts.id)
+    
+    # id may be json metagenome object
+    if os.path.isfile(opts.id):
+        id_str = open(opts.id,'r').read()
+        try:
+            id_obj = json.loads(id_str)
+            opts.id = id_obj['id']
+        except:
+            sys.stderr.write("ERROR: id not found in %s\n"%opts.id)
+            return 1
+    if not opts.id:
+        sys.stderr.write("ERROR: id required\n")
+        return 1
     
     # get top taxa
     top_taxa = []
@@ -152,21 +214,45 @@ def main(args):
     # all md5s
     md5s = map(lambda x: x['id'], abiom['rows'])
     
+    # set json object
+    obj_id = ".".join([opts.id, opts.level, str(opts.top)])
+    if FORMAT == 'json':
+        OUT_OBJ = {
+            'id': obj_id,
+            'name': obj_id+'.annot',
+            'type': 'metagenome',
+            'source_id': obj_id,
+            'source': opts.source,
+            'confidence_type': 'blat',
+            'otus': []
+        }
+    
+    # get output handle
+    if (not opts.output) or (opts.output == '-'):
+        OUT_HDL = sys.stdout
+    else:
+        OUT_HDL = open(opts.output, 'w')
+
     # get annotations for taxa
     if opts.top > 0:
         # get annotations for individual taxa
-        for taxa in top_taxa:
+        for i, taxa in enumerate(top_taxa):
             func_md5, func_acc = annotations_for_taxa(opts, md5s, [taxa])
-            output_annotation(md5s, func_md5, func_acc, amatrix, ematrix, taxa)
+            output_annotation(md5s, func_md5, func_acc, amatrix, ematrix, taxa, i+1)
         # get annotations for tail
         if opts.rest:
             func_md5, func_acc = annotations_for_taxa(opts, md5s, top_taxa, True)
-            output_annotation(md5s, func_md5, func_acc, amatrix, ematrix, 'tail')
+            output_annotation(md5s, func_md5, func_acc, amatrix, ematrix, 'tail', i+2)
     else:
         # get annotations for all taxa
         func_md5, func_acc = annotations_for_taxa(opts, md5s, top_taxa)
-        output_annotation(md5s, func_md5, func_acc, amatrix, ematrix, 'glob')
+        output_annotation(md5s, func_md5, func_acc, amatrix, ematrix, 'glob', 1)
     
+    # output for json format
+    if opts.format == 'json':
+        OUT_HDL.write(json.dumps(OUT_OBJ)+"\n")
+    
+    OUT_HDL.close()
     return 0
     
 

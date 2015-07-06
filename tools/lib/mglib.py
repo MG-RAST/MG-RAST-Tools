@@ -8,9 +8,12 @@ import json
 import string
 import random
 import subprocess
+import requests
+import cStringIO
+from requests_toolbelt import MultipartEncoder
 
 # don't buffer stdout
-sys.stdout = os.fdopen(sys.stdout.fileno(), 'w', 0)
+#sys.stdout = os.fdopen(sys.stdout.fileno(), 'w', 0)
 
 VERSION = '1'
 API_URL = "http://api.metagenomics.anl.gov/"+VERSION
@@ -30,16 +33,18 @@ def async_rest_api(url, auth=None, data=None, debug=False, delay=15):
         time.sleep(delay)
         result = obj_from_url(submit['url'], debug=debug)
     if 'ERROR' in result['data']:
+        if debug:
+            sys.stderr.write("URL: %s\n" %url)
         sys.stderr.write("ERROR: %s\n" %result['data']['ERROR'])
         sys.exit(1)
     return result['data']
 
 # return python struct from JSON output of MG-RAST API
-def obj_from_url(url, auth=None, data=None, debug=False):
+def obj_from_url(url, auth=None, data=None, debug=False, method=None):
     header = {'Accept': 'application/json'}
     if auth:
         header['Auth'] = auth
-    if data:
+    if data or method:
         header['Content-Type'] = 'application/json'
     if debug:
         if data:
@@ -48,26 +53,38 @@ def obj_from_url(url, auth=None, data=None, debug=False):
         print "url:\t"+url
     try:
         req = urllib2.Request(url, data, headers=header)
+        if method:
+            req.get_method = lambda: method
         res = urllib2.urlopen(req)
     except urllib2.HTTPError, error:
+        if debug:
+            sys.stderr.write("URL: %s\n" %url)
         try:
             eobj = json.loads(error.read())
             sys.stderr.write("ERROR (%s): %s\n" %(error.code, eobj['ERROR']))
-            sys.exit(1)
         except:
             sys.stderr.write("ERROR (%s): %s\n" %(error.code, error.read()))
+        finally:
             sys.exit(1)
     if not res:
+        if debug:
+            sys.stderr.write("URL: %s\n" %url)
         sys.stderr.write("ERROR: no results returned\n")
         sys.exit(1)
     obj = json.loads(res.read())
     if obj is None:
+        if debug:
+            sys.stderr.write("URL: %s\n" %url)
         sys.stderr.write("ERROR: return structure not valid json format\n")
         sys.exit(1)
     if len(obj.keys()) == 0:
+        if debug:
+            sys.stderr.write("URL: %s\n" %url)
         sys.stderr.write("ERROR: no data available\n")
         sys.exit(1)
     if 'ERROR' in obj:
+        if debug:
+            sys.stderr.write("URL: %s\n" %url)
         sys.stderr.write("ERROR: %s\n" %obj['ERROR'])
         sys.exit(1)
     return obj
@@ -76,11 +93,13 @@ def obj_from_url(url, auth=None, data=None, debug=False):
 def stdout_from_url(url, auth=None, data=None, debug=False):
     file_from_url(url, sys.stdout, auth=auth, data=data, debug=debug)
 
-# print to file results of MG-RAST API
-def file_from_url(url, handle, auth=None, data=None, debug=False):
+# print to file results of MG-RAST or Shock API
+def file_from_url(url, handle, auth=None, sauth=None, data=None, debug=False):
     header = {'Accept': 'text/plain'}
     if auth:
         header['Auth'] = auth
+    if sauth:
+        header['Authorization'] = sauth
     if data:
         header['Content-Type'] = 'application/json'
     if debug:
@@ -94,7 +113,10 @@ def file_from_url(url, handle, auth=None, data=None, debug=False):
     except urllib2.HTTPError, error:
         try:
             eobj = json.loads(error.read())
-            sys.stderr.write("ERROR (%s): %s\n" %(error.code, eobj['ERROR']))
+            if 'ERROR' in eobj:
+                sys.stderr.write("ERROR (%s): %s\n" %(error.code, eobj['ERROR']))
+            elif 'error' in eobj:
+                sys.stderr.write("ERROR (%s): %s\n" %(error.code, eobj['error'][0]))
             sys.exit(1)
         except:
             sys.stderr.write("ERROR (%s): %s\n" %(error.code, error.read()))
@@ -107,6 +129,30 @@ def file_from_url(url, handle, auth=None, data=None, debug=False):
         if not chunk:
             break
         handle.write(chunk)
+
+# POST file to Shock
+def post_node(url, keyname, filename, attr, auth=None):
+    data = {
+        keyname: (os.path.basename(filename), open(filename)),
+        'attributes': ('unknown', cStringIO.StringIO(attr))
+    }
+    mdata = MultipartEncoder(fields=data)
+    headers = {'Content-Type': mdata.content_type}
+    if auth:
+        headers['Authorization'] = auth
+    try:
+        req = requests.post(url, headers=headers, data=mdata, allow_redirects=True)
+        rj = req.json()
+    except:
+        sys.stderr.write("Unable to connect to Shock server")
+        sys.exit(1)
+    if not (req.ok):
+        sys.stderr.write("Unable to connect to Shock server")
+        sys.exit(1)
+    if rj['error']:
+        sys.stderr.write("Shock error %s: %s"%(rj['status'], rj['error'][0]))
+        sys.exit(1)
+    return rj['data']
 
 # safe handling of stdout for piping
 def safe_print(text):
@@ -134,6 +180,7 @@ def sparse_to_dense(sMatrix, rmax, cmax):
     return dMatrix
 
 # transform BIOM format to tabbed table
+# returns max value of matrix
 def biom_to_tab(biom, hdl, rows=None, use_id=True, col_name=False):
     if biom['matrix_type'] == 'sparse':
         matrix = sparse_to_dense(biom['data'], biom['shape'][0], biom['shape'][1])
@@ -143,6 +190,7 @@ def biom_to_tab(biom, hdl, rows=None, use_id=True, col_name=False):
         hdl.write( "\t%s\n" %"\t".join([c['name'] for c in biom['columns']]) )
     else:
         hdl.write( "\t%s\n" %"\t".join([c['id'] for c in biom['columns']]) )
+    rowmax = []
     for i, row in enumerate(matrix):
         name = biom['rows'][i]['id']
         if (not use_id) and ('ontology' in biom['rows'][i]['metadata']):
@@ -150,12 +198,14 @@ def biom_to_tab(biom, hdl, rows=None, use_id=True, col_name=False):
         if rows and (name not in rows):
             continue
         try:
-            hdl.write( "%s\t%s\n" %(name, "\t".join([str(r) for r in row])) )
+            rowmax.append(max(row))
+            hdl.write( "%s\t%s\n" %(name, "\t".join(map(str, row))) )
         except:
             try:
                 hdl.close()
             except:
                 pass
+    return max(rowmax)
 
 # retrieve a list of metadata values from biom file columns for given term
 # order is same as columns
@@ -316,7 +366,7 @@ def get_auth_token(opts):
         return os.environ['KB_AUTH_TOKEN']
     if opts.token:
         return opts.token
-    elif opts.user or opts.passwd:
+    elif hasattr(opts, 'user') and hasattr(opts, 'passwd') and (opts.user or opts.passwd):
         if opts.user and opts.passwd:
             return token_from_login(opts.user, opts.passwd)
         else:

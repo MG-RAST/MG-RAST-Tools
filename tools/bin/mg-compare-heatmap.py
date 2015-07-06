@@ -30,7 +30,7 @@ Output
     JSON struct containing ordered distances for metagenomes and annotations, along with dendogram data.
 
 EXAMPLES
-    mg-compare-taxa --ids "kb|mg.286,kb|mg.287,kb|mg.288,kb|mg.289" --level class --source RefSeq --format text | mg-compare-heatmap --input - --format text --cluster median --distance manhattan
+    mg-compare-taxa --ids "mgm4441679.3,mgm4441680.3,mgm4441681.3,mgm4441682.3" --level class --source RefSeq --format text | mg-compare-heatmap --input - --format text --cluster median --distance manhattan
 
 SEE ALSO
     -
@@ -91,7 +91,7 @@ def main(args):
     else:
         out_hdl = open(opts.output, 'w')
     
-    out_hdl.write(json.dumps(hmap)+"\n")
+    out_hdl.write(json.dumps(hmap, separators=(', ',': '), indent=4)+"\n")
     out_hdl.close()
     return 0
 
