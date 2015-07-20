@@ -61,7 +61,11 @@ view_options     = ["all", "sequence"]
 validate_options = ["sequence", "metadata"]
 compute_options  = ["sff2fastq", "demultiplex", "pairjoin", "pairjoin_demultiplex"]
 
-def get_auth():
+def get_auth(token):
+    if token:
+        auth_obj = obj_from_url(API_URL+"/user/authenticate", auth=token)
+        auth_obj['token'] = token
+        return auth_obj
     if not os.path.isfile(auth_file):
         sys.stderr.write("ERROR: missing authentication file, please login\n")
         return None
@@ -311,8 +315,9 @@ def main(args):
         login(args[1], args[2])
         return 0
     
-    # load auth
-    mgrast_auth = get_auth()
+    # load auth - token overrides login
+    token = get_auth_token(opts)
+    mgrast_auth = get_auth(token)
     if not mgrast_auth:
         return 1
     
