@@ -84,8 +84,6 @@ auth_file   = os.path.join(os.path.expanduser('~'), ".mgrast_auth")
 mgrast_auth = {}
 valid_actions  = ["login", "list", "status", "delete", "submit"]
 submit_types   = ["simple", "batch", "demultiplex", "pairjoin", "pairjoin_demultiplex"]
-pipeline_flags = ["assembled", "filter_ln", "filter_ambig", "dynamic_trim", "dereplicate", "bowtie"]
-pipeline_opts  = ["max_ambig", "max_lqb", "min_qual", "filter_ln_mult", "screen_indexes", "priority"]
 
 def get_auth(token):
     if token:
@@ -253,12 +251,13 @@ def seqs_from_json(json_in, tmp_dir):
     return stype, files
 
 def submit(stype, files, opts):
-    # so far simple only
-    if stype == 'batch':
-        print "'batch' type submission is currently not supported."
-        return
+    fids = []
     # get files in shock
-    fids = upload(files)
+    if stype == 'batch':
+        fids = archive_upload(files[0])
+    else:
+        fids = upload(files)
+    
     # set POST data
     data = {}
     if opts.metadata:
@@ -269,7 +268,7 @@ def submit(stype, files, opts):
     elif opts.project_name:
         data['project_name'] = opts.project_name
     # figure out type
-    if stype == 'simple':
+    if (stype == 'simple') or (stype == 'batch'):
         data['seq_files'] = fids
     elif stype == 'demultiplex':
         data['multiplex_file'] = fids[0]
@@ -286,6 +285,32 @@ def submit(stype, files, opts):
         data['index_file'] = fids[2]
         data['retain'] = 1 if opts.retain else 0
         data['barcode_count'] = opts.bcnum
+    
+    # set pipeline flags - assembeled is special case
+    if opts.assembled:
+        data['assembled'] = 1
+        data['filter_ln'] = 0
+        data['filter_ambig'] = 0
+        data['dynamic_trim'] = 0
+        data['dereplicate'] = 0
+        data['bowtie'] = 0
+    else:
+        data['assembled'] = 0
+        data['filter_ln'] = 0 if opts.no_filter_ln else 1
+        data['filter_ambig'] = 0 if opts.no_filter_ambig else 1
+        data['dynamic_trim'] = 0 if opts.no_dynamic_trim else 1
+        data['dereplicate'] = 0 if opts.no_dereplicate else 1
+        data['bowtie'] = 0 if opts.no_bowtie else 1
+    # set pipeline options
+    data['filter_ln_mult'] = opts.filter_ln_mult
+    data['max_ambig'] = opts.max_ambig
+    data['max_lqb'] = opts.max_lqb
+    data['min_qual'] = opts.min_qual
+    if opts.screen_indexes:
+        data['screen_indexes'] = opts.screen_indexes
+    if opts.priority:
+        data['priority'] = opts.priority
+    
     # submit it
     result = obj_from_url(API_URL+"/submission/submit", data=json.dumps(data), auth=mgrast_auth['token'])
     if opts.synch or opts.json_out:
@@ -303,12 +328,14 @@ def upload(files):
             "user": mgrast_auth['login'],
             "email": mgrast_auth['email']
         })
-        # POST to shock
-        fformat = "upload"
+        # get format
         if f.endswith(".gz"):
             fformat = "gzip"
         elif f.endswith(".bz2"):
             fformat = "bzip2"
+        else:
+            fformat = "upload"
+        # POST to shock
         result = post_node(SHOCK_URL+"/node", fformat, f, attr, auth="mgrast "+mgrast_auth['token'])
         # compute file info
         info = obj_from_url(API_URL+"/inbox/info/"+result['id'], auth=mgrast_auth['token'])
@@ -316,6 +343,30 @@ def upload(files):
         fids.append(result['id'])
     return fids
 
+def archive_upload(afile):
+    attr = json.dumps({
+        "type": "inbox",
+        "id": mgrast_auth['id'],
+        "user": mgrast_auth['login'],
+        "email": mgrast_auth['email']
+    })
+    # get format
+    if afile.endswith(".tar.gz"):
+        aformat = "tar.gz"
+    elif afile.endswith(".tar.bz2"):
+        aformat = "tar.bz2"
+    elif afile.endswith(".tar"):
+        aformat = "tar"
+    elif afile.endswith(".zip"):
+        aformat = "zip"
+    else:
+        sys.stderr.write("ERROR: input file %s is incorrect archive format\n"%afile)
+        sys.exit(1)
+    # POST to shock / unpack
+    result = post_node(SHOCK_URL+"/node", "upload", afile, attr, auth="mgrast "+mgrast_auth['token'])
+    unpack = unpack_node(SHOCK_URL+"/node", result['id'], aformat, attr, auth="mgrast "+mgrast_auth['token'])
+    fids = map(lambda x: x['id'], unpack)
+    return fids
 
 def main(args):
     global mgrast_auth, API_URL, SHOCK_URL
