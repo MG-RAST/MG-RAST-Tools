@@ -5,6 +5,7 @@ import sys
 import json
 import time
 import base64
+import getpass
 from operator import itemgetter
 from optparse import OptionParser
 from prettytable import PrettyTable
@@ -20,7 +21,7 @@ VERSION
 SYNOPSIS
     mg-submit
         --help
-        login <user> <password>
+        login <login name>
         list
         status <submission id>
         delete <submission id>
@@ -424,8 +425,8 @@ def main(args):
     if action not in valid_actions:
         sys.stderr.write("ERROR: invalid action. use one of: %s\n"%", ".join(valid_actions))
         return 1
-    elif (action == "login") and (len(args) < 3):
-        sys.stderr.write("ERROR: missing login name and password\n")
+    elif (action == "login") and (len(args) < 2):
+        sys.stderr.write("ERROR: missing login name\n")
         return 1
     elif (action in ["status", "delete"]) and (len(args) < 2):
         sys.stderr.write("ERROR: %s missing submission ID\n"%action)
@@ -449,7 +450,8 @@ def main(args):
     
     # login first
     if action == "login":
-        login(args[1], args[2])
+        password = getpass.getpass('Enter your password: ')
+        login(args[1], password)
         return 0
     
     # load auth - token overrides login
