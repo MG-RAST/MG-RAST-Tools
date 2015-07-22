@@ -5,6 +5,7 @@ import sys
 import json
 import time
 import base64
+import getpass
 from operator import itemgetter
 from optparse import OptionParser
 from prettytable import PrettyTable
@@ -20,7 +21,7 @@ VERSION
 SYNOPSIS
     mg-inbox
         --help
-        login <user> <password>
+        login <login name>
         view all
         view sequence
         upload <file> <file> ... [--gzip, --bzip2]
@@ -82,6 +83,15 @@ def login(name, password):
     auth_str = "mggo4711"+base64.b64encode(name+":"+password)
     auth_obj = obj_from_url(API_URL+"?verbosity=verbose", auth=auth_str)
     json.dump(auth_obj, open(auth_file,'w'))
+
+def check_id(uuid, inbox):
+    if len(inbox['files']) == 0:
+        sys.stderr.write("ERROR: File ID '%s' does not exist in your inbox. Did you use File Name by mistake?\n"%uuid)
+        sys.exit(1)
+    ids = map(lambda x: x['id'], inbox['files'])
+    if uuid not in ids:
+        sys.stderr.write("ERROR: File ID '%s' does not exist in your inbox. Did you use File Name by mistake?\n"%uuid)
+        sys.exit(1)
 
 def view(vtype):
     data = obj_from_url(API_URL+"/inbox", auth=mgrast_auth['token'])
@@ -145,7 +155,7 @@ def upload(fformat, files):
         # compute sequence stats
         if info['stats_info']['file_type'] in ['fasta', 'fastq']:
             stats = obj_from_url(API_URL+"/inbox/stats/"+result['id'], auth=mgrast_auth['token'])
-            print stats['status']
+            print info['status'].replace("stats computation", "validation")
 
 def rename(fid, fname):
     data = {"name": fname, "file": fid}
@@ -155,12 +165,14 @@ def rename(fid, fname):
 def validate(fformat, files, get_info=False):
     for f in files:
         data = obj_from_url(API_URL+"/inbox/"+f, auth=mgrast_auth['token'])
+        check_id(f, data)
+        ids = map(lambda x: data, data)
         if ('data_type' in data) and (data['data_type'] == fformat):
             print "%s (%s) is a valid %s file"%(data['filename'], f, fformat)
         elif fformat == 'sequence':
             if data['stats_info']['file_type'] in ['fasta', 'fastq']:
                 info = obj_from_url(API_URL+"/inbox/stats/"+f, auth=mgrast_auth['token'])
-                print info['status']
+                print info['status'].replace("stats computation", "validation")
             else:
                 sys.stderr.write("ERROR: %s (%s) is not a fastq or fasta file\n"%(data['filename'], f))
         elif fformat == 'metadata':
@@ -210,6 +222,7 @@ def submit(files, project, metadata):
     info = []
     for f in files:
         x = obj_from_url(API_URL+"/inbox/"+f, auth=mgrast_auth['token'])
+        check_id(f, data)
         if ('data_type' in x) and (x['data_type'] == 'sequence'):
             info.append(x)
         else:
@@ -273,8 +286,8 @@ def main(args):
     if action not in valid_actions:
         sys.stderr.write("ERROR: invalid action. use one of: %s\n"%", ".join(valid_actions))
         return 1
-    elif (action == "login") and (len(args) < 3):
-        sys.stderr.write("ERROR: missing login name and password\n")
+    elif (action == "login") and (len(args) < 2):
+        sys.stderr.write("ERROR: missing login name\n")
         return 1
     elif (action == "view") and ((len(args) < 2) or (args[1] not in view_options)):
         sys.stderr.write("ERROR: invalid view option. use one of: %s\n"%", ".join(view_options))
@@ -312,7 +325,8 @@ def main(args):
     
     # login first
     if action == "login":
-        login(args[1], args[2])
+        password = getpass.getpass('Enter your password: ')
+        login(args[1], password)
         return 0
     
     # load auth - token overrides login
