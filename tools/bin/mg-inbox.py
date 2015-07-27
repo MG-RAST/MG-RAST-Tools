@@ -317,9 +317,6 @@ def main(args):
     if action not in valid_actions:
         sys.stderr.write("ERROR: invalid action. use one of: %s\n"%", ".join(valid_actions))
         return 1
-    elif (action == "login") and (len(args) < 2):
-        sys.stderr.write("ERROR: missing login name\n")
-        return 1
     elif (action == "view") and ((len(args) < 2) or (args[1] not in view_options)):
         sys.stderr.write("ERROR: invalid view option. use one of: %s\n"%", ".join(view_options))
         return 1
