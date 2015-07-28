@@ -21,7 +21,7 @@ VERSION
 SYNOPSIS
     mg-inbox
         --help
-        login <login name>
+        login [--token <auth token>]
         view all
         view sequence
         upload <file> <file> ... [--gzip, --bzip2]
@@ -65,13 +65,12 @@ compute_options  = ["sff2fastq", "demultiplex", "pairjoin", "pairjoin_demultiple
 def get_auth(token):
     if token:
         auth_obj = obj_from_url(API_URL+"/user/authenticate", auth=token)
-        auth_obj['token'] = token
         return auth_obj
     if not os.path.isfile(auth_file):
         sys.stderr.write("ERROR: missing authentication file, please login\n")
         return None
     auth_obj = json.load(open(auth_file,'r'))
-    if ("token" not in auth_obj) and ("id" not in auth_obj) and ("expiration" not in auth_obj):
+    if ("token" not in auth_obj) or ("id" not in auth_obj) or ("expiration" not in auth_obj):
         sys.stderr.write("ERROR: invalid authentication file, please login\n")
         return None
     if time.time() > int(auth_obj["expiration"]):
@@ -79,9 +78,8 @@ def get_auth(token):
         return None
     return auth_obj
 
-def login(name, password):
-    auth_str = "mggo4711"+base64.b64encode(name+":"+password)
-    auth_obj = obj_from_url(API_URL+"?verbosity=verbose", auth=auth_str)
+def login(token):
+    auth_obj = obj_from_url(API_URL+"/user/authenticate", auth=token)
     json.dump(auth_obj, open(auth_file,'w'))
 
 def check_id(uuid, inbox):
@@ -96,8 +94,23 @@ def check_id(uuid, inbox):
 def view(vtype):
     data = obj_from_url(API_URL+"/inbox", auth=mgrast_auth['token'])
     files = sorted(data['files'], key=itemgetter('timestamp'))
+    action_set = filter(lambda x: ("actions" in x) and (len(x['actions']) > 0), files)
+    has_action = True if len(action_set) > 0 else False
+    has_error = False
+    if has_action:
+        for f in action_set:
+            for a in f['actions']:
+                if ('error' in a) and a['error']:
+                    has_error = True
+    header = ["ID", "name", "md5sum", "size", "time", "format"]
+    
     if vtype == "sequence":
-        pt = PrettyTable(["ID", "name", "md5sum", "size", "time", "format", "seq_type", "seq_count", "bp_count", "actions"])
+        header = header + ["seq_type", "seq_count", "bp_count"]
+        if has_action:
+            header.append("actions")
+            if has_error:
+                header.append("error")
+        pt = PrettyTable(header)
         for f in files:
             if ('data_type' in f) and (f['data_type'] == 'sequence'):
                 row = [
@@ -105,34 +118,50 @@ def view(vtype):
                     f['filename'],
                     f['checksum'],
                     f['filesize'],
-                    f['timestamp'],
+                    f['timestamp'].split(".")[0],
                     f['stats_info']['file_type'],
                     f['stats_info']['sequence_type'],
                     f['stats_info']['sequence_count'],
-                    f['stats_info']['bp_count'],
-                    []
+                    f['stats_info']['bp_count']
                 ]
-                if ('actions' in f) and (len(f['actions']) > 0):
+                if has_action:
+                    row.append([])
                     for a in f['actions']:
                         row[9].append(a['name']+": "+a['status'])
-                row[9] = "\n".join(row[9])
+                    row[9] = "\n".join(row[9])
+                    if has_error:
+                        row.append([])
+                        for a in f['actions']:
+                            if ('error' in a) and a['error']:
+                                row[10].append(a['name']+": "+a['error'])
+                        row[10] = "\n".join(row[10])
                 pt.add_row(row)
     else:
-        pt = PrettyTable(["ID", "name", "md5sum", "size", "time", "format", "actions"])
+        if has_action:
+            header.append("actions")
+            if has_error:
+                header.append("error")
+        pt = PrettyTable(header)
         for f in files:
             row = [
                 f['id'],
                 f['filename'],
                 f['checksum'],
                 f['filesize'],
-                f['timestamp'],
-                f['stats_info']['file_type'],
-                []
+                f['timestamp'].split(".")[0],
+                f['stats_info']['file_type']
             ]
-            if ('actions' in f) and (len(f['actions']) > 0):
+            if has_action:
+                row.append([])
                 for a in f['actions']:
                     row[6].append(a['name']+": "+a['status'])
-            row[6] = "\n".join(row[6])
+                row[6] = "\n".join(row[6])
+                if has_error:
+                    row.append([])
+                    for a in f['actions']:
+                        if ('error' in a) and a['error']:
+                            row[7].append(a['name']+": "+a['error'])
+                    row[7] = "\n".join(row[7])
             pt.add_row(row)
     pt.align = "r"
     pt.align['name'] = "l"
@@ -286,9 +315,6 @@ def main(args):
     if action not in valid_actions:
         sys.stderr.write("ERROR: invalid action. use one of: %s\n"%", ".join(valid_actions))
         return 1
-    elif (action == "login") and (len(args) < 2):
-        sys.stderr.write("ERROR: missing login name\n")
-        return 1
     elif (action == "view") and ((len(args) < 2) or (args[1] not in view_options)):
         sys.stderr.write("ERROR: invalid view option. use one of: %s\n"%", ".join(view_options))
         return 1
@@ -323,14 +349,15 @@ def main(args):
         sys.stderr.write("ERROR: invalid submit, must have one of project or metadata\n")
         return 1
     
-    # login first
+    # explict login
+    token = get_auth_token(opts)
     if action == "login":
-        password = getpass.getpass('Enter your password: ')
-        login(args[1], password)
+        if not token:
+            token = raw_input('Enter your MG-RAST auth token: ')
+        login(token)
         return 0
     
-    # load auth - token overrides login
-    token = get_auth_token(opts)
+    # get auth object, get from token if no login
     mgrast_auth = get_auth(token)
     if not mgrast_auth:
         return 1
