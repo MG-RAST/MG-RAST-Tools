@@ -65,13 +65,12 @@ compute_options  = ["sff2fastq", "demultiplex", "pairjoin", "pairjoin_demultiple
 def get_auth(token):
     if token:
         auth_obj = obj_from_url(API_URL+"/user/authenticate", auth=token)
-        auth_obj['token'] = token
         return auth_obj
     if not os.path.isfile(auth_file):
         sys.stderr.write("ERROR: missing authentication file, please login\n")
         return None
     auth_obj = json.load(open(auth_file,'r'))
-    if ("token" not in auth_obj) and ("id" not in auth_obj) and ("expiration" not in auth_obj):
+    if ("token" not in auth_obj) or ("id" not in auth_obj) or ("expiration" not in auth_obj):
         sys.stderr.write("ERROR: invalid authentication file, please login\n")
         return None
     if time.time() > int(auth_obj["expiration"]):
@@ -81,7 +80,6 @@ def get_auth(token):
 
 def login(token):
     auth_obj = obj_from_url(API_URL+"/user/authenticate", auth=token)
-    auth_obj['token'] = token
     json.dump(auth_obj, open(auth_file,'w'))
 
 def check_id(uuid, inbox):
