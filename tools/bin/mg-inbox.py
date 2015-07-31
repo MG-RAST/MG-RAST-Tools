@@ -100,6 +100,7 @@ def view(vtype):
     if has_action:
         for f in action_set:
             for a in f['actions']:
+                a['name'] = a['name'].replace("stats", "validation")
                 if ('error' in a) and a['error']:
                     has_error = True
     header = ["ID", "name", "md5sum", "size", "time", "format"]
@@ -184,7 +185,7 @@ def upload(fformat, files):
         # compute sequence stats
         if info['stats_info']['file_type'] in ['fasta', 'fastq']:
             stats = obj_from_url(API_URL+"/inbox/stats/"+result['id'], auth=mgrast_auth['token'])
-            print info['status'].replace("stats computation", "validation")
+            print stats['status'].replace("stats computation", "validation")
 
 def rename(fid, fname):
     data = {"name": fname, "file": fid}
