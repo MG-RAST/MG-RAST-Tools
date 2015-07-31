@@ -82,14 +82,16 @@ def login(token):
     auth_obj = obj_from_url(API_URL+"/user/authenticate", auth=token)
     json.dump(auth_obj, open(auth_file,'w'))
 
-def check_id(uuid, inbox):
-    if len(inbox['files']) == 0:
-        sys.stderr.write("ERROR: File ID '%s' does not exist in your inbox. Did you use File Name by mistake?\n"%uuid)
+def check_ids(files):
+    data = obj_from_url(API_URL+"/inbox", auth=mgrast_auth['token'])
+    if len(data['files']) == 0:
+        sys.stderr.write("ERROR: Your inbox is empty, please upload first.\n")
         sys.exit(1)
-    ids = map(lambda x: x['id'], inbox['files'])
-    if uuid not in ids:
-        sys.stderr.write("ERROR: File ID '%s' does not exist in your inbox. Did you use File Name by mistake?\n"%uuid)
-        sys.exit(1)
+    ids = map(lambda x: x['id'], data['files'])
+    for f in files:
+        if f not in ids:
+            sys.stderr.write("ERROR: File ID '%s' does not exist in your inbox. Did you use File Name by mistake?\n"%f)
+            sys.exit(1)
 
 def view(vtype):
     data = obj_from_url(API_URL+"/inbox", auth=mgrast_auth['token'])
@@ -195,7 +197,6 @@ def rename(fid, fname):
 def validate(fformat, files, get_info=False):
     for f in files:
         data = obj_from_url(API_URL+"/inbox/"+f, auth=mgrast_auth['token'])
-        check_id(f, data)
         ids = map(lambda x: data, data)
         if ('data_type' in data) and (data['data_type'] == fformat):
             print "%s (%s) is a valid %s file"%(data['filename'], f, fformat)
@@ -252,7 +253,6 @@ def submit(files, project, metadata):
     info = []
     for f in files:
         x = obj_from_url(API_URL+"/inbox/"+f, auth=mgrast_auth['token'])
-        check_id(f, data)
         if ('data_type' in x) and (x['data_type'] == 'sequence'):
             info.append(x)
         else:
@@ -374,14 +374,19 @@ def main(args):
         else:
             upload('upload', args[1:])
     elif action == "rename":
+        check_ids([args[1]])
         rename(args[1], args[2])
     elif action == "validate":
+        check_ids(args[2:])
         validate(args[1], args[2:])
     elif action == "compute":
+        check_ids(args[2:])
         compute(args[1], args[2:], opts.retain, opts.joinfile)
     elif action == "delete":
+        check_ids(args[1:])
         delete(args[1:])
     elif action == "submit":
+        check_ids(args[1:])
         submit(args[1:], opts.project, opts.metadata)
     
     return 0
