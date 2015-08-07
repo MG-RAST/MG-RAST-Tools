@@ -29,9 +29,9 @@ SYNOPSIS
         validate sequence <seq file id> <seq file id> ...
         validate metadata <excel file id> <excel file id> ...
         compute sff2fastq <sff file id>
-        compute demultiplex <seq file id> <barcode file id>
+        compute demultiplex <seq file id> <barcode file id> [<index file id>, --rc_index]
         compute pairjoin <pair1 seq file id> <pair2 seq file id> [--retain, --joinfile <filename>]
-        compute pairjoin_demultiplex <pair1 seq file id> <pair2 seq file id> <index file id> [--retain, --joinfile <filename>]
+        compute pairjoin_demultiplex <pair1 seq file id> <pair2 seq file id> <index file id> <barcode file id> [--retain, --rc_index]
         delete <file id> <file id> ...
         submit <file id> <file id> ... [--project <project id>, --metadata <file id>]
 
@@ -218,19 +218,34 @@ def validate(fformat, files, get_info=False):
             else:
                 sys.stderr.write("ERROR: %s (%s) is not a spreadsheet file\n"%(data['filename'], f))
 
-def compute(action, files, retain, joinfile):
+def compute(action, files, retain, joinfile, rc_index):
     if action == "sff2fastq":
         data = {"sff_file": files[0]}
     elif action == "demultiplex":
-        data = {"seq_file": files[0], "barcode_file": files[1]}
+        data = {
+            "seq_file": files[0],
+            "barcode_file": files[1],
+            "rc_index": 1 if rc_index else 0
+        }
+        if len(files) == 3:
+            data["index_file"] = files[2]
     elif action == "pairjoin":
-        data = {"pair_file_1": files[0], "pair_file_2": files[1], "retain": 1 if retain else 0}
+        data = {
+            "pair_file_1": files[0],
+            "pair_file_2": files[1],
+            "retain": 1 if retain else 0
+        }
         if joinfile:
             data['output'] = joinfile
     elif action == "pairjoin_demultiplex":
-        data = {"pair_file_1": files[0], "pair_file_2": files[1], "index_file": files[2], "retain": 1 if retain else 0}
-        if joinfile:
-            data['output'] = joinfile
+        data = {
+            "pair_file_1": files[0],
+            "pair_file_2": files[1],
+            "index_file": files[2],
+            "barcode_file": files[3],
+            "retain": 1 if retain else 0,
+            "rc_index": 1 if rc_index else 0
+        }
     else:
         sys.stderr.write("ERROR: invalid compute option. use one of: %s\n"%", ".join(compute_options))
     info = obj_from_url(API_URL+"/inbox/"+action, data=json.dumps(data), auth=mgrast_auth['token'])
@@ -302,6 +317,7 @@ def main(args):
     parser.add_option("", "--gzip", dest="gzip", action="store_true", default=False, help="upload file is gzip compressed")
     parser.add_option("", "--bzip2", dest="bzip2", action="store_true", default=False, help="upload file is bzip2 compressed")
     parser.add_option("", "--retain", dest="retain", action="store_true", default=False, help="retain non-overlapping sequences in pair-merge")
+    parser.add_option("", "--rc_index", dest="rc_index", action="store_true", default=False, help="barcodes in index file are reverse compliment of mapping file")
     
     # get inputs
     (opts, args) = parser.parse_args()
@@ -342,8 +358,9 @@ def main(args):
             sys.stderr.write("ERROR: invalid compute option. use one of: %s\n"%", ".join(compute_options))
             return 1
         if ( ((args[1] == "sff2fastq") and (len(args) != 3)) or
-             ((args[1] in ["demultiplex", "pairjoin"]) and (len(args) != 4)) or
-             ((args[1] == "pairjoin_demultiplex") and (len(args) != 5)) ):
+             ((args[1] == "demultiplex") and (len(args) < 4)) or
+             ((args[1] == "pairjoin") and (len(args) != 4)) or
+             ((args[1] == "pairjoin_demultiplex") and (len(args) != 6)) ):
             sys.stderr.write("ERROR: compute %s missing file(s)\n"%args[1])
             return 1
     elif (action == "submit") and (not opts.project) and (not opts.metadata):
@@ -381,7 +398,7 @@ def main(args):
         validate(args[1], args[2:])
     elif action == "compute":
         check_ids(args[2:])
-        compute(args[1], args[2:], opts.retain, opts.joinfile)
+        compute(args[1], args[2:], opts.retain, opts.joinfile, opts.rc_index)
     elif action == "delete":
         check_ids(args[1:])
         delete(args[1:])
