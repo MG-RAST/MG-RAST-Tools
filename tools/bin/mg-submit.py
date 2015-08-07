@@ -443,7 +443,6 @@ def main(args):
             sys.stderr.write("ERROR: submit %s missing file(s)\n"%args[1])
             return 1
     
-    l
     # explict login
     token = get_auth_token(opts)
     if action == "login":
