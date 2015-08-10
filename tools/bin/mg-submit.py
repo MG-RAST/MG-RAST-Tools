@@ -4,6 +4,7 @@ import os
 import sys
 import json
 import time
+import pprint
 import base64
 import getpass
 from operator import itemgetter
@@ -79,7 +80,6 @@ AUTHORS
     %s
 """
 
-API_URL = "http://api-dev.metagenomics.anl.gov"
 synch_pause = 900
 auth_file   = os.path.join(os.path.expanduser('~'), ".mgrast_auth")
 mgrast_auth = {}
@@ -259,6 +259,8 @@ def submit(stype, files, opts):
     
     # set POST data
     data = {}
+    if opts.debug:
+        data['debug'] = 1
     if opts.metadata:
         mid = upload([opts.metadata])
         data['metadata_file'] = mid
@@ -316,7 +318,9 @@ def submit(stype, files, opts):
     
     # submit it
     result = obj_from_url(API_URL+"/submission/submit", data=json.dumps(data), auth=mgrast_auth['token'])
-    if opts.synch or opts.json_out:
+    if opts.debug:
+        pprint.pprint(result)
+    elif opts.synch or opts.json_out:
         print "submission started: "+result['id']
         wait_on_complete(result['id'], opts.json_out)
     else:
@@ -407,6 +411,7 @@ def main(args):
     parser.add_option("", "--json_out", dest="json_out", default=None, help="Output final metagenome product as json object to this file, synch mode only")
     parser.add_option("", "--json_in", dest="json_in", default=None, help="Input sequence file(s) encoded as shock handle in json file, simple or pairjoin types only")
     parser.add_option("", "--tmp_dir", dest="tmp_dir", default="", help="Temp dir to download too if using json_in option, default is current working dir")
+    parser.add_option("", "--debug", dest="debug", action="store_true", default=False, help="Submit in debug mode")
     
     # get inputs
     (opts, args) = parser.parse_args()
