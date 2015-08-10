@@ -3,11 +3,15 @@
 import os
 import sys
 import json
-import base64
 import urllib2
 from operator import itemgetter
 from optparse import OptionParser
-from prettytable import PrettyTable
+
+try:
+    from prettytable import PrettyTable
+except ImportError:
+    sys.stderr.write("[error] PrettyTable is missing, use 'pip install prettytable'\n")
+    sys.exit(1)
 
 prehelp = """
 NAME

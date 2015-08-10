@@ -5,12 +5,28 @@ import sys
 import json
 import time
 import urllib2
+import cStringIO
 from operator import itemgetter
 from optparse import OptionParser
-from prettytable import PrettyTable
-import requests
-import cStringIO
-from requests_toolbelt import MultipartEncoder
+
+try:
+    from prettytable import PrettyTable
+except ImportError:
+    sys.stderr.write("[error] prettytable library is missing, use 'pip install prettytable'\n")
+    sys.exit(1)
+
+try:
+    import requests
+except ImportError:
+    sys.stderr.write("[error] requests library is missing, use 'pip install requests'\n")
+    sys.exit(1)
+
+try:
+    from requests_toolbelt import MultipartEncoder
+except ImportError:
+    sys.stderr.write("[error] requests_toolbelt library is missing, use 'pip install prettytable'\n")
+    sys.exit(1)
+
 
 prehelp = """
 NAME
