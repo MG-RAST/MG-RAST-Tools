@@ -197,7 +197,6 @@ def rename(fid, fname):
 def validate(fformat, files, get_info=False):
     for f in files:
         data = obj_from_url(API_URL+"/inbox/"+f, auth=mgrast_auth['token'])
-        ids = map(lambda x: data, data)
         if ('data_type' in data) and (data['data_type'] == fformat):
             print "%s (%s) is a valid %s file"%(data['filename'], f, fformat)
         elif fformat == 'sequence':
