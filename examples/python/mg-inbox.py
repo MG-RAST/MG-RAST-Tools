@@ -383,7 +383,7 @@ def submit(files, project, metadata):
         data = {"input_id": i['id'], "metagenome_id": rjob['metagenome_id']}
         sjob = obj_from_url(API_URL+"/job/submit", data=json.dumps(data), auth=mgrast_auth['token'])
         mgids.append(rjob['metagenome_id'])
-        print "metagenome %s created for file %s (%s). submission id is: %s"%(rjob['metagenome_id'], i['filename'], i['id'], sjob['id'])
+        print "metagenome %s created for file %s (%s). pipeline id is: %s"%(rjob['metagenome_id'], i['filename'], i['id'], sjob['awe_id'])
     # apply metadata
     if mdata and metadata:
         data = {"node_id": metadata, "metagenome": mgids}
