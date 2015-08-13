@@ -4,6 +4,7 @@ import os
 import sys
 import json
 import time
+import pprint
 import base64
 import getpass
 from operator import itemgetter
@@ -27,9 +28,9 @@ SYNOPSIS
         delete <submission id>
         submit simple <seq file> [<seq file>, <seq file>, ...]
         submit batch <seq files in archive>
-        submit demultiplex <seq file> <barcode file>
+        submit demultiplex <seq file> <barcode file> [<index file>, --rc_index]
         submit pairjoin <pair1 seq file> <pair2 seq file> [--retain, --mg_name <name>]
-        submit pairjoin_demultiplex <pair1 seq file> <pair2 seq file> <index file> [--retain, --bc_num <int>]
+        submit pairjoin_demultiplex <pair1 seq file> <pair2 seq file> <index file> <barcode file> [--retain, --rc_index]
     
     Note:
         each 'submit' action must include one of: --project_id, --project_name, --metadata
@@ -79,7 +80,6 @@ AUTHORS
     %s
 """
 
-API_URL = "http://api-dev.metagenomics.anl.gov"
 synch_pause = 900
 auth_file   = os.path.join(os.path.expanduser('~'), ".mgrast_auth")
 mgrast_auth = {}
@@ -259,6 +259,8 @@ def submit(stype, files, opts):
     
     # set POST data
     data = {}
+    if opts.debug:
+        data['debug'] = 1
     if opts.metadata:
         mid = upload([opts.metadata])
         data['metadata_file'] = mid
@@ -272,6 +274,9 @@ def submit(stype, files, opts):
     elif stype == 'demultiplex':
         data['multiplex_file'] = fids[0]
         data['barcode_file'] = fids[1]
+        data['rc_index'] = 1 if opts.rc_index else 0
+        if len(fids) == 3:
+            data["index_file"] = fids[2]
     elif stype == 'pairjoin':
         data['pair_file_1'] = fids[0]
         data['pair_file_2'] = fids[1]
@@ -282,8 +287,9 @@ def submit(stype, files, opts):
         data['pair_file_1'] = fids[0]
         data['pair_file_2'] = fids[1]
         data['index_file'] = fids[2]
+        data['barcode_file'] = fids[3]
         data['retain'] = 1 if opts.retain else 0
-        data['barcode_count'] = opts.bcnum
+        data['rc_index'] = 1 if opts.rc_index else 0
     
     # set pipeline flags - assembeled is special case
     if opts.assembled:
@@ -312,7 +318,9 @@ def submit(stype, files, opts):
     
     # submit it
     result = obj_from_url(API_URL+"/submission/submit", data=json.dumps(data), auth=mgrast_auth['token'])
-    if opts.synch or opts.json_out:
+    if opts.debug:
+        pprint.pprint(result)
+    elif opts.synch or opts.json_out:
         print "submission started: "+result['id']
         wait_on_complete(result['id'], opts.json_out)
     else:
@@ -383,7 +391,7 @@ def main(args):
     # pairjoin / demultiplex options
     parser.add_option("", "--mg_name", dest="mgname", default=None, help="name of pair-merge metagenome if not in metadata, default is UUID")
     parser.add_option("", "--retain", dest="retain", action="store_true", default=False, help="retain non-overlapping sequences in pair-merge")
-    parser.add_option("", "--bc_num", dest="bcnum", type="int", default=0, help="number of unique barcodes in index file")
+    parser.add_option("", "--rc_index", dest="rc_index", action="store_true", default=False, help="barcodes in index file are reverse compliment of mapping file")
     # pipeline flags
     parser.add_option("", "--assembled", dest="assembled", action="store_true", default=False, help="if true sequences are assembeled, default is false")
     parser.add_option("", "--no_filter_ln", dest="no_filter_ln", action="store_true", default=False, help="if true skip sequence length filtering, default is on")
@@ -403,6 +411,7 @@ def main(args):
     parser.add_option("", "--json_out", dest="json_out", default=None, help="Output final metagenome product as json object to this file, synch mode only")
     parser.add_option("", "--json_in", dest="json_in", default=None, help="Input sequence file(s) encoded as shock handle in json file, simple or pairjoin types only")
     parser.add_option("", "--tmp_dir", dest="tmp_dir", default="", help="Temp dir to download too if using json_in option, default is current working dir")
+    parser.add_option("", "--debug", dest="debug", action="store_true", default=False, help="Submit in debug mode")
     
     # get inputs
     (opts, args) = parser.parse_args()
@@ -433,17 +442,14 @@ def main(args):
         if (len(args) < 2) or (args[1] not in submit_types):
             sys.stderr.write("ERROR: invalid submit option. use one of: %s\n"%", ".join(submit_types))
             return 1
-        if (args[1] == "pairjoin_demultiplex") and (opts.bcnum < 2):
-            sys.stderr.write("ERROR: pairjoin_demultiplex requires a minimum of 2 barcodes\n")
-            return 1
         if ( ((args[1] == "simple") and (len(args) < 3)) or
              ((args[1] == "batch") and (len(args) != 3)) or
-             ((args[1] in ["demultiplex", "pairjoin"]) and (len(args) != 4)) or
-             ((args[1] == "pairjoin_demultiplex") and (len(args) != 5)) ):
+             ((args[1] == "demultiplex") and (len(args) < 4)) or
+             ((args[1] == "pairjoin") and (len(args) != 4)) or
+             ((args[1] == "pairjoin_demultiplex") and (len(args) != 6)) ):
             sys.stderr.write("ERROR: submit %s missing file(s)\n"%args[1])
             return 1
     
-    l
     # explict login
     token = get_auth_token(opts)
     if action == "login":

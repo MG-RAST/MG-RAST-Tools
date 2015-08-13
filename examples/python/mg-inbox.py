@@ -4,19 +4,36 @@ import os
 import sys
 import json
 import time
-import base64
-import getpass
+import urllib2
+import cStringIO
 from operator import itemgetter
 from optparse import OptionParser
-from prettytable import PrettyTable
-from mglib import *
+
+try:
+    from prettytable import PrettyTable
+except ImportError:
+    sys.stderr.write("[error] prettytable library is missing, use 'pip install prettytable'\n")
+    sys.exit(1)
+
+try:
+    import requests
+except ImportError:
+    sys.stderr.write("[error] requests library is missing, use 'pip install requests'\n")
+    sys.exit(1)
+
+try:
+    from requests_toolbelt import MultipartEncoder
+except ImportError:
+    sys.stderr.write("[error] requests_toolbelt library is missing, use 'pip install prettytable'\n")
+    sys.exit(1)
+
 
 prehelp = """
 NAME
     mg-inbox
 
 VERSION
-    %s
+    1
 
 SYNOPSIS
     mg-inbox
@@ -52,8 +69,11 @@ SEE ALSO
     -
 
 AUTHORS
-    %s
+    Jared Bischof, Travis Harrison, Folker Meyer, Tobias Paczian, Andreas Wilke
 """
+
+API_URL = "http://api.metagenomics.anl.gov"
+SHOCK_URL = "http://shock.metagenomics.anl.gov"
 
 auth_file   = os.path.join(os.path.expanduser('~'), ".mgrast_auth")
 mgrast_auth = {}
@@ -61,6 +81,80 @@ valid_actions    = ["login", "view", "upload", "rename", "validate", "compute", 
 view_options     = ["all", "sequence"]
 validate_options = ["sequence", "metadata"]
 compute_options  = ["sff2fastq", "demultiplex", "pairjoin", "pairjoin_demultiplex"]
+
+# return python struct from JSON output of MG-RAST API
+def obj_from_url(url, auth=None, data=None, debug=False, method=None):
+    header = {'Accept': 'application/json'}
+    if auth:
+        header['Auth'] = auth
+    if data or method:
+        header['Content-Type'] = 'application/json'
+    if debug:
+        if data:
+            print "data:\t"+data
+        print "header:\t"+json.dumps(header)
+        print "url:\t"+url
+    try:
+        req = urllib2.Request(url, data, headers=header)
+        if method:
+            req.get_method = lambda: method
+        res = urllib2.urlopen(req)
+    except urllib2.HTTPError, error:
+        if debug:
+            sys.stderr.write("URL: %s\n" %url)
+        try:
+            eobj = json.loads(error.read())
+            sys.stderr.write("ERROR (%s): %s\n" %(error.code, eobj['ERROR']))
+        except:
+            sys.stderr.write("ERROR (%s): %s\n" %(error.code, error.read()))
+        finally:
+            sys.exit(1)
+    if not res:
+        if debug:
+            sys.stderr.write("URL: %s\n" %url)
+        sys.stderr.write("ERROR: no results returned\n")
+        sys.exit(1)
+    obj = json.loads(res.read())
+    if obj is None:
+        if debug:
+            sys.stderr.write("URL: %s\n" %url)
+        sys.stderr.write("ERROR: return structure not valid json format\n")
+        sys.exit(1)
+    if len(obj.keys()) == 0:
+        if debug:
+            sys.stderr.write("URL: %s\n" %url)
+        sys.stderr.write("ERROR: no data available\n")
+        sys.exit(1)
+    if 'ERROR' in obj:
+        if debug:
+            sys.stderr.write("URL: %s\n" %url)
+        sys.stderr.write("ERROR: %s\n" %obj['ERROR'])
+        sys.exit(1)
+    return obj
+
+# POST file to Shock
+def post_node(url, keyname, filename, attr, auth=None):
+    data = {
+        keyname: (os.path.basename(filename), open(filename)),
+        'attributes': ('unknown', cStringIO.StringIO(attr))
+    }
+    mdata = MultipartEncoder(fields=data)
+    headers = {'Content-Type': mdata.content_type}
+    if auth:
+        headers['Authorization'] = auth
+    try:
+        req = requests.post(url, headers=headers, data=mdata, allow_redirects=True)
+        rj = req.json()
+    except:
+        sys.stderr.write("Unable to connect to Shock server")
+        sys.exit(1)
+    if not (req.ok):
+        sys.stderr.write("Unable to connect to Shock server")
+        sys.exit(1)
+    if rj['error']:
+        sys.stderr.write("Shock error %s: %s"%(rj['status'], rj['error'][0]))
+        sys.exit(1)
+    return rj['data']
 
 def get_auth(token):
     if token:
@@ -306,7 +400,7 @@ def main(args):
     global mgrast_auth, API_URL, SHOCK_URL
     OptionParser.format_description = lambda self, formatter: self.description
     OptionParser.format_epilog = lambda self, formatter: self.epilog
-    parser = OptionParser(usage='', description=prehelp%VERSION, epilog=posthelp%AUTH_LIST)
+    parser = OptionParser(usage='', description=prehelp, epilog=posthelp)
     parser.add_option("-u", "--mgrast_url", dest="mgrast_url", default=API_URL, help="MG-RAST API url")
     parser.add_option("-s", "--shock_url", dest="shock_url", default=SHOCK_URL, help="Shock API url")
     parser.add_option("-t", "--token", dest="token", default=None, help="MG-RAST token")
@@ -367,15 +461,14 @@ def main(args):
         return 1
     
     # explict login
-    token = get_auth_token(opts)
     if action == "login":
-        if not token:
-            token = raw_input('Enter your MG-RAST auth token: ')
-        login(token)
+        if not opts.token:
+            opts.token = raw_input('Enter your MG-RAST auth token: ')
+        login(opts.token)
         return 0
     
     # get auth object, get from token if no login
-    mgrast_auth = get_auth(token)
+    mgrast_auth = get_auth(opts.token)
     if not mgrast_auth:
         return 1
     
