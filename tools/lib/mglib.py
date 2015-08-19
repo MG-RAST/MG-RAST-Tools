@@ -24,7 +24,7 @@ SEARCH_FIELDS = ["function", "organism", "md5", "name", "metadata", "biome", "fe
 # return python struct from JSON output of asynchronous MG-RAST API
 def async_rest_api(url, auth=None, data=None, debug=False, delay=15):
     submit = obj_from_url(url, auth=auth, data=data, debug=debug)
-    if not (('status' in submit) and (submit['status'] == 'Submitted') and ('url' in submit)):
+    if not (('status' in submit) and (submit['status'] == 'submitted') and ('url' in submit)):
         sys.stderr.write("ERROR: return data invalid format\n:%s"%json.dumps(submit))
     result = obj_from_url(submit['url'], debug=debug)
     while result['status'] != 'done':
