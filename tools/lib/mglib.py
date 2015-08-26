@@ -146,11 +146,11 @@ def post_node(url, keyname, filename, attr, auth=None):
     except:
         sys.stderr.write("Unable to connect to Shock server")
         sys.exit(1)
+    if rj and rj['error']:
+        sys.stderr.write("Shock error %s: %s"%(rj['status'], rj['error'][0]))
+        sys.exit(1)
     if not (req.ok):
         sys.stderr.write("Unable to connect to Shock server")
-        sys.exit(1)
-    if rj['error']:
-        sys.stderr.write("Shock error %s: %s"%(rj['status'], rj['error'][0]))
         sys.exit(1)
     return rj['data']
 
@@ -161,20 +161,21 @@ def unpack_node(url, parent_id, aformat, attr, auth=None):
         'archive_format': aformat,
         'attributes_str': attr
     }
-    headers = {'Content-Type': 'application/json'}
+    mdata = MultipartEncoder(fields=data)
+    headers = {'Content-Type': mdata.content_type}
     if auth:
         headers['Authorization'] = auth
     try:
-        req = requests.post(url, headers=headers, data=data, allow_redirects=True)
+        req = requests.post(url, headers=headers, data=mdata, allow_redirects=True)
         rj = req.json()
     except:
         sys.stderr.write("Unable to connect to Shock server")
         sys.exit(1)
+    if rj and rj['error']:
+        sys.stderr.write("Shock error %s: %s"%(rj['status'], rj['error'][0]))
+        sys.exit(1)
     if not (req.ok):
         sys.stderr.write("Unable to connect to Shock server")
-        sys.exit(1)
-    if rj['error']:
-        sys.stderr.write("Shock error %s: %s"%(rj['status'], rj['error'][0]))
         sys.exit(1)
     return rj['data']
 

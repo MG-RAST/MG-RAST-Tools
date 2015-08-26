@@ -42,6 +42,7 @@ SYNOPSIS
         view all
         view sequence
         upload <file> <file> ... [--gzip, --bzip2]
+        upload-archive <archive file, one of: .zip, .tar, .tar.gz, .tar.bz2>
         rename <file id> <new name>
         validate sequence <seq file id> <seq file id> ...
         validate metadata <excel file id> <excel file id> ...
@@ -77,7 +78,7 @@ SHOCK_URL = "http://shock.metagenomics.anl.gov"
 
 auth_file   = os.path.join(os.path.expanduser('~'), ".mgrast_auth")
 mgrast_auth = {}
-valid_actions    = ["login", "view", "upload", "rename", "validate", "compute", "delete", "submit", "submitall"]
+valid_actions    = ["login", "view", "upload", "upload-archive", "rename", "validate", "compute", "delete", "submit", "submitall"]
 view_options     = ["all", "sequence"]
 validate_options = ["sequence", "metadata"]
 compute_options  = ["sff2fastq", "demultiplex", "pairjoin", "pairjoin_demultiplex"]
@@ -148,11 +149,36 @@ def post_node(url, keyname, filename, attr, auth=None):
     except:
         sys.stderr.write("Unable to connect to Shock server")
         sys.exit(1)
+    if rj and rj['error']:
+        sys.stderr.write("Shock error %s: %s"%(rj['status'], rj['error'][0]))
+        sys.exit(1)
     if not (req.ok):
         sys.stderr.write("Unable to connect to Shock server")
         sys.exit(1)
-    if rj['error']:
+    return rj['data']
+
+# unpack archive node into new nodes
+def unpack_node(url, parent_id, aformat, attr, auth=None):
+    data = {
+        'unpack_node': parent_id,
+        'archive_format': aformat,
+        'attributes_str': attr
+    }
+    mdata = MultipartEncoder(fields=data)
+    headers = {'Content-Type': mdata.content_type}
+    if auth:
+        headers['Authorization'] = auth
+    try:
+        req = requests.post(url, headers=headers, data=mdata, allow_redirects=True)
+        rj = req.json()
+    except:
+        sys.stderr.write("Unable to connect to Shock server")
+        sys.exit(1)
+    if rj and rj['error']:
         sys.stderr.write("Shock error %s: %s"%(rj['status'], rj['error'][0]))
+        sys.exit(1)
+    if not (req.ok):
+        sys.stderr.write("Unable to connect to Shock server")
         sys.exit(1)
     return rj['data']
 
@@ -281,6 +307,38 @@ def upload(fformat, files):
         # compute sequence stats
         if info['stats_info']['file_type'] in ['fasta', 'fastq']:
             stats = obj_from_url(API_URL+"/inbox/stats/"+result['id'], auth=mgrast_auth['token'])
+            print stats['status'].replace("stats computation", "validation")
+
+def upload_archive(afile):
+    attr = json.dumps({
+        "type": "inbox",
+        "id": mgrast_auth['id'],
+        "user": mgrast_auth['login'],
+        "email": mgrast_auth['email']
+    })
+    # get format
+    if afile.endswith(".tar.gz"):
+        aformat = "tar.gz"
+    elif afile.endswith(".tar.bz2"):
+        aformat = "tar.bz2"
+    elif afile.endswith(".tar"):
+        aformat = "tar"
+    elif afile.endswith(".zip"):
+        aformat = "zip"
+    else:
+        sys.stderr.write("ERROR: input file %s is incorrect archive format\n"%afile)
+        sys.exit(1)
+    # POST to shock / unpack
+    result = post_node(SHOCK_URL+"/node", "upload", afile, attr, auth="mgrast "+mgrast_auth['token'])
+    unpack = unpack_node(SHOCK_URL+"/node", result['id'], aformat, attr, auth="mgrast "+mgrast_auth['token'])
+    # process new nodes
+    for node in unpack:
+        # compute file info
+        info = obj_from_url(API_URL+"/inbox/info/"+node['id'], auth=mgrast_auth['token'])
+        print info['status']
+        # compute sequence stats
+        if info['stats_info']['file_type'] in ['fasta', 'fastq']:
+            stats = obj_from_url(API_URL+"/inbox/stats/"+node['id'], auth=mgrast_auth['token'])
             print stats['status'].replace("stats computation", "validation")
 
 def rename(fid, fname):
@@ -415,7 +473,7 @@ def main(args):
     # get inputs
     (opts, args) = parser.parse_args()
     if len(args) < 1:
-        sys.stderr.write("ERROR: missing action\n")
+        sys.stderr.write("ERROR: missing action, please check usage with %s -h\n"%(sys.argv[0]))
         return 1
     action = args[0]
     API_URL = opts.mgrast_url
@@ -428,7 +486,7 @@ def main(args):
     elif (action == "view") and ((len(args) < 2) or (args[1] not in view_options)):
         sys.stderr.write("ERROR: invalid view option. use one of: %s\n"%", ".join(view_options))
         return 1
-    elif (action in ["upload", "delete", "submit"]) and (len(args) < 2):
+    elif (action in ["upload", "upload-archive", "delete", "submit"]) and (len(args) < 2):
         sys.stderr.write("ERROR: %s missing file\n"%action)
         return 1
     elif action == "upload":
@@ -436,6 +494,13 @@ def main(args):
             if not os.path.isfile(f):
                 sys.stderr.write("ERROR: upload file '%s' does not exist\n"%f)
                 return 1
+    elif action == "upload-archive":
+        if len(args[1:]) > 1:
+            sys.stderr.write("ERROR: upload-archive only supports one file\n")
+            return 1
+        if not os.path.isfile(args[1]):
+            sys.stderr.write("ERROR: upload-archive file '%s' does not exist\n"%args[1])
+            return 1
     elif (action == "rename") and (len(args) != 3):
         sys.stderr.write("ERROR: %s missing file or name\n"%action)
         return 1
@@ -482,6 +547,8 @@ def main(args):
             upload('bzip2', args[1:])
         else:
             upload('upload', args[1:])
+    elif action == "upload-archive":
+        upload_archive(args[1])
     elif action == "rename":
         check_ids([args[1]])
         rename(args[1], args[2])
