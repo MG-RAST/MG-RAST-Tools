@@ -24,7 +24,7 @@ SEARCH_FIELDS = ["function", "organism", "md5", "name", "metadata", "biome", "fe
 # return python struct from JSON output of asynchronous MG-RAST API
 def async_rest_api(url, auth=None, data=None, debug=False, delay=15):
     submit = obj_from_url(url, auth=auth, data=data, debug=debug)
-    if not (('status' in submit) and (submit['status'] == 'Submitted') and ('url' in submit)):
+    if not (('status' in submit) and (submit['status'] == 'submitted') and ('url' in submit)):
         sys.stderr.write("ERROR: return data invalid format\n:%s"%json.dumps(submit))
     result = obj_from_url(submit['url'], debug=debug)
     while result['status'] != 'done':
@@ -146,11 +146,11 @@ def post_node(url, keyname, filename, attr, auth=None):
     except:
         sys.stderr.write("Unable to connect to Shock server")
         sys.exit(1)
+    if rj and rj['error']:
+        sys.stderr.write("Shock error %s: %s"%(rj['status'], rj['error'][0]))
+        sys.exit(1)
     if not (req.ok):
         sys.stderr.write("Unable to connect to Shock server")
-        sys.exit(1)
-    if rj['error']:
-        sys.stderr.write("Shock error %s: %s"%(rj['status'], rj['error'][0]))
         sys.exit(1)
     return rj['data']
 
@@ -161,20 +161,21 @@ def unpack_node(url, parent_id, aformat, attr, auth=None):
         'archive_format': aformat,
         'attributes_str': attr
     }
-    headers = {'Content-Type': 'application/json'}
+    mdata = MultipartEncoder(fields=data)
+    headers = {'Content-Type': mdata.content_type}
     if auth:
         headers['Authorization'] = auth
     try:
-        req = requests.post(url, headers=headers, data=data, allow_redirects=True)
+        req = requests.post(url, headers=headers, data=mdata, allow_redirects=True)
         rj = req.json()
     except:
         sys.stderr.write("Unable to connect to Shock server")
         sys.exit(1)
+    if rj and rj['error']:
+        sys.stderr.write("Shock error %s: %s"%(rj['status'], rj['error'][0]))
+        sys.exit(1)
     if not (req.ok):
         sys.stderr.write("Unable to connect to Shock server")
-        sys.exit(1)
-    if rj['error']:
-        sys.stderr.write("Shock error %s: %s"%(rj['status'], rj['error'][0]))
         sys.exit(1)
     return rj['data']
 
