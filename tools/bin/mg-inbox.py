@@ -23,8 +23,8 @@ SYNOPSIS
         login [--token <auth token>]
         view all
         view sequence
-        upload <file> <file> ... [--gzip, --bzip2]
-        upload-archive <archive file, one of: .zip, .tar, .tar.gz, .tar.bz2>
+        upload <file> <file> ...
+        upload-archive <archive file>
         rename <file id> <new name>
         validate sequence <seq file id> <seq file id> ...
         validate metadata <excel file id> <excel file id> ...
@@ -37,6 +37,16 @@ SYNOPSIS
 
 DESCRIPTION
     MG-RAST inbox operations
+    
+    supported file types  |     extensions
+    ----------------------|--------------------------
+        sequence          |  .fasta, .fastq
+        excel             |  .xls, .xlsx
+        plain text        |  .txt, .barcode
+        gzip compressed   |  .gz
+        bzip2 compressed  |  .bz2
+        zip archive       |  .zip
+        tar archive       |  .tar, .tar.gz, .tar.bz2
 """
 
 posthelp = """
@@ -171,7 +181,7 @@ def view(vtype):
     pt.align['time'] = "l"
     print pt
 
-def upload(fformat, files):
+def upload(files):
     for f in files:
         attr = json.dumps({
             "type": "inbox",
@@ -179,6 +189,13 @@ def upload(fformat, files):
             "user": mgrast_auth['login'],
             "email": mgrast_auth['email']
         })
+        # get format
+        if f.endswith(".gz"):
+            fformat = "gzip"
+        elif f.endswith(".bz2"):
+            fformat = "bzip2"
+        else:
+            fformat = "upload"
         # POST to shock
         result = post_node(SHOCK_URL+"/node", fformat, f, attr, auth="mgrast "+mgrast_auth['token'])
         # compute file info
@@ -345,8 +362,6 @@ def main(args):
     parser.add_option("-p", "--project", dest="project", default=None, help="project ID")
     parser.add_option("-m", "--metadata", dest="metadata", default=None, help="metadata file ID")
     parser.add_option("-j", "--joinfile", dest="joinfile", default=None, help="name of resulting pair-merge file (without extension), default is <pair 1 filename>_<pair 2 filename>")
-    parser.add_option("", "--gzip", dest="gzip", action="store_true", default=False, help="upload file is gzip compressed")
-    parser.add_option("", "--bzip2", dest="bzip2", action="store_true", default=False, help="upload file is bzip2 compressed")
     parser.add_option("", "--retain", dest="retain", action="store_true", default=False, help="retain non-overlapping sequences in pair-merge")
     parser.add_option("", "--rc_index", dest="rc_index", action="store_true", default=False, help="barcodes in index file are reverse compliment of mapping file")
     
@@ -422,12 +437,7 @@ def main(args):
     if action == "view":
         view(args[1])
     elif action == "upload":
-        if opts.gzip:
-            upload('gzip', args[1:])
-        elif opts.bzip2:
-            upload('bzip2', args[1:])
-        else:
-            upload('upload', args[1:])
+        upload(args[1:])
     elif action == "upload-archive":
         upload_archive(args[1])
     elif action == "rename":
