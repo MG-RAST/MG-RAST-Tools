@@ -72,10 +72,6 @@ view_options     = ["all", "sequence"]
 validate_options = ["sequence", "metadata"]
 compute_options  = ["sff2fastq", "demultiplex", "pairjoin", "pairjoin_demultiplex"]
 
-def login(token):
-    auth_obj = obj_from_url(API_URL+"/user/authenticate", auth=token)
-    json.dump(auth_obj, open(auth_file,'w'))
-
 def check_ids(files):
     data = obj_from_url(API_URL+"/inbox", auth=mgrast_auth['token'])
     if len(data['files']) == 0:

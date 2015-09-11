@@ -86,10 +86,6 @@ mgrast_auth = {}
 valid_actions = ["login", "list", "status", "delete", "submit"]
 submit_types  = ["simple", "batch", "demultiplex", "pairjoin", "pairjoin_demultiplex"]
 
-def login(token):
-    auth_obj = obj_from_url(API_URL+"/user/authenticate", auth=token)
-    json.dump(auth_obj, open(auth_file,'w'))
-
 def listall():
     data = obj_from_url(API_URL+"/submission/list", auth=mgrast_auth['token'])
     submissions = sorted(data['submissions'], key=itemgetter('timestamp'))

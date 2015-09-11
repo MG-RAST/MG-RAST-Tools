@@ -423,6 +423,10 @@ def token_from_login(user, passwd):
     data = obj_from_url(API_URL, auth=auth)
     return data['token']
 
+def login(token):
+    auth_obj = obj_from_url(API_URL+"/user/authenticate", auth=token)
+    json.dump(auth_obj, open(auth_file,'w'))
+
 def login_from_token(token):
     parts = {}
     for part in token.strip().split('|'):
