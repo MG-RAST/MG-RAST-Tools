@@ -389,6 +389,8 @@ def kbid_lookup(ids, reverse=False):
 def get_auth_token(opts):
     if 'KB_AUTH_TOKEN' in os.environ:
         return os.environ['KB_AUTH_TOKEN']
+    if 'MGRKEY' in os.environ:
+        return os.environ['MGRKEY']
     if opts.token:
         return opts.token
     elif hasattr(opts, 'user') and hasattr(opts, 'passwd') and (opts.user or opts.passwd):
