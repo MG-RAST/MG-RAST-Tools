@@ -37,14 +37,6 @@ AUTHORS
     %s
 """
 
-def opt2int(opt, x):
-    try:
-        i = int(x)
-    except:
-        sys.stderr.write("ERROR: --%s must be an integer\n"%opt)
-        sys.exit(1)
-    return i
-
 def main(args):
     OptionParser.format_description = lambda self, formatter: self.description
     OptionParser.format_epilog = lambda self, formatter: self.epilog
