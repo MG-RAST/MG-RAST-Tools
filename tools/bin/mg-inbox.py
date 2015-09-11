@@ -72,22 +72,6 @@ view_options     = ["all", "sequence"]
 validate_options = ["sequence", "metadata"]
 compute_options  = ["sff2fastq", "demultiplex", "pairjoin", "pairjoin_demultiplex"]
 
-def get_auth(token):
-    if token:
-        auth_obj = obj_from_url(API_URL+"/user/authenticate", auth=token)
-        return auth_obj
-    if not os.path.isfile(auth_file):
-        sys.stderr.write("ERROR: missing authentication file, please login\n")
-        return None
-    auth_obj = json.load(open(auth_file,'r'))
-    if ("token" not in auth_obj) or ("id" not in auth_obj) or ("expiration" not in auth_obj):
-        sys.stderr.write("ERROR: invalid authentication file, please login\n")
-        return None
-    if time.time() > int(auth_obj["expiration"]):
-        sys.stderr.write("ERROR: expired authentication file, please login\n")
-        return None
-    return auth_obj
-
 def login(token):
     auth_obj = obj_from_url(API_URL+"/user/authenticate", auth=token)
     json.dump(auth_obj, open(auth_file,'w'))
