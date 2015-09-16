@@ -44,10 +44,10 @@ def main(args):
     parser.add_option("", "--input", dest="input", default='-', help="input: filename or stdin (-), default is stdin")
     parser.add_option("", "--format", dest="format", default='biom', help="input format: 'text' for tabbed table, 'biom' for BIOM format, default is biom")
     parser.add_option("", "--output", dest="output", default='biom', help="output format: 'text' for tabbed table, 'biom' for BIOM format, default is biom")
-    parser.add_option("", "--order", dest="order", default=None, help="column number to order output by (0 for last column), default is no ordering")
+    parser.add_option("", "--order", dest="order", type="int", default=None, help="column number to order output by (0 for last column), default is no ordering")
     parser.add_option("", "--direction", dest="direction", default="desc", help="direction of order. 'asc' for ascending order, 'desc' for descending order, default is desc")
-    parser.add_option("", "--cols", dest="cols", default=None, help="number of columns from the left to return from input table, default is all")
-    parser.add_option("", "--rows", dest="rows", default=None, help="number of rows from the top to return from input table, default is all")
+    parser.add_option("", "--cols", dest="cols", type="int", default=None, help="number of columns from the left to return from input table, default is all")
+    parser.add_option("", "--rows", dest="rows", type="int", default=None, help="number of rows from the top to return from input table, default is all")
     
     # get inputs
     (opts, args) = parser.parse_args()
@@ -87,7 +87,7 @@ def main(args):
     # first we sort
     if opts.order is not None:
         rev_order = True if opts.direction == 'desc' else False
-        order_col = opt2int('order', opts.order)
+        order_col = opts.order
         if order_col > len(cols):
             sys.stderr.write("ERROR: --order value is greater than number of columns in table\n")
         order_col  = order_col - 1
@@ -98,11 +98,11 @@ def main(args):
         
     # subselect rows
     if opts.rows is not None:
-        subrow = opt2int('rows', opts.rows)
+        subrow = opts.rows
         rows = rows[:subrow]
         data = data[:subrow]
     if opts.cols is not None:
-        subcol = opt2int('cols', opts.cols)
+        subcol = opts.cols
         cols = cols[:subcol]
         data = sub_matrix(data, subcol)
     

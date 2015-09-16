@@ -477,14 +477,6 @@ def random_str(size=8):
     chars = string.ascii_letters + string.digits
     return ''.join(random.choice(chars) for x in range(size))
 
-def opt2int(opt, x):
-    try:
-        i = int(x)
-    except:
-        sys.stderr.write("ERROR: --%s must be an integer\n"%opt)
-        sys.exit(1)
-    return i
-
 # this is a bit of a hack, need to redo using rpy2
 def execute_r(cmd, debug=False):
     r_cmd = "echo '%s' | R --vanilla --slave --silent"%cmd

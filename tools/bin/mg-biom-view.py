@@ -43,10 +43,10 @@ def main(args):
     parser = OptionParser(usage='', description=prehelp%VERSION, epilog=posthelp%AUTH_LIST)
     parser.add_option("-i", "--input", dest="input", default='-', help="input: filename or stdin (-), default is stdin")
     parser.add_option("-o", "--output", dest="output", default='-', help="input: filename or stdout (-), default is stdout")
-    parser.add_option("", "--row_start", dest="row_start", default=None, help="row position to start table with, default is first")
-    parser.add_option("", "--row_end", dest="row_end", default=None, help="row position to end table with, default is last")
-    parser.add_option("", "--col_start", dest="col_start", default=None, help="column position to start table with, default is first")
-    parser.add_option("", "--col_end", dest="col_end", default=None, help="column position to end table with, default is last")
+    parser.add_option("", "--row_start", dest="row_start", type="int", default=None, help="row position to start table with, default is first")
+    parser.add_option("", "--row_end", dest="row_end", type="int", default=None, help="row position to end table with, default is last")
+    parser.add_option("", "--col_start", dest="col_start", type="int", default=None, help="column position to start table with, default is first")
+    parser.add_option("", "--col_end", dest="col_end", type="int", default=None, help="column position to end table with, default is last")
     parser.add_option("", "--stats", dest="stats", action="store_true", default=False, help="include significance stats in output, default is off")
     
     # get inputs
@@ -73,10 +73,10 @@ def main(args):
         sys.stderr.write("ERROR: unable to load input data\n")
         return 1
     
-    row_start = 0 if opts.row_start is None else opt2int('row_start', opts.row_start)-1
-    row_end   = len(rows) if opts.row_end is None else opt2int('row_end', opts.row_end)
-    col_start = 0 if opts.col_start is None else opt2int('col_start', opts.col_start)-1
-    col_end   = len(cols) if opts.col_end is None else opt2int('col_end', opts.col_end)
+    row_start = 0 if opts.row_start is None else opts.row_start - 1
+    row_end   = len(rows) if opts.row_end is None else opts.row_end
+    col_start = 0 if opts.col_start is None else opts.col_start - 1
+    col_end   = len(cols) if opts.col_end is None else opts.col_end
     
     # output data
     try:
