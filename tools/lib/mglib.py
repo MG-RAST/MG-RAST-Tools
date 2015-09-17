@@ -3,6 +3,7 @@ import sys
 import time
 import copy
 import urllib2
+import urlparse
 import base64
 import json
 import string
@@ -23,6 +24,8 @@ SEARCH_FIELDS = ["function", "organism", "md5", "name", "metadata", "biome", "fe
 
 # return python struct from JSON output of asynchronous MG-RAST API
 def async_rest_api(url, auth=None, data=None, debug=False, delay=15):
+    parameters = urlparse.parse_qs(url.split("?")[1])
+    assert "asynchronous" in parameters, "Must specify asynchronous=1 for asynchronous call!"
     submit = obj_from_url(url, auth=auth, data=data, debug=debug)
     if not (('status' in submit) and (submit['status'] == 'submitted') and ('url' in submit)):
         sys.stderr.write("ERROR: return data invalid format\n:%s"%json.dumps(submit))
