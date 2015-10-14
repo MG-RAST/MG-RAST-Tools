@@ -65,7 +65,6 @@ AUTHORS
     %s
 """
 
-auth_file   = os.path.join(os.path.expanduser('~'), ".mgrast_auth")
 mgrast_auth = {}
 valid_actions    = ["login", "view", "upload", "upload-archive", "rename", "validate", "compute", "delete", "submit", "submitall"]
 view_options     = ["all", "sequence"]
