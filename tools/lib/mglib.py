@@ -3,6 +3,7 @@ import sys
 import time
 import copy
 import urllib2
+import urlparse
 import base64
 import json
 import string
@@ -15,6 +16,7 @@ from requests_toolbelt import MultipartEncoder
 # don't buffer stdout
 #sys.stdout = os.fdopen(sys.stdout.fileno(), 'w', 0)
 
+auth_file = os.path.join(os.path.expanduser('~'), ".mgrast_auth")
 VERSION = '1'
 API_URL = "http://api.metagenomics.anl.gov/"+VERSION
 SHOCK_URL = "http://shock.metagenomics.anl.gov"
@@ -23,6 +25,8 @@ SEARCH_FIELDS = ["function", "organism", "md5", "name", "metadata", "biome", "fe
 
 # return python struct from JSON output of asynchronous MG-RAST API
 def async_rest_api(url, auth=None, data=None, debug=False, delay=15):
+    parameters = urlparse.parse_qs(url.split("?")[1])
+    assert "asynchronous" in parameters, "Must specify asynchronous=1 for asynchronous call!"
     submit = obj_from_url(url, auth=auth, data=data, debug=debug)
     if not (('status' in submit) and (submit['status'] == 'submitted') and ('url' in submit)):
         sys.stderr.write("ERROR: return data invalid format\n:%s"%json.dumps(submit))
@@ -389,6 +393,8 @@ def kbid_lookup(ids, reverse=False):
 def get_auth_token(opts):
     if 'KB_AUTH_TOKEN' in os.environ:
         return os.environ['KB_AUTH_TOKEN']
+    if 'MGRKEY' in os.environ:
+        return os.environ['MGRKEY']
     if opts.token:
         return opts.token
     elif hasattr(opts, 'user') and hasattr(opts, 'passwd') and (opts.user or opts.passwd):
@@ -400,10 +406,30 @@ def get_auth_token(opts):
     else:
         return None
 
+def get_auth(token):
+    if token:
+        auth_obj = obj_from_url(API_URL+"/user/authenticate", auth=token)
+        return auth_obj
+    if not os.path.isfile(auth_file):
+        sys.stderr.write("ERROR: missing authentication file, please login\n")
+        return None
+    auth_obj = json.load(open(auth_file,'r'))
+    if ("token" not in auth_obj) or ("id" not in auth_obj) or ("expiration" not in auth_obj):
+        sys.stderr.write("ERROR: invalid authentication file, please login\n")
+        return None
+    if time.time() > int(auth_obj["expiration"]):
+        sys.stderr.write("ERROR: expired authentication file, please login\n")
+        return None
+    return auth_obj
+
 def token_from_login(user, passwd):
     auth = 'kbgo4711'+base64.b64encode('%s:%s' %(user, passwd)).replace('\n', '')
     data = obj_from_url(API_URL, auth=auth)
     return data['token']
+
+def login(token):
+    auth_obj = obj_from_url(API_URL+"/user/authenticate", auth=token)
+    json.dump(auth_obj, open(auth_file,'w'))
 
 def login_from_token(token):
     parts = {}

@@ -81,30 +81,9 @@ AUTHORS
 """
 
 synch_pause = 900
-auth_file   = os.path.join(os.path.expanduser('~'), ".mgrast_auth")
 mgrast_auth = {}
 valid_actions = ["login", "list", "status", "delete", "submit"]
 submit_types  = ["simple", "batch", "demultiplex", "pairjoin", "pairjoin_demultiplex"]
-
-def get_auth(token):
-    if token:
-        auth_obj = obj_from_url(API_URL+"/user/authenticate", auth=token)
-        return auth_obj
-    if not os.path.isfile(auth_file):
-        sys.stderr.write("ERROR: missing authentication file, please login\n")
-        return None
-    auth_obj = json.load(open(auth_file,'r'))
-    if ("token" not in auth_obj) or ("id" not in auth_obj) or ("expiration" not in auth_obj):
-        sys.stderr.write("ERROR: invalid authentication file, please login\n")
-        return None
-    if time.time() > int(auth_obj["expiration"]):
-        sys.stderr.write("ERROR: expired authentication file, please login\n")
-        return None
-    return auth_obj
-
-def login(token):
-    auth_obj = obj_from_url(API_URL+"/user/authenticate", auth=token)
-    json.dump(auth_obj, open(auth_file,'w'))
 
 def listall():
     data = obj_from_url(API_URL+"/submission/list", auth=mgrast_auth['token'])
