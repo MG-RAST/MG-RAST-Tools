@@ -81,7 +81,6 @@ AUTHORS
 """
 
 synch_pause = 900
-auth_file   = os.path.join(os.path.expanduser('~'), ".mgrast_auth")
 mgrast_auth = {}
 valid_actions = ["login", "list", "status", "delete", "submit"]
 submit_types  = ["simple", "batch", "demultiplex", "pairjoin", "pairjoin_demultiplex"]

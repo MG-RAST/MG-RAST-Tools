@@ -16,6 +16,7 @@ from requests_toolbelt import MultipartEncoder
 # don't buffer stdout
 #sys.stdout = os.fdopen(sys.stdout.fileno(), 'w', 0)
 
+auth_file = os.path.join(os.path.expanduser('~'), ".mgrast_auth")
 VERSION = '1'
 API_URL = "http://api.metagenomics.anl.gov/"+VERSION
 SHOCK_URL = "http://shock.metagenomics.anl.gov"
