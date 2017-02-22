@@ -121,9 +121,9 @@ def main(args):
     # ouput
     if opts.info:
         depth = get_depth(jdata)
-        print "type\t%s\ndepth\t%d"%(jtype, depth)
+        print("type\t%s\ndepth\t%d"%(jtype, depth))
     if (not opts.value) and (opts.json or opts.keys):
-        print to_string(jdata, dump=opts.json, keys=opts.keys, expand=True)
+        print(to_string(jdata, dump=opts.json, keys=opts.keys, expand=True))
     elif opts.value and (len(vlist) > 0):
         data = jdata
         path = []
@@ -140,13 +140,13 @@ def main(args):
             except:
                 sys.stderr.write("ERROR: (%s) is not a key/index path of inputted JSON\n"%', '.join(path))
                 return 1
-        print to_string(data, dump=opts.json, keys=opts.keys, expand=True)
+        print(to_string(data, dump=opts.json, keys=opts.keys, expand=True))
     elif opts.find:
         for val, path in get_values(jdata, [], opts.find):
-            print ".".join(path)+"\t"+to_string(val, dump=True)
+            print(".".join(path)+"\t"+to_string(val, dump=True))
     # default list top level
     else:
-        print to_string(jdata)
+        print(to_string(jdata))
     return 0
 
 if __name__ == "__main__":

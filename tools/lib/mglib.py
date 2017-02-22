@@ -33,7 +33,7 @@ def async_rest_api(url, auth=None, data=None, debug=False, delay=15):
     result = obj_from_url(submit['url'], debug=debug)
     while result['status'] != 'done':
         if debug:
-            print "waiting %d seconds ..."%delay
+            print("waiting %d seconds ..."%delay)
         time.sleep(delay)
         result = obj_from_url(submit['url'], debug=debug)
     if 'ERROR' in result['data']:
@@ -52,9 +52,9 @@ def obj_from_url(url, auth=None, data=None, debug=False, method=None):
         header['Content-Type'] = 'application/json'
     if debug:
         if data:
-            print "data:\t"+data
-        print "header:\t"+json.dumps(header)
-        print "url:\t"+url
+            print("data:\t"+data)
+        print("header:\t"+json.dumps(header))
+        print("url:\t"+url)
     try:
         req = urllib2.Request(url, data, headers=header)
         if method:
@@ -108,9 +108,9 @@ def file_from_url(url, handle, auth=None, sauth=None, data=None, debug=False):
         header['Content-Type'] = 'application/json'
     if debug:
         if data:
-            print "data:\t"+data
-        print "header:\t"+json.dumps(header)
-        print "url:\t"+url
+            print("data:\t"+data)
+        print("header:\t"+json.dumps(header))
+        print("url:\t"+url)
     try:
         req = urllib2.Request(url, data, headers=header)
         res = urllib2.urlopen(req)
@@ -485,7 +485,7 @@ def random_str(size=8):
 def execute_r(cmd, debug=False):
     r_cmd = "echo '%s' | R --vanilla --slave --silent"%cmd
     if debug:
-        print r_cmd
+        print(r_cmd)
     else:
         process = subprocess.Popen(r_cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
         output, error = process.communicate()

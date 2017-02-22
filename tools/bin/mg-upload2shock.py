@@ -60,7 +60,7 @@ def main(args):
     attributes = {}
     attributes['type'] = 'temp'
     node = shock_client.upload(attr=json.dumps(attributes), data=file_path)
-    print json.dumps(node)
+    print(json.dumps(node))
 
     return 0
 
