@@ -77,7 +77,7 @@ def main(args):
         url  = opts.url+'/project/'+opts.project+'?verbosity=full'
         data = obj_from_url(url, auth=token)
         for mg in data['metagenomes']:
-            mgs.append(mg[0])
+            mgs.append("mgm"+mg["metagenome_id"])
     elif opts.metagenome:
         mgs.append(opts.metagenome)
     
