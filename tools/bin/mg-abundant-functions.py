@@ -97,14 +97,24 @@ def main(args):
         sub_ann = set( map(lambda x: x[level], data['data']) )
     
     # sort data
-    for d in sorted(biom['data'], key=itemgetter(2), reverse=True):
-        name = biom['rows'][d[0]]['id'] if opts.source != 'Subsystems' else biom['rows'][d[0]]['metadata']['ontology'][-1]
-        if len(top_ann) >= opts.top:
-            break
-        if sub_ann and (name not in sub_ann):
-            continue
-        top_ann[name] = d[2]
-    
+    if biom["matrix_type"] == "sparse":
+        for d in sorted(biom['data'], key=itemgetter(2), reverse=True):
+            name = biom['rows'][d[0]]['id']  # if opts.source != 'Subsystems' else biom['rows'][d[0]]['metadata']['ontology'][-1]
+            if len(top_ann) >= opts.top:
+                break
+            if sub_ann and (name not in sub_ann):
+                continue
+            top_ann[name] = d[2]
+    if biom["matrix_type"] == "dense":
+        sortindex = sorted(range(len(biom['data'])), key=biom['data'].__getitem__, reverse=True)
+        for n in sortindex:
+            name = biom['rows'][n]['id'] # if opts.source != 'Subsystems' else biom['rows'][n]['metadata']['ontology'][-1]
+            if len(top_ann) >= opts.top:
+                break
+            if sub_ann and (name not in sub_ann):
+                continue
+            top_ann[name] = biom['data'][n][0]
+
     # output data
     for k, v in sorted(top_ann.items(), key=itemgetter(1), reverse=True):
         safe_print("%s\t%d\n" %(k, v))
