@@ -96,32 +96,46 @@ def listall():
     print pt
 
 def status(sid):
-    data = obj_from_url(API_URL+"/submission/"+sid, auth=mgrast_auth['token'])
+    data = obj_from_url(API_URL+"/submission/"+sid+'?full=1', auth=mgrast_auth['token'])
     # check for errors
-    if isinstance(data['status'], basestring):
-        sys.stderr.write("ERROR: %s\n"%data['status'])
+    if ('error' in data) and data['error']:
+        sys.stderr.write("ERROR: %s\n"%data['error'])
         sys.exit(1)
     
-    fids = map(lambda x: x['id'], data['status']['inputs'])
-    fnames = map(lambda x: x['filename'], data['status']['inputs'])
+    fids   = map(lambda x: x['id'], data['inputs'])
+    fnames = map(lambda x: x['filename'], data['inputs'])
+    fsizes = map(lambda x: str(x['filesize']), data['inputs'])
     # submission summary
-    pt_summary = PrettyTable(["submission ID", "type", "submit time", "input file ID", "input file name"])
-    pt_summary.add_row([data['id'], data['status']['type'], data['status']['timestamp'], "\n".join(fids), "\n".join(fnames)])
+    pt_summary = PrettyTable(["submission ID", "type", "submit time", "input file ID", "input file name", "input file size"])
+    pt_summary.add_row([data['id'], data['type'], data['info']['submittime'], "\n".join(fids), "\n".join(fnames), "\n".join(fsizes)])
     pt_summary.align = "l"
-    # submission status
-    pt_status = PrettyTable(["submission step", "step name", "step status", "step inputs"])
-    for i, p in enumerate(data['status']['preprocessing']):
-        pt_status.add_row( [i, p['stage'], p['status'], "\n".join(p['inputs'])] )
-    pt_status.align = "l"
-    # metagenome info
-    pt_mg = PrettyTable(["metagenome ID", "metagenome name", "total status", "completed steps", "total steps", "submit time", "job ID"])
-    for p in data['status']['metagenomes']:
-        pt_mg.add_row( [p['id'], p['name'], p['status'], p['completed'], p['total'], p['timestamp'], p['job']] )
-    pt_mg.align = "l"
-    # output it
     print pt_summary
-    print pt_status
-    if len(data['status']['metagenomes']) > 0:
+    # submission status
+    if ('preprocessing' in data) and data['preprocessing']:
+        pt_status = PrettyTable(["submission step", "step name", "step status", "step inputs"])
+        for i, p in enumerate(data['preprocessing']):
+            pstatus = p['status']
+            if ('error' in p) and p['error']:
+                pstatus += "\n"+p['error']
+            pt_status.add_row( [i, p['stage'], pstatus, "\n".join(p['inputs'])] )
+        pt_status.align = "l"
+        print pt_status
+    # metagenome info
+    if ('metagenomes' in data) and data['metagenomes']:
+        pt_mg = PrettyTable(["metagenome ID", "metagenome name", "status", "remaining steps", "submit time", "complete time", "pipeline ID"])
+        for m in data['metagenomes']:
+            state = "in-progress"
+            if len(m['state']) == 1:
+                state = m['state'][0]
+            else:
+                for s in m['state']:
+                    if s == 'suspend':
+                        state = 'suspend'
+            remain = 0
+            if m['task'] and (len(m['task']) > 0):
+                remain = len(m['task'])
+            pt_mg.add_row( [m['userattr']['id'], m['userattr']['name'], state, remain, m['submittime'], m['completedtime'], m['id']] )
+        pt_mg.align = "l"
         print pt_mg
 
 def wait_on_complete(sid, json_out):
