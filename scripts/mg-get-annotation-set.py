@@ -1,7 +1,6 @@
 #!/usr/bin/env python
 
 import sys
-import urllib
 from collections import defaultdict
 from operator import itemgetter
 from optparse import OptionParser
@@ -62,7 +61,7 @@ def output_annotation(md5s, func_md5, func_acc, amatrix, ematrix, otu, otu_num):
     sum_coverage = 0
     sum_confidence = 0
     func_num = 1
-    for f in sorted(func_md5.iterkeys()):
+    for f in sorted(func_md5.keys()):
         if len(func_md5[f]) == 0:
             continue        
         # get abund / evalue
@@ -188,7 +187,7 @@ def main(args):
                  ('result_type', 'abundance'),
                  ('asynchronous', '1'),
                  ('hide_metadata', '1') ]
-    t_url = opts.url+'/matrix/organism?'+urllib.urlencode(t_params, True)
+    t_url = opts.url+'/matrix/organism?'+urlencode(t_params, True)
     biom = async_rest_api(t_url, auth=token)
     for d in sorted(biom['data'], key=itemgetter(2), reverse=True):
         if (opts.top > 0) and (len(top_taxa) >= opts.top):
@@ -204,7 +203,7 @@ def main(args):
                  ('asynchronous', '1'),
                  ('hide_metadata', '1'),
                  ('hide_annotation', '1') ]
-    f_url = opts.url+'/matrix/feature?'+urllib.urlencode(f_params, True)
+    f_url = opts.url+'/matrix/feature?'+urlencode(f_params, True)
     # biom
     abiom = async_rest_api(f_url+'&result_type=abundance', auth=token)
     ebiom = async_rest_api(f_url+'&result_type=evalue', auth=token)

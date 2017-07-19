@@ -90,7 +90,7 @@ def main(args):
     result = obj_from_url(url, auth=token)
     stats  = result['statistics']
     if opts.stat == 'sequence':
-        for s in sorted(stats['sequence_stats'].iterkeys()):
+        for s in sorted(stats['sequence_stats'].keys()):
             safe_print("%s\t%s\n" %(s, stats['sequence_stats'][s]))
     elif opts.stat == 'bp_profile':
         if not stats['qc']['bp_profile']['percents']['data']:

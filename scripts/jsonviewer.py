@@ -54,7 +54,7 @@ def get_values(data, path, key):
         if key in data:
             np = path+[key]
             yield data[key], np
-        sub_iter = data.iteritems()
+        sub_iter = iter(data.items())
     if isinstance(data, list):
         sub_iter = enumerate(data)
     for k, x in sub_iter:
@@ -66,7 +66,7 @@ def get_depth(data, depth=0):
     if not data:
         return depth
     elif isinstance(data, dict):
-        return max(get_depth(v, depth+1) for k, v in data.iteritems())
+        return max(get_depth(v, depth+1) for k, v in data.items())
     elif isinstance(data, list):
         return max(get_depth(e, depth+1) for e in data)
     else:
@@ -81,7 +81,7 @@ def to_string(x, dump=False, keys=False, expand=False, summary=False):
         elif keys:
             return "\n".join(sorted(x.keys()))
         else:
-            return "\n".join(map(lambda k: "%s\t%s"%(str(k), to_string(x[k], summary=True)), sorted(x.keys())))
+            return "\n".join(["%s\t%s"%(str(k), to_string(x[k], summary=True)) for k in sorted(x.keys())])
     elif isinstance(x, list):
         if summary:
             return "<list>"
@@ -90,7 +90,7 @@ def to_string(x, dump=False, keys=False, expand=False, summary=False):
         elif keys:
             return len(x)
         else:
-            return "\n".join(map(lambda e: to_string(e, summary=True), x))
+            return "\n".join([to_string(e, summary=True) for e in x])
     else:
         return str(x)
 
@@ -121,9 +121,9 @@ def main(args):
     # ouput
     if opts.info:
         depth = get_depth(jdata)
-        print "type\t%s\ndepth\t%d"%(jtype, depth)
+        print("type\t%s\ndepth\t%d"%(jtype, depth))
     if (not opts.value) and (opts.json or opts.keys):
-        print to_string(jdata, dump=opts.json, keys=opts.keys, expand=True)
+        print(to_string(jdata, dump=opts.json, keys=opts.keys, expand=True))
     elif opts.value and (len(vlist) > 0):
         data = jdata
         path = []
@@ -140,13 +140,13 @@ def main(args):
             except:
                 sys.stderr.write("ERROR: (%s) is not a key/index path of inputted JSON\n"%', '.join(path))
                 return 1
-        print to_string(data, dump=opts.json, keys=opts.keys, expand=True)
+        print(to_string(data, dump=opts.json, keys=opts.keys, expand=True))
     elif opts.find:
         for val, path in get_values(jdata, [], opts.find):
-            print ".".join(path)+"\t"+to_string(val, dump=True)
+            print(".".join(path)+"\t"+to_string(val, dump=True))
     # default list top level
     else:
-        print to_string(jdata)
+        print(to_string(jdata))
     return 0
 
 if __name__ == "__main__":

@@ -93,17 +93,17 @@ def listall():
         row = [ s['id'], s['type'], s['status'], s['timestamp'] ]
         pt.add_row(row)
     pt.align = "l"
-    print pt
+    print(pt)
 
 def status(sid):
     data = obj_from_url(API_URL+"/submission/"+sid, auth=mgrast_auth['token'])
     # check for errors
-    if isinstance(data['status'], basestring):
+    if isinstance(data['status'], str):
         sys.stderr.write("ERROR: %s\n"%data['status'])
         sys.exit(1)
     
-    fids = map(lambda x: x['id'], data['status']['inputs'])
-    fnames = map(lambda x: x['filename'], data['status']['inputs'])
+    fids = [x['id'] for x in data['status']['inputs']]
+    fnames = [x['filename'] for x in data['status']['inputs']]
     # submission summary
     pt_summary = PrettyTable(["submission ID", "type", "submit time", "input file ID", "input file name"])
     pt_summary.add_row([data['id'], data['status']['type'], data['status']['timestamp'], "\n".join(fids), "\n".join(fnames)])
@@ -119,10 +119,10 @@ def status(sid):
         pt_mg.add_row( [p['id'], p['name'], p['status'], p['completed'], p['total'], p['timestamp'], p['job']] )
     pt_mg.align = "l"
     # output it
-    print pt_summary
-    print pt_status
+    print(pt_summary)
+    print(pt_status)
     if len(data['status']['metagenomes']) > 0:
-        print pt_mg
+        print(pt_mg)
 
 def wait_on_complete(sid, json_out):
     listed_mgs = set()
@@ -133,7 +133,7 @@ def wait_on_complete(sid, json_out):
         time.sleep(synch_pause)
         data = obj_from_url(API_URL+"/submission/"+sid, auth=mgrast_auth['token'])
         # check for global errors
-        if isinstance(data['status'], basestring):
+        if isinstance(data['status'], str):
             sys.stderr.write("ERROR: %s\n"%data['status'])
             sys.exit(1)
         # check for submission errors
@@ -148,7 +148,7 @@ def wait_on_complete(sid, json_out):
         if total_mg > 0:
             for mg in data['status']['metagenomes']:
                 if mg['id'] not in listed_mgs:
-                    print "metagenome analysis started: "+mg['id']
+                    print("metagenome analysis started: "+mg['id'])
                     listed_mgs.add(mg['id'])
                 if mg['status'] == "completed":
                     done_mg += 1
@@ -162,13 +162,13 @@ def wait_on_complete(sid, json_out):
         jhdl = open(json_out, 'w')
         for mg in data['status']['metagenomes']:
             if mg['status'] == "completed":
-                print "metagenome analysis completed: "+mg['id']
+                print("metagenome analysis completed: "+mg['id'])
                 mgdata = obj_from_url(API_URL+"/metagenome/"+mg['id']+"?verbosity=full", auth=mgrast_auth['token'])
                 mgs.append(mgdata)
             elif mg['status'] == "suspend":
-                print "metagenome analysis failed: "+mg['id']
+                print("metagenome analysis failed: "+mg['id'])
                 if "error" in mg:
-                    print "[error] "+mg['error']
+                    print("[error] "+mg['error'])
         if len(mgs) == 1:
             # output single dict
             json.dump(mgs[0], jhdl)
@@ -185,11 +185,11 @@ def wait_on_complete(sid, json_out):
         for mg in data['status']['metagenomes']:
             pt_mg.add_row( [mg['id'], mg['name'], mg['status'], mg['timestamp']] )
         pt_mg.align = "l"
-        print pt_mg
+        print(pt_mg)
 
 def delete(sid):
     data = obj_from_url(API_URL+"/submission/"+sid, auth=mgrast_auth['token'], method='DELETE')
-    print data['status']
+    print(data['status'])
 
 def seqs_from_json(json_in, tmp_dir):
     files = []
@@ -300,7 +300,7 @@ def submit(stype, files, opts):
     if opts.debug:
         pprint.pprint(result)
     elif opts.synch or opts.json_out:
-        print "submission started: "+result['id']
+        print("submission started: "+result['id'])
         wait_on_complete(result['id'], opts.json_out)
     else:
         status(result['id'])
@@ -325,7 +325,7 @@ def upload(files):
         result = post_node(SHOCK_URL+"/node", fformat, f, attr, auth="mgrast "+mgrast_auth['token'])
         # compute file info
         info = obj_from_url(API_URL+"/inbox/info/"+result['id'], auth=mgrast_auth['token'])
-        print info['status']
+        print(info['status'])
         fids.append(result['id'])
     return fids
 
@@ -351,7 +351,7 @@ def archive_upload(afile):
     # POST to shock / unpack
     result = post_node(SHOCK_URL+"/node", "upload", afile, attr, auth="mgrast "+mgrast_auth['token'])
     unpack = unpack_node(SHOCK_URL+"/node", result['id'], aformat, attr, auth="mgrast "+mgrast_auth['token'])
-    fids = map(lambda x: x['id'], unpack)
+    fids = [x['id'] for x in unpack]
     return fids
 
 def main(args):
@@ -433,7 +433,7 @@ def main(args):
     token = get_auth_token(opts)
     if action == "login":
         if not token:
-            token = raw_input('Enter your MG-RAST auth token: ')
+            token = input('Enter your MG-RAST auth token: ')
         login(token)
         return 0
     

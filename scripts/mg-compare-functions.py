@@ -2,7 +2,6 @@
 
 import os
 import sys
-import urllib
 import copy
 from operator import itemgetter
 from optparse import OptionParser
@@ -121,7 +120,7 @@ def main(args):
             cur_params = copy.deepcopy(params)
             for i in sub_ids:
                 cur_params.append(('id', i))
-            cur_url  = opts.url+'/matrix/function?'+urllib.urlencode(cur_params, True)
+            cur_url  = opts.url+'/matrix/function?'+urlencode(cur_params, True)
             cur_biom = async_rest_api(cur_url, auth=token)
             biom = merge_biom(biom, cur_biom)
             if opts.temp:
@@ -129,7 +128,7 @@ def main(args):
     else:
         for i in id_list:
             params.append(('id', i))
-        url = opts.url+'/matrix/function?'+urllib.urlencode(params, True)
+        url = opts.url+'/matrix/function?'+urlencode(params, True)
         biom = async_rest_api(url, auth=token)
         if opts.temp:
             json.dump(biom, open(opts.temp, 'w'))
@@ -151,7 +150,7 @@ def main(args):
         params = [ ('version', opts.version),
                    ('min_level', opts.level),
                    ('source', opts.source) ]
-        url = opts.url+'/m5nr/ontology?'+urllib.urlencode(params, True)
+        url = opts.url+'/m5nr/ontology?'+urlencode(params, True)
         data = obj_from_url(url)
         level = 'level4' if opts.level == 'function' else opts.level
         for ann in data['data']:

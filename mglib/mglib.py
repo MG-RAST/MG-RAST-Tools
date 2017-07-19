@@ -1,17 +1,26 @@
+from __future__ import print_function
 import os
 import sys
 import time
 import copy
-import urllib2
-import urlparse
 import base64
 import json
 import string
 import random
 import subprocess
 import requests
-import cStringIO
+import io
 from requests_toolbelt import MultipartEncoder
+
+try:  # python3
+    from urllib.parse import urlparse, urlencode, parse_qs
+    from urllib.request import urlopen, Request
+    from urllib.error import HTTPError
+except ImportError:  # python2
+    from urlparse import urlparse, parse_qs
+    from urllib import urlencode
+    from urllib2 import urlopen, Request, HTTPError
+
 
 # don't buffer stdout
 #sys.stdout = os.fdopen(sys.stdout.fileno(), 'w', 0)
@@ -33,15 +42,16 @@ def obj_from_url(url, auth=None, data=None, debug=False, method=None):
         header['Content-Type'] = 'application/json'
     if debug:
         if data:
-            print "data:\t"+data
-        print "header:\t"+json.dumps(header)
-        print "url:\t"+url
+            print("data:\t"+data)
+        print("header:\t"+json.dumps(header))
+        print("url:\t"+url)
     try:
-        req = urllib2.Request(url, data, headers=header)
+        print("Making request "+url, file=sys.stderr)
+        req = Request(url, data, headers=header)
         if method:
             req.get_method = lambda: method
-        res = urllib2.urlopen(req)
-    except urllib2.HTTPError, error:
+        res = urlopen(req)
+    except HTTPError as error:
         if debug:
             sys.stderr.write("URL: %s\n" %url)
         try:
@@ -62,7 +72,7 @@ def obj_from_url(url, auth=None, data=None, debug=False, method=None):
             sys.stderr.write("URL: %s\n" %url)
         sys.stderr.write("ERROR: return structure not valid json format\n")
         sys.exit(1)
-    if len(obj.keys()) == 0:
+    if len(list(obj.keys())) == 0:
         if debug:
             sys.stderr.write("URL: %s\n" %url)
         sys.stderr.write("ERROR: no data available\n")
@@ -76,7 +86,7 @@ def obj_from_url(url, auth=None, data=None, debug=False, method=None):
 
 # return python struct from JSON output of asynchronous MG-RAST API
 def async_rest_api(url, auth=None, data=None, debug=False, delay=15):
-    parameters = urlparse.parse_qs(url.split("?")[1])
+    parameters = parse_qs(url.split("?")[1])
     assert "asynchronous" in parameters, "Must specify asynchronous=1 for asynchronous call!"
     submit = obj_from_url(url, auth=auth, data=data, debug=debug)
     if not (('status' in submit) and (submit['status'] == 'submitted') and ('url' in submit)):
@@ -84,7 +94,7 @@ def async_rest_api(url, auth=None, data=None, debug=False, delay=15):
     result = obj_from_url(submit['url'], debug=debug)
     while result['status'] != 'done':
         if debug:
-            print "waiting %d seconds ..."%delay
+            print("waiting %d seconds ..."%delay)
         time.sleep(delay)
         result = obj_from_url(submit['url'], debug=debug)
     if 'ERROR' in result['data']:
@@ -109,13 +119,13 @@ def file_from_url(url, handle, auth=None, sauth=None, data=None, debug=False):
         header['Content-Type'] = 'application/json'
     if debug:
         if data:
-            print "data:\t"+data
-        print "header:\t"+json.dumps(header)
-        print "url:\t"+url
+            print("data:\t"+data)
+        print("header:\t"+json.dumps(header))
+        print("url:\t"+url)
     try:
-        req = urllib2.Request(url, data, headers=header)
-        res = urllib2.urlopen(req)
-    except urllib2.HTTPError, error:
+        req = Request(url, data, headers=header)
+        res = urlopen(req)
+    except HTTPError as error:
         try:
             eobj = json.loads(error.read())
             if 'ERROR' in eobj:
@@ -133,13 +143,13 @@ def file_from_url(url, handle, auth=None, sauth=None, data=None, debug=False):
         chunk = res.read(8192)
         if not chunk:
             break
-        handle.write(chunk)
+        handle.write(chunk.decode('utf8'))
 
 # POST file to Shock
 def post_node(url, keyname, filename, attr, auth=None):
     data = {
         keyname: (os.path.basename(filename), open(filename)),
-        'attributes': ('unknown', cStringIO.StringIO(attr))
+        'attributes': ('unknown', io.StringIO(attr))
     }
     mdata = MultipartEncoder(fields=data)
     headers = {'Content-Type': mdata.content_type}
@@ -244,7 +254,7 @@ def metadata_from_biom(biom, term):
     for col in biom['columns']:
         value = 'null'
         if ('metadata' in col) and col['metadata']:
-            for v in col['metadata'].itervalues():
+            for v in col['metadata'].values():
                 if ('data' in v) and (term in v['data']):
                     value = v['data'][term]
         vals.append(value)
@@ -486,7 +496,7 @@ def random_str(size=8):
 def execute_r(cmd, debug=False):
     r_cmd = "echo '%s' | R --vanilla --slave --silent"%cmd
     if debug:
-        print r_cmd
+        print(r_cmd)
     else:
         process = subprocess.Popen(r_cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
         output, error = process.communicate()

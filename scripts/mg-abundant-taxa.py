@@ -1,7 +1,6 @@
 #!/usr/bin/env python
 
 import sys
-import urllib
 from operator import itemgetter
 from optparse import OptionParser
 from mglib.mglib import *
@@ -77,7 +76,7 @@ def main(args):
                ('result_type', 'abundance'),
                ('asynchronous', '1'),
                ('hide_metadata', '1') ]
-    url = opts.url+'/matrix/organism?'+urllib.urlencode(params, True)
+    url = opts.url+'/matrix/organism?'+urlencode(params, True)
 
     # retrieve data
     top_ann = {}
@@ -90,7 +89,7 @@ def main(args):
                    ('filter_level', opts.filter_level),
                    ('min_level', opts.level),
                    ('version', opts.version) ]
-        url = opts.url+'/m5nr/taxonomy?'+urllib.urlencode(params, True)
+        url = opts.url+'/m5nr/taxonomy?'+urlencode(params, True)
         data = obj_from_url(url)
         sub_ann = set( map(lambda x: x[opts.level], data['data']) )
     

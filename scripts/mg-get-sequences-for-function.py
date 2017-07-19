@@ -1,7 +1,6 @@
 #!/usr/bin/env python
 
 import sys
-import urllib
 from operator import itemgetter
 from optparse import OptionParser
 from mglib.mglib import *
@@ -72,7 +71,7 @@ def main(args):
         params.append(('filter', opts.name))
         if opts.level:
             params.append(('filter_level', opts.level))
-    url = opts.url+'/annotation/sequence/'+opts.id+'?'+urllib.urlencode(params, True)
+    url = opts.url+'/annotation/sequence/'+opts.id+'?'+urlencode(params, True)
     
     # output data
     stdout_from_url(url, auth=token)
