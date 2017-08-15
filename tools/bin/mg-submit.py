@@ -255,8 +255,8 @@ def submit(stype, files, opts):
     if opts.debug:
         data['debug'] = 1
     if opts.metadata:
-        mid = upload([opts.metadata])
-        data['metadata_file'] = mid
+        mids = upload([opts.metadata])
+        data['metadata_file'] = mids[0]
     elif opts.project_id:
         data['project_id'] = opts.project_id
     elif opts.project_name:
@@ -314,9 +314,11 @@ def submit(stype, files, opts):
     if opts.debug:
         pprint.pprint(result)
     elif opts.synch or opts.json_out:
+        print "submission project: "+result['project']
         print "submission started: "+result['id']
         wait_on_complete(result['id'], opts.json_out)
     else:
+        print "submission project: "+result['project']
         status(result['id'])
 
 def upload(files):
@@ -378,7 +380,7 @@ def main(args):
     parser.add_option("-s", "--shock_url", dest="shock_url", default=SHOCK_URL, help="Shock API url")
     parser.add_option("-t", "--token", dest="token", default=None, help="MG-RAST token")
     # required options
-    parser.add_option("-m", "--metadata", dest="metadata", default=None, help="metadata file ID")
+    parser.add_option("-m", "--metadata", dest="metadata", default=None, help="metadata .xlsx file")
     parser.add_option("", "--project_id", dest="project_id", default=None, help="project ID")
     parser.add_option("", "--project_name", dest="project_name", default=None, help="project name")
     # pairjoin / demultiplex options
@@ -452,18 +454,6 @@ def main(args):
         return 0
     
     # get auth object, get from token if no login
-    mgrast_auth = get_auth(token)
-    if not mgrast_auth:
-        return 1
-    
-    # login first
-    if action == "login":
-        password = getpass.getpass('Enter your password: ')
-        login(args[1], password)
-        return 0
-    
-    # load auth - token overrides login
-    token = get_auth_token(opts)
     mgrast_auth = get_auth(token)
     if not mgrast_auth:
         return 1
