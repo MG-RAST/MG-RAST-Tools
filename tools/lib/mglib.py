@@ -134,6 +134,28 @@ def file_from_url(url, handle, auth=None, sauth=None, data=None, debug=False):
             break
         handle.write(chunk)
 
+# POST file to MG-RAST
+def post_file(url, filename, data={}, auth=None):
+    data['upload'] = (os.path.basename(filename), open(filename))
+    mdata = MultipartEncoder(fields=data)
+    headers = {'Content-Type': mdata.content_type}
+    if auth:
+        headers['Auth'] = auth
+    try:
+        req = requests.post(url, headers=headers, data=mdata, allow_redirects=True)
+        rj = req.json()
+    except:
+        sys.stderr.write("Unable to connect to MG-RAST API server")
+        sys.exit(1)
+    if rj and rj['ERROR']:
+        sys.stderr.write("ERROR: %s\n"%(rj['ERROR']))
+        sys.exit(1)
+    if not (req.ok):
+        sys.stderr.write("Unable to connect to MG-RAST API server")
+        sys.exit(1)
+    return rj
+
+
 # POST file to Shock
 def post_node(url, keyname, filename, attr, auth=None):
     data = {
