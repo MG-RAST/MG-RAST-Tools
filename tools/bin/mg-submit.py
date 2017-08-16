@@ -246,9 +246,9 @@ def submit(stype, files, opts):
     fids = []
     # get files in shock
     if stype == 'batch':
-        fids = archive_upload(files[0])
+        fids = archive_upload(files[0], opts.verbose)
     else:
-        fids = upload(files)
+        fids = upload(files, opts.verbose)
     
     # set POST data
     data = {}
@@ -310,20 +310,26 @@ def submit(stype, files, opts):
         data['priority'] = opts.priority
     
     # submit it
+    if opts.verbose:
+        print "Submitting to MG-RAST with the following parameters:"
+        print json.dumps(data, sort_keys=True, indent=4)
     result = obj_from_url(API_URL+"/submission/submit", data=json.dumps(data), auth=mgrast_auth['token'])
+    if opts.verbose and (not opts.debug):
+        print json.dumps(result)
     if opts.debug:
         pprint.pprint(result)
     elif opts.synch or opts.json_out:
-        print "submission project: "+result['project']
-        print "submission started: "+result['id']
+        print "Project ID: "+result['project']
+        print "Submission ID: "+result['id']
         wait_on_complete(result['id'], opts.json_out)
     else:
-        print "submission project: "+result['project']
+        print "Project ID: "+result['project']
+        print "Submission ID: "+result['id']
         status(result['id'])
 
-def upload(files):
+def upload(files, verbose):
     fids = []
-    for f in files:
+    for i, f in enumerate(files):
         attr = json.dumps({
             "type": "inbox",
             "id": mgrast_auth['id'],
@@ -338,14 +344,28 @@ def upload(files):
         else:
             fformat = "upload"
         # POST to shock
+        if verbose:
+            if len(files) > 1:
+                print "Uploading file %d of %d (%s) to MG-RAST Shock"%(i, len(files), f)
+            else:
+                print "Uploading file %s to MG-RAST Shock"%(f)
         result = post_node(SHOCK_URL+"/node", fformat, f, attr, auth="mgrast "+mgrast_auth['token'])
+        if verbose:
+            print json.dumps(result)
+            if len(files) > 1:
+                print "Setting info for file %d of %d (%s) in MG-RAST inbox"%(i, len(files), f)
+            else:
+                print "Setting info for file %s in MG-RAST inbox"%(f)
         # compute file info
         info = obj_from_url(API_URL+"/inbox/info/"+result['id'], auth=mgrast_auth['token'])
-        print info['status']
+        if verbose:
+            print json.dumps(info)
+        else:
+            print info['status']
         fids.append(result['id'])
     return fids
 
-def archive_upload(afile):
+def archive_upload(afile, verbose):
     attr = json.dumps({
         "type": "inbox",
         "id": mgrast_auth['id'],
@@ -365,8 +385,15 @@ def archive_upload(afile):
         sys.stderr.write("ERROR: input file %s is incorrect archive format\n"%afile)
         sys.exit(1)
     # POST to shock / unpack
+    if verbose:
+        print "Uploading file %s to MG-RAST Shock"%(f)
     result = post_node(SHOCK_URL+"/node", "upload", afile, attr, auth="mgrast "+mgrast_auth['token'])
+    if verbose:
+        print json.dumps(result)
+        print "Unpacking archive file %s"%(f)
     unpack = unpack_node(SHOCK_URL+"/node", result['id'], aformat, attr, auth="mgrast "+mgrast_auth['token'])
+    if verbose:
+        print json.dumps(unpack)
     fids = map(lambda x: x['id'], unpack)
     return fids
 
@@ -406,6 +433,7 @@ def main(args):
     parser.add_option("", "--json_out", dest="json_out", default=None, help="Output final metagenome product as json object to this file, synch mode only")
     parser.add_option("", "--json_in", dest="json_in", default=None, help="Input sequence file(s) encoded as shock handle in json file, simple or pairjoin types only")
     parser.add_option("", "--tmp_dir", dest="tmp_dir", default="", help="Temp dir to download too if using json_in option, default is current working dir")
+    parser.add_option("-v", "--verbose", dest="verbose", action="store_true", default=False, help="Verbose STDOUT")
     parser.add_option("", "--debug", dest="debug", action="store_true", default=False, help="Submit in debug mode")
     
     # get inputs
@@ -422,6 +450,9 @@ def main(args):
         action = args[0]
     API_URL = opts.mgrast_url
     SHOCK_URL = opts.shock_url
+    
+    if opts.verbose and opts.debug:
+        print "##### Running in Debug Mode #####"
     
     # validate inputs
     if action not in valid_actions:
@@ -460,10 +491,16 @@ def main(args):
     
     # actions
     if action == "list":
+        if opts.verbose:
+            print "Listing all submissions for "+mgrast_auth['login']
         listall()
     elif action == "status":
+        if opts.verbose:
+            print "Status for submission"+args[1]
         status(args[1])
     elif action == "delete":
+        if opts.verbose:
+            print "Deleting submission"+args[1]
         delete(args[1])
     elif action == "submit":
         # process input json if exists
@@ -475,6 +512,8 @@ def main(args):
         if opts.json_out and (stype == "pairjoin") and (not opts.mgname):
             opts.mgname = os.path.splitext(opts.json_out)[0]
         # submit it
+        if opts.verbose:
+            print "Starting submission %s for %d files"%(stype, len(infiles))
         submit(stype, infiles, opts)
 
     return 0
