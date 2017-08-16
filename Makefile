@@ -2,8 +2,12 @@
 default:
 	python2 setup.py build
 
+build: 
+	python2 setup.py build
+
 install:
-	python2 setup.py install 
+	python2 setup.py develop  
+#  Normal setup install causes problems with running the scripts while in the source tree
 
 clean:
 	python2 setup.py clean

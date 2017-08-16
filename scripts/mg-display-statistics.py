@@ -5,7 +5,7 @@ import math
 from operator import itemgetter
 from optparse import OptionParser
 from mglib.mglib import *
-import aplotter
+from mglib import aplotter
 
 prehelp = """
 NAME
