@@ -104,11 +104,11 @@ def test_jsonviewer():
     stat, out, err = runme(s2) 
 
 def test_mg_abundant_functions():
-    s = '''mg-abundant-functions.py --id "mgm4441680.3" --level level3 --source Subsystems --top 20 --evalue 8'''
+    s = '''mg-abundant-functions.py --id mgm4441680.3 --level level3 --source Subsystems --top 20 --evalue 8'''
     stat, out, err = runme(s) 
 
 def test_mg_abundant_taxa():
-    s = '''mg-abundant-taxa.py --id "mgm4441680.3" --level genus --source RefSeq --top 20 --evalue 8'''
+    s = '''mg-abundant-taxa.py --id mgm4441680.3 --level genus --source RefSeq --top 20 --evalue 8'''
     stat, out, err = runme(s) 
 
 def test_mg_compare_taxa():
@@ -116,15 +116,15 @@ def test_mg_compare_taxa():
     stat, out, err = runme(s) 
 
 def test_mg_compare_alpha_diversity():
-    s= '''mg-compare-alpha-diversity.py --ids "mgm4441679.3,mgm4441680.3,mgm4441681.3,mgm4441682.3" --level class --source RefSeq'''
+    s= '''mg-compare-alpha-diversity.py --ids mgm4441679.3,mgm4441680.3,mgm4441681.3,mgm4441682.3 --level class --source RefSeq'''
     stat, out, err = runme(s) 
 
 def test_mg_compare_functions():
-    s='''mg-compare-functions.py --ids "mgm4441679.3,mgm4441680.3,mgm4441681.3,mgm4441682.3" --level level2 --source KO --format text --evalue 8'''
+    s='''mg-compare-functions.py --ids mgm4441679.3,mgm4441680.3,mgm4441681.3,mgm4441682.3 --level level2 --source KO --format text --evalue 8'''
     stat, out, err = runme(s) 
 
 def test_mg_display_statistics():
-    s='''mg-display-statistics.py --id "mgm4441680.3" --stat sequence'''
+    s='''mg-display-statistics.py --id mgm4441680.3 --stat sequence'''
     stat, out, err = runme(s) 
   
 def test_mg_download():
@@ -136,22 +136,22 @@ def test_mg_download():
 #    stat, out, err = runme(s) 
 
 def test_mg_get_annotation_set():
-    s='''mg-get-annotation-set.py --id "mgm4441680.3" --top 5 --level genus --source SEED'''
+    s='''mg-get-annotation-set.py --id mgm4441680.3 --top 5 --level genus --source SEED'''
     stat, out, err = runme(s) 
     assert stat == 0
 
 def test_mg_get_sequences_for_function():
-    s='''mg-get-sequences-for-function.py --id "mgm4441680.3" --name "Central carbohydrate metabolism" --level level2 --source Subsystems --evalue 10'''
+    s='''mg-get-sequences-for-function.py --id mgm4441680.3 --name "Central carbohydrate metabolism" --level level2 --source Subsystems --evalue 10'''
     stat, out, err = runme(s) 
     assert stat == 0
 
 def test_mg_get_sequences_for_taxon():
-    s='''mg-get-sequences-for-taxon.py --id "mgm4441680.3" --name Lachnospiraceae --level family --source RefSeq --evalue 8'''
+    s='''mg-get-sequences-for-taxon.py --id mgm4441680.3 --name Lachnospiraceae --level family --source RefSeq --evalue 8'''
     stat, out, err = runme(s) 
     assert stat == 0
 
 def test_mg_get_similarity_for_taxon():
-    s='''mg-get-similarity-for-function.py --id "mgm4441680.3" --name "Central carbohydrate metabolism" --level level2 --source Subsystems --evalue 10'''
+    s='''mg-get-similarity-for-function.py --id mgm4441680.3 --name "Central carbohydrate metabolism" --level level2 --source Subsystems --evalue 10'''
     stat, out, err = runme(s) 
     assert stat == 0
 def test_mg_inbox_view():
