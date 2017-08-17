@@ -32,6 +32,25 @@ SHOCK_URL = "http://shock.metagenomics.anl.gov"
 AUTH_LIST = "Jared Bischof, Travis Harrison, Folker Meyer, Tobias Paczian, Andreas Wilke"
 SEARCH_FIELDS = ["function", "organism", "md5", "name", "metadata", "biome", "feature", "material", "country", "location", "longitude", "latitude", "created", "env_package_type", "project_id", "project_name", "PI_firstname", "PI_lastname", "sequence_type", "seq_method", "collection_date"]
 
+# return python struct from JSON output of asynchronous MG-RAST API
+def async_rest_api(url, auth=None, data=None, debug=False, delay=15):
+    parameters = urlparse.parse_qs(url.split("?")[1])
+    assert "asynchronous" in parameters, "Must specify asynchronous=1 for asynchronous call!"
+    submit = obj_from_url(url, auth=auth, data=data, debug=debug)
+    if not (('status' in submit) and (submit['status'] == 'submitted') and ('url' in submit)):
+        sys.stderr.write("ERROR: return data invalid format\n:%s"%json.dumps(submit))
+    result = obj_from_url(submit['url'], debug=debug)
+    while result['status'] != 'done':
+        if debug:
+            print("waiting %d seconds ..."%delay)
+        time.sleep(delay)
+        result = obj_from_url(submit['url'], debug=debug)
+    if 'ERROR' in result['data']:
+        if debug:
+            sys.stderr.write("URL: %s\n" %url)
+        sys.stderr.write("ERROR: %s\n" %result['data']['ERROR'])
+        sys.exit(1)
+    return result['data']
 
 # return python struct from JSON output of MG-RAST API
 def obj_from_url(url, auth=None, data=None, debug=False, method=None):
