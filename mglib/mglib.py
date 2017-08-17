@@ -55,10 +55,10 @@ def obj_from_url(url, auth=None, data=None, debug=False, method=None):
         if debug:
             sys.stderr.write("URL: %s\n" %url)
         try:
-            eobj = json.loads(error.read())
+            eobj = json.loads(error.read().decode("utf8"))
             sys.stderr.write("ERROR (%s): %s\n" %(error.code, eobj['ERROR']))
         except:
-            sys.stderr.write("ERROR (%s): %s\n" %(error.code, error.read()))
+            sys.stderr.write("ERROR (%s): %s\n" %(error.code, error.read().decode("utf8")))
         finally:
             sys.exit(1)
     if not res:
@@ -66,7 +66,7 @@ def obj_from_url(url, auth=None, data=None, debug=False, method=None):
             sys.stderr.write("URL: %s\n" %url)
         sys.stderr.write("ERROR: no results returned\n")
         sys.exit(1)
-    obj = json.loads(res.read())
+    obj = json.loads(res.read().decode("utf8"))
     if obj is None:
         if debug:
             sys.stderr.write("URL: %s\n" %url)
