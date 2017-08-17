@@ -102,8 +102,8 @@ def status(sid):
         sys.stderr.write("ERROR: %s\n"%data['status'])
         sys.exit(1)
     
-    fids = map(lambda x: x['id'], data['status']['inputs'])
-    fnames = map(lambda x: x['filename'], data['status']['inputs'])
+    fids = map(lambda x: x['id'], data['status']['submission']['input']['files'])
+    fnames = map(lambda x: x['filename'], data['status']['submission']['input']['files'])
     # submission summary
     pt_summary = PrettyTable(["submission ID", "type", "submit time", "input file ID", "input file name"])
     pt_summary.add_row([data['id'], data['status']['type'], data['status']['timestamp'], "\n".join(fids), "\n".join(fnames)])
