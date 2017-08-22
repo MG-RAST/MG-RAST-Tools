@@ -60,8 +60,7 @@ def main(args):
     OptionParser.format_epilog = lambda self, formatter: self.epilog
     parser = OptionParser(usage='', description=prehelp%VERSION, epilog=posthelp%AUTH_LIST)
     # access options
-    parser.add_option("-u", "--mgrast_url", dest="mgrast_url", default=API_URL, help="MG-RAST API url")
-    parser.add_option("-s", "--shock_url", dest="shock_url", default=SHOCK_URL, help="Shock API url")
+    parser.add_option("-u", "--url", dest="url", default=API_URL, help="MG-RAST API url")
     parser.add_option("-t", "--token", dest="token", default=None, help="MG-RAST token")
     # other options
     parser.add_option("-f", "--file", dest="mdfile", default=None, help="metadata .xlsx file")
@@ -69,8 +68,7 @@ def main(args):
     
     # get inputs
     (opts, args) = parser.parse_args()
-    API_URL = opts.mgrast_url
-    SHOCK_URL = opts.shock_url
+    API_URL = opts.url
     
     # validate inputs
     if len(args) < 1:
@@ -98,7 +96,7 @@ def main(args):
         data = obj_from_url(opts.url+'/metadata/export/'+pid, auth=token)
         print json.dumps(data, sort_keys=True, indent=4)
     elif action == "update-metadata":
-        result = post_file(opts.url+'/metadata/update', opts.mdfile, auth=token, data={'project': pid})
+        result = post_file(opts.url+'/metadata/update', 'upload', opts.mdfile, data={'project': pid}, auth=token)
         print json.dumps(data, sort_keys=True, indent=4)
     elif action == "make-public":
         data = obj_from_url(opts.url+'/project/'+pid+'/makepublic', auth=token)

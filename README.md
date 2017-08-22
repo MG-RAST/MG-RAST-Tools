@@ -20,6 +20,7 @@ Repository of scripts and libraries for using the MG-RAST API and MG-RAST data
 
 -   Python libs
     -   prettytable - <https://pypi.python.org/pypi/PrettyTable>
+    -   poster - <https://pypi.python.org/pypi/poster>
     -   requests - <http://docs.python-requests.org/en/latest>
     -   requests_toolbelt - <https://github.com/sigmavirus24/requests-toolbelt>
     -   scipy - <http://www.scipy.org>

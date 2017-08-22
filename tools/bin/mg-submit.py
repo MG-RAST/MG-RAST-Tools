@@ -106,8 +106,8 @@ def status(sid):
     fnames = map(lambda x: x['filename'], data['inputs'])
     fsizes = map(lambda x: str(x['filesize']), data['inputs'])
     # submission summary
-    pt_summary = PrettyTable(["submission ID", "type", "submit time", "input file ID", "input file name", "input file size"])
-    pt_summary.add_row([data['id'], data['type'], data['info']['submittime'], "\n".join(fids), "\n".join(fnames), "\n".join(fsizes)])
+    pt_summary = PrettyTable(["submission ID", "type", "submit time", "input file ID", "input file name", "input file size", "status"])
+    pt_summary.add_row([data['id'], data['type'], data['info']['submittime'], "\n".join(fids), "\n".join(fnames), "\n".join(fsizes), data['state']])
     pt_summary.align = "l"
     print pt_summary
     # submission status
@@ -207,7 +207,6 @@ def delete(sid):
 
 def seqs_from_json(json_in, tmp_dir):
     files = []
-    shock_auth = "OAuth "+mgrast_auth['token']
     try:
         seq_obj = json.load(open(json_in, 'r'))
     except:
@@ -219,7 +218,7 @@ def seqs_from_json(json_in, tmp_dir):
         down_url  = "%s/node/%s?download"%(seq_obj['handle']['url'], seq_obj['handle']['id'])
         down_file = os.path.join(tmp_dir, seq_obj['handle']['file_name'])
         down_hdl  = open(down_file, 'w')
-        file_from_url(down_url, down_hdl, sauth=shock_auth)
+        file_from_url(down_url, down_hdl, auth=mgrast_auth['token'])
         down_hdl.close()
         files.append(down_file)
     # pairjoin type
@@ -231,8 +230,8 @@ def seqs_from_json(json_in, tmp_dir):
         down_file_2 = os.path.join(tmp_dir, seq_obj['handle_2']['file_name'])
         down_hdl_1  = open(down_file_1, 'w')
         down_hdl_2  = open(down_file_2, 'w')
-        file_from_url(down_url_1, down_hdl_1, sauth=shock_auth)
-        file_from_url(down_url_2, down_hdl_2, sauth=shock_auth)
+        file_from_url(down_url_1, down_hdl_1, auth=mgrast_auth['token'])
+        file_from_url(down_url_2, down_hdl_2, auth=mgrast_auth['token'])
         down_hdl_1.close()
         down_hdl_2.close()
         files.append(down_file_1)
@@ -244,7 +243,7 @@ def seqs_from_json(json_in, tmp_dir):
 
 def submit(stype, files, opts):
     fids = []
-    # get files in shock
+    # post files to shock
     if stype == 'batch':
         fids = archive_upload(files[0], opts.verbose)
     else:
@@ -255,7 +254,7 @@ def submit(stype, files, opts):
     if opts.debug:
         data['debug'] = 1
     if opts.metadata:
-        mids = upload([opts.metadata])
+        mids = upload([opts.metadata], opts.verbose)
         data['metadata_file'] = mids[0]
     elif opts.project_id:
         data['project_id'] = opts.project_id
@@ -329,40 +328,47 @@ def submit(stype, files, opts):
 
 def upload(files, verbose):
     fids = []
+    attr = json.dumps({
+        "type": "inbox",
+        "id": mgrast_auth['id'],
+        "user": mgrast_auth['login'],
+        "email": mgrast_auth['email']
+    })
     for i, f in enumerate(files):
-        attr = json.dumps({
-            "type": "inbox",
-            "id": mgrast_auth['id'],
-            "user": mgrast_auth['login'],
-            "email": mgrast_auth['email']
-        })
         # get format
         if f.endswith(".gz"):
             fformat = "gzip"
+            fname = os.path.basename(f[:-3])
         elif f.endswith(".bz2"):
             fformat = "bzip2"
+            fname = os.path.basename(f[:-4])
         else:
             fformat = "upload"
+            fname = os.path.basename(f)
         # POST to shock
+        data = {
+            "file_name": fname,
+            "attributes_str": attr
+        }
         if verbose:
             if len(files) > 1:
-                print "Uploading file %d of %d (%s) to MG-RAST Shock"%(i, len(files), f)
+                print "Uploading file %d of %d (%s) to MG-RAST Shock"%(i+1, len(files), f)
             else:
                 print "Uploading file %s to MG-RAST Shock"%(f)
-        result = post_node(SHOCK_URL+"/node", fformat, f, attr, auth="mgrast "+mgrast_auth['token'])
+        result = post_file(SHOCK_URL+"/node", fformat, f, data=data, auth=mgrast_auth['token'], debug=verbose)
         if verbose:
             print json.dumps(result)
             if len(files) > 1:
-                print "Setting info for file %d of %d (%s) in MG-RAST inbox"%(i, len(files), f)
+                print "Setting info for file %d of %d (%s) in MG-RAST inbox"%(i+1, len(files), f)
             else:
                 print "Setting info for file %s in MG-RAST inbox"%(f)
         # compute file info
-        info = obj_from_url(API_URL+"/inbox/info/"+result['id'], auth=mgrast_auth['token'])
+        info = obj_from_url(API_URL+"/inbox/info/"+result['data']['id'], auth=mgrast_auth['token'], debug=verbose)
         if verbose:
             print json.dumps(info)
         else:
             print info['status']
-        fids.append(result['id'])
+        fids.append(result['data']['id'])
     return fids
 
 def archive_upload(afile, verbose):
@@ -386,15 +392,24 @@ def archive_upload(afile, verbose):
         sys.exit(1)
     # POST to shock / unpack
     if verbose:
-        print "Uploading file %s to MG-RAST Shock"%(f)
-    result = post_node(SHOCK_URL+"/node", "upload", afile, attr, auth="mgrast "+mgrast_auth['token'])
+        print "Uploading file %s to MG-RAST Shock"%(afile)
+    data = {
+        "file_name": os.path.basename(afile),
+        "attributes_str": attr
+    }
+    result = post_file(SHOCK_URL+"/node", "upload", afile, data=data, auth=mgrast_auth['token'], debug=verbose)
     if verbose:
         print json.dumps(result)
-        print "Unpacking archive file %s"%(f)
-    unpack = unpack_node(SHOCK_URL+"/node", result['id'], aformat, attr, auth="mgrast "+mgrast_auth['token'])
+        print "Unpacking archive file %s"%(afile)
+    data = {
+        "unpack_node": result['data']['id'],
+        "archive_format": aformat,
+        "attributes_str": attr
+    }
+    unpack = obj_from_url(SHOCK_URL+"/node", data=data, auth=mgrast_auth['token'], debug=verbose)
     if verbose:
         print json.dumps(unpack)
-    fids = map(lambda x: x['id'], unpack)
+    fids = map(lambda x: x['id'], unpack['data'])
     return fids
 
 def main(args):

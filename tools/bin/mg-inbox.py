@@ -176,13 +176,17 @@ def upload(files):
         else:
             fformat = "upload"
         # POST to shock
-        result = post_node(SHOCK_URL+"/node", fformat, f, attr, auth="mgrast "+mgrast_auth['token'])
+        data = {
+            "file_name": os.path.basename(f),
+            "attributes_str": attr
+        }
+        result = post_file(SHOCK_URL+"/node", fformat, f, data=data, auth=mgrast_auth['token'])
         # compute file info
-        info = obj_from_url(API_URL+"/inbox/info/"+result['id'], auth=mgrast_auth['token'])
+        info = obj_from_url(API_URL+"/inbox/info/"+result['data']['id'], auth=mgrast_auth['token'])
         print info['status']
         # compute sequence stats
         if info['stats_info']['file_type'] in ['fasta', 'fastq']:
-            stats = obj_from_url(API_URL+"/inbox/stats/"+result['id'], auth=mgrast_auth['token'])
+            stats = obj_from_url(API_URL+"/inbox/stats/"+result['data']['id'], auth=mgrast_auth['token'])
             print stats['status'].replace("stats computation", "validation")
 
 def upload_archive(afile):
@@ -205,10 +209,19 @@ def upload_archive(afile):
         sys.stderr.write("ERROR: input file %s is incorrect archive format\n"%afile)
         sys.exit(1)
     # POST to shock / unpack
-    result = post_node(SHOCK_URL+"/node", "upload", afile, attr, auth="mgrast "+mgrast_auth['token'])
-    unpack = unpack_node(SHOCK_URL+"/node", result['id'], aformat, attr, auth="mgrast "+mgrast_auth['token'])
+    data = {
+        "file_name": os.path.basename(afile),
+        "attributes_str": attr
+    }
+    result = post_file(SHOCK_URL+"/node", "upload", afile, data=data, auth=mgrast_auth['token'])
+    data = {
+        "unpack_node": result['data']['id'],
+        "archive_format": aformat,
+        "attributes_str": attr
+    }
+    unpack = obj_from_url(SHOCK_URL+"/node", data=data, auth=mgrast_auth['token'])
     # process new nodes
-    for node in unpack:
+    for node in unpack['data']:
         # compute file info
         info = obj_from_url(API_URL+"/inbox/info/"+node['id'], auth=mgrast_auth['token'])
         print info['status']
