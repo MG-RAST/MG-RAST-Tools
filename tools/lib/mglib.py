@@ -9,9 +9,9 @@ import json
 import string
 import random
 import subprocess
-import requests
 import cStringIO
-from requests_toolbelt import MultipartEncoder
+from poster.encode import multipart_encode
+from poster.streaminghttp import register_openers
 
 # don't buffer stdout
 #sys.stdout = os.fdopen(sys.stdout.fileno(), 'w', 0)
@@ -22,6 +22,70 @@ API_URL = "http://api.metagenomics.anl.gov/"+VERSION
 SHOCK_URL = "http://shock.metagenomics.anl.gov"
 AUTH_LIST = "Jared Bischof, Travis Harrison, Folker Meyer, Tobias Paczian, Andreas Wilke"
 SEARCH_FIELDS = ["function", "organism", "md5", "name", "metadata", "biome", "feature", "material", "country", "location", "longitude", "latitude", "created", "env_package_type", "project_id", "project_name", "PI_firstname", "PI_lastname", "sequence_type", "seq_method", "collection_date"]
+
+# return response body from MG-RAST or Shock API
+def body_from_url(url, accept, auth=None, data=None, debug=False, method=None):
+    header = {'Accept': accept}
+    if auth:
+        header['Authorization'] = 'mgrast '+auth
+    if data or method:
+        header['Content-Type'] = 'application/json'
+    if debug:
+        if data:
+            print "data:\t"+data
+        print "header:\t"+json.dumps(header)
+        print "url:\t"+url
+    try:
+        req = urllib2.Request(url, data, headers=header)
+        if method:
+            req.get_method = lambda: method
+        res = urllib2.urlopen(req)
+    except urllib2.HTTPError, error:
+        try:
+            eobj = json.loads(error.read())
+            if 'ERROR' in eobj:
+                sys.stderr.write("ERROR (%s): %s\n" %(error.code, eobj['ERROR']))
+            elif 'error' in eobj:
+                sys.stderr.write("ERROR (%s): %s\n" %(error.code, eobj['error'][0]))
+        except:
+            sys.stderr.write("ERROR (%s): %s\n" %(error.code, error.read()))
+        finally:
+            sys.exit(1)
+    if not res:
+        sys.stderr.write("ERROR: no results returned\n")
+        sys.exit(1)
+    return res
+
+# return python struct from JSON output of MG-RAST or Shock API
+def obj_from_url(url, auth=None, data=None, debug=False, method=None):
+    result = body_from_url(url, 'application/json', auth=auth, data=data, debug=debug, method=method)
+    obj = json.loads(result.read())
+    if obj is None:
+        sys.stderr.write("ERROR: return structure not valid json format\n")
+        sys.exit(1)
+    if len(obj.keys()) == 0:
+        sys.stderr.write("ERROR: no data available\n")
+        sys.exit(1)
+    if 'ERROR' in obj:
+        sys.stderr.write("ERROR: %s\n" %obj['ERROR'])
+        sys.exit(1)
+    if ('error' in obj) and obj['error']:
+        sys.stderr.write("ERROR: %s\n" %obj['error'][0])
+        sys.exit(1)
+    return obj
+
+# print to file results of MG-RAST or Shock API
+def file_from_url(url, handle, auth=None, data=None, debug=False):
+    result = body_from_url(url, 'text/plain', auth=auth, data=data, debug=debug)
+    while True:
+        chunk = result.read(8192)
+        if not chunk:
+            break
+        handle.write(chunk)
+
+# print to stdout results of MG-RAST API
+def stdout_from_url(url, auth=None, data=None, debug=False):
+    file_from_url(url, sys.stdout, auth=auth, data=data, debug=debug)
 
 # return python struct from JSON output of asynchronous MG-RAST API
 def async_rest_api(url, auth=None, data=None, debug=False, delay=15):
@@ -37,82 +101,24 @@ def async_rest_api(url, auth=None, data=None, debug=False, delay=15):
         time.sleep(delay)
         result = obj_from_url(submit['url'], debug=debug)
     if 'ERROR' in result['data']:
-        if debug:
-            sys.stderr.write("URL: %s\n" %url)
         sys.stderr.write("ERROR: %s\n" %result['data']['ERROR'])
         sys.exit(1)
     return result['data']
 
-# return python struct from JSON output of MG-RAST API
-def obj_from_url(url, auth=None, data=None, debug=False, method=None):
-    header = {'Accept': 'application/json'}
-    if auth:
-        header['Auth'] = auth
-    if data or method:
-        header['Content-Type'] = 'application/json'
+# POST file to MG-RAST or Shock
+def post_file(url, keyname, filename, data={}, auth=None, debug=False):
+    register_openers()
     if debug:
-        if data:
-            print "data:\t"+data
+        print "data:\t"+json.dumps(data)
+    data[keyname] = open(filename)
+    datagen, header = multipart_encode(data)
+    if auth:
+        header['Authorization'] = 'mgrast '+auth
+    if debug:
         print "header:\t"+json.dumps(header)
         print "url:\t"+url
     try:
-        req = urllib2.Request(url, data, headers=header)
-        if method:
-            req.get_method = lambda: method
-        res = urllib2.urlopen(req)
-    except urllib2.HTTPError, error:
-        if debug:
-            sys.stderr.write("URL: %s\n" %url)
-        try:
-            eobj = json.loads(error.read())
-            sys.stderr.write("ERROR (%s): %s\n" %(error.code, eobj['ERROR']))
-        except:
-            sys.stderr.write("ERROR (%s): %s\n" %(error.code, error.read()))
-        finally:
-            sys.exit(1)
-    if not res:
-        if debug:
-            sys.stderr.write("URL: %s\n" %url)
-        sys.stderr.write("ERROR: no results returned\n")
-        sys.exit(1)
-    obj = json.loads(res.read())
-    if obj is None:
-        if debug:
-            sys.stderr.write("URL: %s\n" %url)
-        sys.stderr.write("ERROR: return structure not valid json format\n")
-        sys.exit(1)
-    if len(obj.keys()) == 0:
-        if debug:
-            sys.stderr.write("URL: %s\n" %url)
-        sys.stderr.write("ERROR: no data available\n")
-        sys.exit(1)
-    if 'ERROR' in obj:
-        if debug:
-            sys.stderr.write("URL: %s\n" %url)
-        sys.stderr.write("ERROR: %s\n" %obj['ERROR'])
-        sys.exit(1)
-    return obj
-
-# print to stdout results of MG-RAST API
-def stdout_from_url(url, auth=None, data=None, debug=False):
-    file_from_url(url, sys.stdout, auth=auth, data=data, debug=debug)
-
-# print to file results of MG-RAST or Shock API
-def file_from_url(url, handle, auth=None, sauth=None, data=None, debug=False):
-    header = {'Accept': 'text/plain'}
-    if auth:
-        header['Auth'] = auth
-    if sauth:
-        header['Authorization'] = sauth
-    if data:
-        header['Content-Type'] = 'application/json'
-    if debug:
-        if data:
-            print "data:\t"+data
-        print "header:\t"+json.dumps(header)
-        print "url:\t"+url
-    try:
-        req = urllib2.Request(url, data, headers=header)
+        req = urllib2.Request(url, datagen, header)
         res = urllib2.urlopen(req)
     except urllib2.HTTPError, error:
         try:
@@ -121,67 +127,27 @@ def file_from_url(url, handle, auth=None, sauth=None, data=None, debug=False):
                 sys.stderr.write("ERROR (%s): %s\n" %(error.code, eobj['ERROR']))
             elif 'error' in eobj:
                 sys.stderr.write("ERROR (%s): %s\n" %(error.code, eobj['error'][0]))
-            sys.exit(1)
         except:
             sys.stderr.write("ERROR (%s): %s\n" %(error.code, error.read()))
+        finally:
             sys.exit(1)
     if not res:
         sys.stderr.write("ERROR: no results returned\n")
         sys.exit(1)
-    while True:
-        chunk = res.read(8192)
-        if not chunk:
-            break
-        handle.write(chunk)
-
-# POST file to Shock
-def post_node(url, keyname, filename, attr, auth=None):
-    data = {
-        keyname: (os.path.basename(filename), open(filename)),
-        'attributes': ('unknown', cStringIO.StringIO(attr))
-    }
-    mdata = MultipartEncoder(fields=data)
-    headers = {'Content-Type': mdata.content_type}
-    if auth:
-        headers['Authorization'] = auth
-    try:
-        req = requests.post(url, headers=headers, data=mdata, allow_redirects=True)
-        rj = req.json()
-    except:
-        sys.stderr.write("Unable to connect to Shock server")
+    obj = json.loads(res.read())
+    if obj is None:
+        sys.stderr.write("ERROR: return structure not valid json format\n")
         sys.exit(1)
-    if rj and rj['error']:
-        sys.stderr.write("Shock error %s: %s"%(rj['status'], rj['error'][0]))
+    if len(obj.keys()) == 0:
+        sys.stderr.write("ERROR: no data available\n")
         sys.exit(1)
-    if not (req.ok):
-        sys.stderr.write("Unable to connect to Shock server")
+    if 'ERROR' in obj:
+        sys.stderr.write("ERROR: %s\n" %obj['ERROR'])
         sys.exit(1)
-    return rj['data']
-
-# unpack archive node into new nodes
-def unpack_node(url, parent_id, aformat, attr, auth=None):
-    data = {
-        'unpack_node': parent_id,
-        'archive_format': aformat,
-        'attributes_str': attr
-    }
-    mdata = MultipartEncoder(fields=data)
-    headers = {'Content-Type': mdata.content_type}
-    if auth:
-        headers['Authorization'] = auth
-    try:
-        req = requests.post(url, headers=headers, data=mdata, allow_redirects=True)
-        rj = req.json()
-    except:
-        sys.stderr.write("Unable to connect to Shock server")
+    if ('error' in obj) and obj['error']:
+        sys.stderr.write("ERROR: %s\n" %obj['error'][0])
         sys.exit(1)
-    if rj and rj['error']:
-        sys.stderr.write("Shock error %s: %s"%(rj['status'], rj['error'][0]))
-        sys.exit(1)
-    if not (req.ok):
-        sys.stderr.write("Unable to connect to Shock server")
-        sys.exit(1)
-    return rj['data']
+    return obj
 
 # safe handling of stdout for piping
 def safe_print(text):

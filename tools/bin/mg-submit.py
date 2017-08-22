@@ -96,32 +96,46 @@ def listall():
     print pt
 
 def status(sid):
-    data = obj_from_url(API_URL+"/submission/"+sid, auth=mgrast_auth['token'])
+    data = obj_from_url(API_URL+"/submission/"+sid+'?full=1', auth=mgrast_auth['token'])
     # check for errors
-    if isinstance(data['status'], basestring):
-        sys.stderr.write("ERROR: %s\n"%data['status'])
+    if ('error' in data) and data['error']:
+        sys.stderr.write("ERROR: %s\n"%data['error'])
         sys.exit(1)
     
-    fids = map(lambda x: x['id'], data['status']['inputs'])
-    fnames = map(lambda x: x['filename'], data['status']['inputs'])
+    fids   = map(lambda x: x['id'], data['inputs'])
+    fnames = map(lambda x: x['filename'], data['inputs'])
+    fsizes = map(lambda x: str(x['filesize']), data['inputs'])
     # submission summary
-    pt_summary = PrettyTable(["submission ID", "type", "submit time", "input file ID", "input file name"])
-    pt_summary.add_row([data['id'], data['status']['type'], data['status']['timestamp'], "\n".join(fids), "\n".join(fnames)])
+    pt_summary = PrettyTable(["submission ID", "type", "submit time", "input file ID", "input file name", "input file size", "status"])
+    pt_summary.add_row([data['id'], data['type'], data['info']['submittime'], "\n".join(fids), "\n".join(fnames), "\n".join(fsizes), data['state']])
     pt_summary.align = "l"
-    # submission status
-    pt_status = PrettyTable(["submission step", "step name", "step status", "step inputs"])
-    for i, p in enumerate(data['status']['preprocessing']):
-        pt_status.add_row( [i, p['stage'], p['status'], "\n".join(p['inputs'])] )
-    pt_status.align = "l"
-    # metagenome info
-    pt_mg = PrettyTable(["metagenome ID", "metagenome name", "total status", "completed steps", "total steps", "submit time", "job ID"])
-    for p in data['status']['metagenomes']:
-        pt_mg.add_row( [p['id'], p['name'], p['status'], p['completed'], p['total'], p['timestamp'], p['job']] )
-    pt_mg.align = "l"
-    # output it
     print pt_summary
-    print pt_status
-    if len(data['status']['metagenomes']) > 0:
+    # submission status
+    if ('preprocessing' in data) and data['preprocessing']:
+        pt_status = PrettyTable(["submission step", "step name", "step status", "step inputs"])
+        for i, p in enumerate(data['preprocessing']):
+            pstatus = p['status']
+            if ('error' in p) and p['error']:
+                pstatus += "\n"+p['error']
+            pt_status.add_row( [i, p['stage'], pstatus, "\n".join(p['inputs'])] )
+        pt_status.align = "l"
+        print pt_status
+    # metagenome info
+    if ('metagenomes' in data) and data['metagenomes']:
+        pt_mg = PrettyTable(["metagenome ID", "metagenome name", "status", "remaining steps", "submit time", "complete time", "pipeline ID"])
+        for m in data['metagenomes']:
+            state = "in-progress"
+            if len(m['state']) == 1:
+                state = m['state'][0]
+            else:
+                for s in m['state']:
+                    if s == 'suspend':
+                        state = 'suspend'
+            remain = 0
+            if m['task'] and (len(m['task']) > 0):
+                remain = len(m['task'])
+            pt_mg.add_row( [m['userattr']['id'], m['userattr']['name'], state, remain, m['submittime'], m['completedtime'], m['id']] )
+        pt_mg.align = "l"
         print pt_mg
 
 def wait_on_complete(sid, json_out):
@@ -193,7 +207,6 @@ def delete(sid):
 
 def seqs_from_json(json_in, tmp_dir):
     files = []
-    shock_auth = "OAuth "+mgrast_auth['token']
     try:
         seq_obj = json.load(open(json_in, 'r'))
     except:
@@ -205,7 +218,7 @@ def seqs_from_json(json_in, tmp_dir):
         down_url  = "%s/node/%s?download"%(seq_obj['handle']['url'], seq_obj['handle']['id'])
         down_file = os.path.join(tmp_dir, seq_obj['handle']['file_name'])
         down_hdl  = open(down_file, 'w')
-        file_from_url(down_url, down_hdl, sauth=shock_auth)
+        file_from_url(down_url, down_hdl, auth=mgrast_auth['token'])
         down_hdl.close()
         files.append(down_file)
     # pairjoin type
@@ -217,8 +230,8 @@ def seqs_from_json(json_in, tmp_dir):
         down_file_2 = os.path.join(tmp_dir, seq_obj['handle_2']['file_name'])
         down_hdl_1  = open(down_file_1, 'w')
         down_hdl_2  = open(down_file_2, 'w')
-        file_from_url(down_url_1, down_hdl_1, sauth=shock_auth)
-        file_from_url(down_url_2, down_hdl_2, sauth=shock_auth)
+        file_from_url(down_url_1, down_hdl_1, auth=mgrast_auth['token'])
+        file_from_url(down_url_2, down_hdl_2, auth=mgrast_auth['token'])
         down_hdl_1.close()
         down_hdl_2.close()
         files.append(down_file_1)
@@ -230,19 +243,19 @@ def seqs_from_json(json_in, tmp_dir):
 
 def submit(stype, files, opts):
     fids = []
-    # get files in shock
+    # post files to shock
     if stype == 'batch':
-        fids = archive_upload(files[0])
+        fids = archive_upload(files[0], opts.verbose)
     else:
-        fids = upload(files)
+        fids = upload(files, opts.verbose)
     
     # set POST data
     data = {}
     if opts.debug:
         data['debug'] = 1
     if opts.metadata:
-        mid = upload([opts.metadata])
-        data['metadata_file'] = mid
+        mids = upload([opts.metadata], opts.verbose)
+        data['metadata_file'] = mids[0]
     elif opts.project_id:
         data['project_id'] = opts.project_id
     elif opts.project_name:
@@ -296,40 +309,69 @@ def submit(stype, files, opts):
         data['priority'] = opts.priority
     
     # submit it
+    if opts.verbose:
+        print "Submitting to MG-RAST with the following parameters:"
+        print json.dumps(data, sort_keys=True, indent=4)
     result = obj_from_url(API_URL+"/submission/submit", data=json.dumps(data), auth=mgrast_auth['token'])
+    if opts.verbose and (not opts.debug):
+        print json.dumps(result)
     if opts.debug:
         pprint.pprint(result)
     elif opts.synch or opts.json_out:
-        print "submission started: "+result['id']
+        print "Project ID: "+result['project']
+        print "Submission ID: "+result['id']
         wait_on_complete(result['id'], opts.json_out)
     else:
+        print "Project ID: "+result['project']
+        print "Submission ID: "+result['id']
         status(result['id'])
 
-def upload(files):
+def upload(files, verbose):
     fids = []
-    for f in files:
-        attr = json.dumps({
-            "type": "inbox",
-            "id": mgrast_auth['id'],
-            "user": mgrast_auth['login'],
-            "email": mgrast_auth['email']
-        })
+    attr = json.dumps({
+        "type": "inbox",
+        "id": mgrast_auth['id'],
+        "user": mgrast_auth['login'],
+        "email": mgrast_auth['email']
+    })
+    for i, f in enumerate(files):
         # get format
         if f.endswith(".gz"):
             fformat = "gzip"
+            fname = os.path.basename(f[:-3])
         elif f.endswith(".bz2"):
             fformat = "bzip2"
+            fname = os.path.basename(f[:-4])
         else:
             fformat = "upload"
+            fname = os.path.basename(f)
         # POST to shock
-        result = post_node(SHOCK_URL+"/node", fformat, f, attr, auth="mgrast "+mgrast_auth['token'])
+        data = {
+            "file_name": fname,
+            "attributes_str": attr
+        }
+        if verbose:
+            if len(files) > 1:
+                print "Uploading file %d of %d (%s) to MG-RAST Shock"%(i+1, len(files), f)
+            else:
+                print "Uploading file %s to MG-RAST Shock"%(f)
+        result = post_file(SHOCK_URL+"/node", fformat, f, data=data, auth=mgrast_auth['token'], debug=verbose)
+        if verbose:
+            print json.dumps(result)
+            if len(files) > 1:
+                print "Setting info for file %d of %d (%s) in MG-RAST inbox"%(i+1, len(files), f)
+            else:
+                print "Setting info for file %s in MG-RAST inbox"%(f)
         # compute file info
-        info = obj_from_url(API_URL+"/inbox/info/"+result['id'], auth=mgrast_auth['token'])
-        print info['status']
-        fids.append(result['id'])
+        info = obj_from_url(API_URL+"/inbox/info/"+result['data']['id'], auth=mgrast_auth['token'], debug=verbose)
+        if verbose:
+            print json.dumps(info)
+        else:
+            print info['status']
+        fids.append(result['data']['id'])
     return fids
 
-def archive_upload(afile):
+def archive_upload(afile, verbose):
     attr = json.dumps({
         "type": "inbox",
         "id": mgrast_auth['id'],
@@ -349,9 +391,25 @@ def archive_upload(afile):
         sys.stderr.write("ERROR: input file %s is incorrect archive format\n"%afile)
         sys.exit(1)
     # POST to shock / unpack
-    result = post_node(SHOCK_URL+"/node", "upload", afile, attr, auth="mgrast "+mgrast_auth['token'])
-    unpack = unpack_node(SHOCK_URL+"/node", result['id'], aformat, attr, auth="mgrast "+mgrast_auth['token'])
-    fids = map(lambda x: x['id'], unpack)
+    if verbose:
+        print "Uploading file %s to MG-RAST Shock"%(afile)
+    data = {
+        "file_name": os.path.basename(afile),
+        "attributes_str": attr
+    }
+    result = post_file(SHOCK_URL+"/node", "upload", afile, data=data, auth=mgrast_auth['token'], debug=verbose)
+    if verbose:
+        print json.dumps(result)
+        print "Unpacking archive file %s"%(afile)
+    data = {
+        "unpack_node": result['data']['id'],
+        "archive_format": aformat,
+        "attributes_str": attr
+    }
+    unpack = obj_from_url(SHOCK_URL+"/node", data=data, auth=mgrast_auth['token'], debug=verbose)
+    if verbose:
+        print json.dumps(unpack)
+    fids = map(lambda x: x['id'], unpack['data'])
     return fids
 
 def main(args):
@@ -364,7 +422,7 @@ def main(args):
     parser.add_option("-s", "--shock_url", dest="shock_url", default=SHOCK_URL, help="Shock API url")
     parser.add_option("-t", "--token", dest="token", default=None, help="MG-RAST token")
     # required options
-    parser.add_option("-m", "--metadata", dest="metadata", default=None, help="metadata file ID")
+    parser.add_option("-m", "--metadata", dest="metadata", default=None, help="metadata .xlsx file")
     parser.add_option("", "--project_id", dest="project_id", default=None, help="project ID")
     parser.add_option("", "--project_name", dest="project_name", default=None, help="project name")
     # pairjoin / demultiplex options
@@ -390,6 +448,7 @@ def main(args):
     parser.add_option("", "--json_out", dest="json_out", default=None, help="Output final metagenome product as json object to this file, synch mode only")
     parser.add_option("", "--json_in", dest="json_in", default=None, help="Input sequence file(s) encoded as shock handle in json file, simple or pairjoin types only")
     parser.add_option("", "--tmp_dir", dest="tmp_dir", default="", help="Temp dir to download too if using json_in option, default is current working dir")
+    parser.add_option("-v", "--verbose", dest="verbose", action="store_true", default=False, help="Verbose STDOUT")
     parser.add_option("", "--debug", dest="debug", action="store_true", default=False, help="Submit in debug mode")
     
     # get inputs
@@ -406,6 +465,9 @@ def main(args):
         action = args[0]
     API_URL = opts.mgrast_url
     SHOCK_URL = opts.shock_url
+    
+    if opts.verbose and opts.debug:
+        print "##### Running in Debug Mode #####"
     
     # validate inputs
     if action not in valid_actions:
@@ -442,24 +504,18 @@ def main(args):
     if not mgrast_auth:
         return 1
     
-    # login first
-    if action == "login":
-        password = getpass.getpass('Enter your password: ')
-        login(args[1], password)
-        return 0
-    
-    # load auth - token overrides login
-    token = get_auth_token(opts)
-    mgrast_auth = get_auth(token)
-    if not mgrast_auth:
-        return 1
-    
     # actions
     if action == "list":
+        if opts.verbose:
+            print "Listing all submissions for "+mgrast_auth['login']
         listall()
     elif action == "status":
+        if opts.verbose:
+            print "Status for submission"+args[1]
         status(args[1])
     elif action == "delete":
+        if opts.verbose:
+            print "Deleting submission"+args[1]
         delete(args[1])
     elif action == "submit":
         # process input json if exists
@@ -471,6 +527,8 @@ def main(args):
         if opts.json_out and (stype == "pairjoin") and (not opts.mgname):
             opts.mgname = os.path.splitext(opts.json_out)[0]
         # submit it
+        if opts.verbose:
+            print "Starting submission %s for %d files"%(stype, len(infiles))
         submit(stype, infiles, opts)
 
     return 0
