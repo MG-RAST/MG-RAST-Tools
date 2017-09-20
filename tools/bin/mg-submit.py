@@ -106,8 +106,8 @@ def status(sid):
     fnames = map(lambda x: x['filename'], data['inputs'])
     fsizes = map(lambda x: str(x['filesize']), data['inputs'])
     # submission summary
-    pt_summary = PrettyTable(["submission ID", "type", "submit time", "input file ID", "input file name", "input file size", "status"])
-    pt_summary.add_row([data['id'], data['type'], data['info']['submittime'], "\n".join(fids), "\n".join(fnames), "\n".join(fsizes), data['state']])
+    pt_summary = PrettyTable(["submission ID", "type", "project", "submit time", "input file ID", "input file name", "input file size", "status"])
+    pt_summary.add_row([data['id'], data['type'], data['project'], data['info']['submittime'], "\n".join(fids), "\n".join(fnames), "\n".join(fsizes), data['state']])
     pt_summary.align = "l"
     print pt_summary
     # submission status

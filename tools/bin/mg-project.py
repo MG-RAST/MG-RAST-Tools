@@ -27,6 +27,7 @@ SYNOPSIS
         upload-metadata <project ID> [--file <filename>]
         make-public <project ID>
         submit-ebi <project ID>
+        status-ebi <project ID>
 
 DESCRIPTION
     MG-RAST project tool
@@ -51,7 +52,7 @@ AUTHORS
 
 synch_pause = 900
 mgrast_auth = {}
-valid_actions = ["get-info", "get-metadata", "update-metadata", "make-public", "submit-ebi"]
+valid_actions = ["get-info", "get-metadata", "update-metadata", "make-public", "submit-ebi", "status-ebi"]
 
 
 def main(args):
@@ -64,6 +65,7 @@ def main(args):
     parser.add_option("-t", "--token", dest="token", default=None, help="MG-RAST token")
     # other options
     parser.add_option("-f", "--file", dest="mdfile", default=None, help="metadata .xlsx file")
+    parser.add_option("", "--taxa", dest="taxa", default=None, help="metagenome_taxonomy for project: http://www.ebi.ac.uk/ena/data/view/Taxon:408169")
     parser.add_option("", "--debug", dest="debug", action="store_true", default=False, help="Run in debug mode")
     
     # get inputs
@@ -90,19 +92,32 @@ def main(args):
     
     # actions
     if action == "get-info":
-        data = obj_from_url(opts.url+'/project/'+pid+'?verbosity=full', auth=token)
+        data = obj_from_url(opts.url+'/project/'+pid+'?verbosity=full&nocache=1', auth=token)
         print json.dumps(data, sort_keys=True, indent=4)
     elif action == "get-metadata":
         data = obj_from_url(opts.url+'/metadata/export/'+pid, auth=token)
         print json.dumps(data, sort_keys=True, indent=4)
     elif action == "update-metadata":
-        result = post_file(opts.url+'/metadata/update', 'upload', opts.mdfile, data={'project': pid}, auth=token)
+        result = post_file(opts.url+'/metadata/update', 'upload', opts.mdfile, auth=token, data=json.dumps({'project': pid}, separators=(',',':')))
         print json.dumps(data, sort_keys=True, indent=4)
     elif action == "make-public":
         data = obj_from_url(opts.url+'/project/'+pid+'/makepublic', auth=token)
         print json.dumps(data, sort_keys=True, indent=4)
     elif action == "submit-ebi":
-        data = obj_from_url(opts.url+'/project/'+pid+'/submittoebi', auth=token, method='POST')
+        debug = 1 if opts.debug else 0
+        info  = {
+            'project_id': pid,
+            'debug': debug
+        }
+        if opts.taxa:
+            info['metagenome_taxonomy'] = {}
+            proj = obj_from_url(opts.url+'/project/'+pid+'?verbosity=verbose&nocache=1', auth=token)
+            for mg in proj['metagenomes']:
+                info['metagenome_taxonomy'][mg['metagenome_id']] = opts.taxa
+        data = obj_from_url(opts.url+'/submission/ebi', auth=token, data=json.dumps(info, separators=(',',':')))
+        print json.dumps(data, sort_keys=True, indent=4)
+    elif action == "status-ebi":
+        data = obj_from_url(opts.url+'/submission/'+pid, auth=token)
         print json.dumps(data, sort_keys=True, indent=4)
     
     return 0
