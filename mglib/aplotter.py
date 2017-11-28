@@ -197,7 +197,7 @@ EPSILON = 0.000001
 
 def transposed(mat):
         result = []
-        for i in xrange(len(mat[0])):
+        for i in range(len(mat[0])):
                 result.append([x[i] for x in mat])
         return result
 
@@ -364,7 +364,7 @@ class Plotter(object):
                         xy_seq.sort(key = lambda c: c[0])
                         prev_p = xy_seq[0]
                         e_xy_seq = enumerate(xy_seq)
-                        e_xy_seq.next()
+                        next(e_xy_seq)
                         for i,(x,y) in e_xy_seq:
                                 draw_symbol = self.dot
                                 line_drawn = self.plot_line(prev_p, (x,y), output_buffer, plot_data)
@@ -452,17 +452,17 @@ class Plotter(object):
                                         if self.draw_axes and cur_y == y_zero_coord and draw_symbol == "-":
                                                 cur_draw_symbol = "="
                                         output_buffer[int(x0+slope*y)][cur_y] = cur_draw_symbol
-                except Exception, e:
-                        print start, end
-                        print start_coord, end_coord
-                        print plot_data
+                except Exception as e:
+                        print(start, end)
+                        print(start_coord, end_coord)
+                        print(plot_data)
                         raise e
 
                 return False            
                
                
         def plot_single(self, seq, min_x = None, max_x = None, min_y = None, max_y = None):
-                return self.plot_double(range(len(seq)),seq, min_x, max_x, min_y, max_y)
+                return self.plot_double(list(range(len(seq))),seq, min_x, max_x, min_y, max_y)
                
 
 
@@ -495,7 +495,7 @@ class Plotter(object):
                 if self.will_draw_axes:
                         self.draw_axes(output_buffer, plot_data)
 
-                self.plot_data(zip(x_seq, y_seq), output_buffer, plot_data)
+                self.plot_data(list(zip(x_seq, y_seq)), output_buffer, plot_data)
 
                 if self.will_plot_labels:
                         self.plot_labels(output_buffer, plot_data)
@@ -514,13 +514,13 @@ class Plotter(object):
                 if plot_data.min_x <= 0 and plot_data.max_x > 0:
                         draw_y = True
                         zero_x = self.get_coord(0, plot_data.min_x, plot_data.x_step)
-                        for y in xrange(plot_data.y_size):
+                        for y in range(plot_data.y_size):
                                 output_buffer[zero_x][y] = "|"
                                
                 if plot_data.min_y <= 0 and plot_data.max_y > 0:
                         draw_x = True
                         zero_y = self.get_coord(0, plot_data.min_y, plot_data.y_step)    
-                        for x in xrange(plot_data.x_size):
+                        for x in range(plot_data.x_size):
                                 output_buffer[x][zero_y] = "-"
 
                 if draw_x and draw_y:
@@ -574,7 +574,7 @@ def plot(*args,**flags):
         else:
                 raise NotImplementedError("can't draw multiple graphs yet")
         if output == sys.stdout:
-                print r
+                print(r)
         else:
                 return r
        
@@ -597,9 +597,9 @@ y = exp(-0.5*x**2)*sin(2*pi*x)
                "p = plot(x, y, output=str)",
                "print p"
                ]
-        print data
+        print(data)
         for c in cmd:
-                print '\n\n', c
+                print('\n\n', c)
                 exec(c)
        
 if __name__ == '__main__':

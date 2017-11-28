@@ -5,7 +5,7 @@ import sys
 import json
 import time
 import urllib2
-import cStringIO
+import StringIO
 from operator import itemgetter
 from optparse import OptionParser
 
@@ -147,7 +147,7 @@ def obj_from_url(url, auth=None, data=None, debug=False, method=None):
 def post_node(url, keyname, filename, attr, auth=None):
     data = {
         keyname: (os.path.basename(filename), open(filename)),
-        'attributes': ('unknown', cStringIO.StringIO(attr))
+        'attributes': ('unknown', StringIO.StringIO(attr))
     }
     mdata = MultipartEncoder(fields=data)
     headers = {'Content-Type': mdata.content_type}

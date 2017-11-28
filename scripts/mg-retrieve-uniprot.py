@@ -1,7 +1,6 @@
 #!/usr/bin/env python
 
 import sys
-import urllib
 from operator import itemgetter
 from optparse import OptionParser
 from mglib.mglib import *
@@ -54,9 +53,9 @@ def main(args):
                ('version', opts.version),
                ('source', opts.source) ]
     if opts.md5:
-        url = opts.url+'/m5nr/md5/'+opts.md5+'?'+urllib.urlencode(params, True)
+        url = opts.url+'/m5nr/md5/'+opts.md5+'?'+urlencode(params, True)
     elif opts.id:
-        url = opts.url+'/m5nr/accession/'+opts.id+'?'+urllib.urlencode(params, True)
+        url = opts.url+'/m5nr/accession/'+opts.id+'?'+urlencode(params, True)
     else:
         sys.stderr.write("ERROR: no md5 checksum or accession given\n")
         return 1

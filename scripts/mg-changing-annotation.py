@@ -104,7 +104,7 @@ def main(args):
             return 1
         for mg in mg_list:
             found_gr = None
-            for gr in grdata.iterkeys():
+            for gr in grdata.keys():
                 if mg in grdata[gr]:
                     found_gr = gr
                     break

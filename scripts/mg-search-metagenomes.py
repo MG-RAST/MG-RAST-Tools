@@ -2,7 +2,6 @@
 
 import sys
 import time
-import urllib
 from operator import itemgetter
 from optparse import OptionParser
 from mglib.mglib import *
@@ -82,7 +81,7 @@ def main(args):
     if opts.order:
         params.append( ('order', opts.order) )
         params.append( ('direction', opts.direction) )
-    url = opts.url+'/metagenome?'+urllib.urlencode(params, True)
+    url = opts.url+'/metagenome?'+urlencode(params, True)
     
     # retrieve data
     fields = ['id']

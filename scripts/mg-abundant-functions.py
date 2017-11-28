@@ -1,9 +1,9 @@
 #!/usr/bin/env python
 
 import sys
-import urllib
 from operator import itemgetter
 from optparse import OptionParser
+import mglib.mglib
 from mglib.mglib import *
 
 prehelp = """
@@ -77,7 +77,7 @@ def main(args):
                ('result_type', 'abundance'),
                ('asynchronous', '1'),
                ('hide_metadata', '1') ]
-    url = opts.url+'/matrix/function?'+urllib.urlencode(params, True)
+    url = opts.url+'/matrix/function?'+urlencode(params, True)
     
     # retrieve data
     top_ann = {}
@@ -91,7 +91,7 @@ def main(args):
                    ('min_level', opts.level),
                    ('version', opts.version),
                    ('source', opts.source) ]
-        url = opts.url+'/m5nr/ontology?'+urllib.urlencode(params, True)
+        url = opts.url+'/m5nr/ontology?'+urlencode(params, True)
         data = obj_from_url(url)
         level = 'level4' if opts.level == 'function' else opts.level
         sub_ann = set( map(lambda x: x[level], data['data']) )
