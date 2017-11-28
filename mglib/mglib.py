@@ -8,7 +8,10 @@ import json
 import string
 import random
 import subprocess
-import cStringIO
+try:
+    from StringIO import StringIO
+except ImportError:
+    from io import StringIO
 from poster.encode import multipart_encode
 from poster.streaminghttp import register_openers
 import requests
