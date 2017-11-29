@@ -49,7 +49,6 @@ def main(args):
     parser.add_option("", "--input", dest="input", default='-', help="input: filename or stdin (-), default is stdin")
     parser.add_option("", "--format", dest="format", default='biom', help="input format: 'text' for tabbed table, 'biom' for BIOM format, default is biom")
     parser.add_option("", "--plot", dest="plot", default=None, help="filename for output plot")
-    parser.add_option("", "--reference", dest="reference", type="int", default=0, help="plot saved as shock reference object: 1=true, 0=false")
     parser.add_option("", "--rlib", dest="rlib", default=None, help="R lib path")
     parser.add_option("", "--height", dest="height", type="float", default=8.5, help="image height in inches, default is 4")
     parser.add_option("", "--width", dest="width", type="float", default=11, help="image width in inches, default is 5")
@@ -114,10 +113,6 @@ suppressMessages( plot_mg_boxplot(
     image_res_dpi=%d
 ))"""%(opts.rlib, tmp_in, opts.plot, label, opts.height, opts.width, opts.dpi)
     execute_r(r_cmd)
-    
-    # shock ref
-    if opts.reference == 1:
-        png_shock_ref(opts.plot+'.png', opts.plot, token)
     
     # cleanup
     os.remove(tmp_in)

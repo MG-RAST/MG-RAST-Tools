@@ -49,7 +49,6 @@ def main(args):
     parser.add_option("", "--input", dest="input", default='-', help="input: filename or stdin (-), default is stdin")
     parser.add_option("", "--format", dest="format", default='biom', help="input format: 'text' for tabbed table, 'biom' for BIOM format, default is biom")
     parser.add_option("", "--plot", dest="plot", default=None, help="filename for output plot")
-    parser.add_option("", "--reference", dest="reference", type="int", default=0, help="plot saved as shock reference object: 1=true, 0=false")
     parser.add_option("", "--cluster", dest="cluster", default='ward', help="cluster function, one of: ward, single, complete, mcquitty, median, centroid, default is ward")
     parser.add_option("", "--distance", dest="distance", default='bray-curtis', help="distance function, one of: bray-curtis, euclidean, maximum, manhattan, canberra, minkowski, difference, default is bray-curtis")
     parser.add_option("", "--rlib", dest="rlib", default=None, help="R lib path")
@@ -118,10 +117,6 @@ suppressMessages( plot_mg_heatdend(
     image_res_dpi=%d
 ))"""%(opts.rlib, tmp_in, opts.plot, order, label, opts.height, opts.width, opts.dpi)
     execute_r(r_cmd)
-    
-    # shock ref
-    if opts.reference == 1:
-        png_shock_ref(opts.plot, opts.plot+'.png', token)
     
     # cleanup
     os.remove(tmp_in)

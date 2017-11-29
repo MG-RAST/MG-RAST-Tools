@@ -3,7 +3,6 @@
 import os
 import sys
 import copy
-import urllib
 from operator import itemgetter
 from optparse import OptionParser
 from mglib.mglib import *
@@ -123,7 +122,7 @@ def main(args):
             cur_params = copy.deepcopy(params)
             for i in sub_ids:
                 cur_params.append(('id', i))
-            cur_url  = opts.url+'/matrix/organism?'+urllib.urlencode(cur_params, True)
+            cur_url  = opts.url+'/matrix/organism?'+urlencode(cur_params, True)
             cur_biom = async_rest_api(cur_url, auth=token)
             biom = merge_biom(biom, cur_biom)
             if opts.temp:
@@ -131,7 +130,7 @@ def main(args):
     else:
         for i in id_list:
             params.append(('id', i))
-        url = opts.url+'/matrix/organism?'+urllib.urlencode(params, True)
+        url = opts.url+'/matrix/organism?'+urlencode(params, True)
         biom = async_rest_api(url, auth=token)
         if opts.temp:
             json.dump(biom, open(opts.temp, 'w'))
@@ -151,7 +150,7 @@ def main(args):
         # annotation mapping from m5nr
         params = [ ('version', opts.version),
                    ('min_level', opts.level) ]
-        url = opts.url+'/m5nr/taxonomy?'+urllib.urlencode(params, True)
+        url = opts.url+'/m5nr/taxonomy?'+urlencode(params, True)
         data = obj_from_url(url)
         for ann in data['data']:
             if (opts.filter_level in ann) and (opts.level in ann) and (ann[opts.filter_level] in filter_list):

@@ -97,7 +97,7 @@ def main(args):
                 pt.add_row([mg, f['file_name'], f['file_id'], f['file_md5'], fsize])
         pt.align = "l"
         pt.align['Byte Size'] = "r"
-        print pt
+        print(pt)
         return 0
     
     # download all in dirs by ID

@@ -60,23 +60,23 @@ def main(args):
     # retrieve / output data
     result = obj_from_url(url, auth=token)
     if opts.verbosity == 'mixs':
-        for r in sorted(result.iterkeys()):
+        for r in sorted(result.keys()):
             if r not in ['project', 'library', 'sample']:
                 safe_print("%s\t%s\n" %(r, result[r]))
     elif opts.verbosity == 'full':
         md = result['metadata']
         safe_print("category\tlabel\tvalue\n")
         if ('project' in md) and md['project']['data']:
-            for p in sorted(md['project']['data'].iterkeys()):
+            for p in sorted(md['project']['data'].keys()):
                 safe_print("project\t%s\t%s\n" %(p, md['project']['data'][p]))
         if ('sample' in md) and md['sample']['data']:
-            for s in sorted(md['sample']['data'].iterkeys()):
+            for s in sorted(md['sample']['data'].keys()):
                 safe_print("sample\t%s\t%s\n" %(s, md['sample']['data'][s]))
         if ('library' in md) and ('type' in md['library']) and md['library']['data']:
-            for l in sorted(md['library']['data'].iterkeys()):
+            for l in sorted(md['library']['data'].keys()):
                 safe_print("library: %s\t%s\t%s\n" %(md['library']['type'], l, md['library']['data'][l]))
         if ('env_package' in md) and ('type' in md['env_package']) and md['env_package']['data']:
-            for e in sorted(md['env_package']['data'].iterkeys()):
+            for e in sorted(md['env_package']['data'].keys()):
                 safe_print("env package: %s\t%s\t%s\n" %(md['env_package']['type'], e, md['env_package']['data'][e]))
     else:
         sys.stderr.write("ERROR: invalid verbosity type\n")

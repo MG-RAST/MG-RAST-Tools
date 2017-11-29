@@ -1,7 +1,6 @@
 #!/usr/bin/env python
 
 import sys
-import urllib
 from operator import itemgetter
 from optparse import OptionParser
 from mglib.mglib import *
@@ -59,7 +58,7 @@ def main(args):
     id_list = opts.ids.split(',')
     params  = [ ('level', opts.level), ('source', opts.source) ]
     for i in id_list:
-        url  = opts.url+'/compute/alphadiversity/'+i+'?'+urllib.urlencode(params, True)
+        url  = opts.url+'/compute/alphadiversity/'+i+'?'+urlencode(params, True)
         data = obj_from_url(url, auth=token)
         safe_print("%s\t%s\n" %(i, data['data']))
     
