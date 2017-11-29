@@ -4,36 +4,18 @@ import os
 import sys
 import json
 import time
-import urllib2
-import StringIO
+import base64
 from operator import itemgetter
 from optparse import OptionParser
-
-try:
-    from prettytable import PrettyTable
-except ImportError:
-    sys.stderr.write("[error] prettytable library is missing, use 'pip install prettytable'\n")
-    sys.exit(1)
-
-try:
-    import requests
-except ImportError:
-    sys.stderr.write("[error] requests library is missing, use 'pip install requests'\n")
-    sys.exit(1)
-
-try:
-    from requests_toolbelt import MultipartEncoder
-except ImportError:
-    sys.stderr.write("[error] requests_toolbelt library is missing, use 'pip install prettytable'\n")
-    sys.exit(1)
-
+from prettytable import PrettyTable
+from mglib.mglib import *
 
 prehelp = """
 NAME
     mg-inbox
 
 VERSION
-    1
+    %s
 
 SYNOPSIS
     mg-inbox
@@ -80,144 +62,21 @@ SEE ALSO
     -
 
 AUTHORS
-    Jared Bischof, Travis Harrison, Folker Meyer, Tobias Paczian, Andreas Wilke
+    %s
 """
 
-API_URL = "http://api.metagenomics.anl.gov"
-SHOCK_URL = "http://shock.metagenomics.anl.gov"
-
-auth_file   = os.path.join(os.path.expanduser('~'), ".mgrast_auth")
 mgrast_auth = {}
 valid_actions    = ["login", "view", "upload", "upload-archive", "rename", "validate", "compute", "delete", "submit", "submitall"]
 view_options     = ["all", "sequence"]
 validate_options = ["sequence", "metadata"]
 compute_options  = ["sff2fastq", "demultiplex", "pairjoin", "pairjoin_demultiplex"]
 
-# return python struct from JSON output of MG-RAST API
-def obj_from_url(url, auth=None, data=None, debug=False, method=None):
-    header = {'Accept': 'application/json'}
-    if auth:
-        header['Auth'] = auth
-    if data or method:
-        header['Content-Type'] = 'application/json'
-    if debug:
-        if data:
-            print "data:\t"+data
-        print "header:\t"+json.dumps(header)
-        print "url:\t"+url
-    try:
-        req = urllib2.Request(url, data, headers=header)
-        if method:
-            req.get_method = lambda: method
-        res = urllib2.urlopen(req)
-    except urllib2.HTTPError, error:
-        if debug:
-            sys.stderr.write("URL: %s\n" %url)
-        try:
-            eobj = json.loads(error.read())
-            sys.stderr.write("ERROR (%s): %s\n" %(error.code, eobj['ERROR']))
-        except:
-            sys.stderr.write("ERROR (%s): %s\n" %(error.code, error.read()))
-        finally:
-            sys.exit(1)
-    if not res:
-        if debug:
-            sys.stderr.write("URL: %s\n" %url)
-        sys.stderr.write("ERROR: no results returned\n")
-        sys.exit(1)
-    obj = json.loads(res.read())
-    if obj is None:
-        if debug:
-            sys.stderr.write("URL: %s\n" %url)
-        sys.stderr.write("ERROR: return structure not valid json format\n")
-        sys.exit(1)
-    if len(obj.keys()) == 0:
-        if debug:
-            sys.stderr.write("URL: %s\n" %url)
-        sys.stderr.write("ERROR: no data available\n")
-        sys.exit(1)
-    if 'ERROR' in obj:
-        if debug:
-            sys.stderr.write("URL: %s\n" %url)
-        sys.stderr.write("ERROR: %s\n" %obj['ERROR'])
-        sys.exit(1)
-    return obj
-
-# POST file to Shock
-def post_node(url, keyname, filename, attr, auth=None):
-    data = {
-        keyname: (os.path.basename(filename), open(filename)),
-        'attributes': ('unknown', StringIO.StringIO(attr))
-    }
-    mdata = MultipartEncoder(fields=data)
-    headers = {'Content-Type': mdata.content_type}
-    if auth:
-        headers['Authorization'] = auth
-    try:
-        req = requests.post(url, headers=headers, data=mdata, allow_redirects=True)
-        rj = req.json()
-    except:
-        sys.stderr.write("Unable to connect to Shock server")
-        sys.exit(1)
-    if rj and rj['error']:
-        sys.stderr.write("Shock error %s: %s"%(rj['status'], rj['error'][0]))
-        sys.exit(1)
-    if not (req.ok):
-        sys.stderr.write("Unable to connect to Shock server")
-        sys.exit(1)
-    return rj['data']
-
-# unpack archive node into new nodes
-def unpack_node(url, parent_id, aformat, attr, auth=None):
-    data = {
-        'unpack_node': parent_id,
-        'archive_format': aformat,
-        'attributes_str': attr
-    }
-    mdata = MultipartEncoder(fields=data)
-    headers = {'Content-Type': mdata.content_type}
-    if auth:
-        headers['Authorization'] = auth
-    try:
-        req = requests.post(url, headers=headers, data=mdata, allow_redirects=True)
-        rj = req.json()
-    except:
-        sys.stderr.write("Unable to connect to Shock server")
-        sys.exit(1)
-    if rj and rj['error']:
-        sys.stderr.write("Shock error %s: %s"%(rj['status'], rj['error'][0]))
-        sys.exit(1)
-    if not (req.ok):
-        sys.stderr.write("Unable to connect to Shock server")
-        sys.exit(1)
-    return rj['data']
-
-def get_auth(token):
-    if token:
-        auth_obj = obj_from_url(API_URL+"/user/authenticate", auth=token)
-        return auth_obj
-    if not os.path.isfile(auth_file):
-        sys.stderr.write("ERROR: missing authentication file, please login\n")
-        return None
-    auth_obj = json.load(open(auth_file,'r'))
-    if ("token" not in auth_obj) or ("id" not in auth_obj) or ("expiration" not in auth_obj):
-        sys.stderr.write("ERROR: invalid authentication file, please login\n")
-        return None
-    if time.time() > int(auth_obj["expiration"]):
-        sys.stderr.write("ERROR: expired authentication file, please login\n")
-        return None
-    return auth_obj
-
-def login(token):
-    auth_obj = obj_from_url(API_URL+"/user/authenticate", auth=token)
-    json.dump(auth_obj, open(auth_file,'w'))
-
 def check_ids(files):
     data = obj_from_url(API_URL+"/inbox", auth=mgrast_auth['token'])
     if len(data['files']) == 0:
         sys.stderr.write("ERROR: Your inbox is empty, please upload first.\n")
         sys.exit(1)
-    ids = map(lambda x: x['id'], data['files'])
+    ids = [x['id'] for x in data['files']]
     for f in files:
         if f not in ids:
             sys.stderr.write("ERROR: File ID '%s' does not exist in your inbox. Did you use File Name by mistake?\n"%f)
@@ -226,7 +85,7 @@ def check_ids(files):
 def view(vtype):
     data = obj_from_url(API_URL+"/inbox", auth=mgrast_auth['token'])
     files = sorted(data['files'], key=itemgetter('timestamp'))
-    action_set = filter(lambda x: ("actions" in x) and (len(x['actions']) > 0), files)
+    action_set = [x for x in files if ("actions" in x) and (len(x['actions']) > 0)]
     has_action = True if len(action_set) > 0 else False
     has_error = False
     if has_action:
@@ -299,7 +158,7 @@ def view(vtype):
     pt.align = "r"
     pt.align['name'] = "l"
     pt.align['time'] = "l"
-    print pt
+    print(pt)
 
 def upload(files):
     for f in files:
@@ -317,14 +176,18 @@ def upload(files):
         else:
             fformat = "upload"
         # POST to shock
-        result = post_node(SHOCK_URL+"/node", fformat, f, attr, auth="mgrast "+mgrast_auth['token'])
+        data = {
+            "file_name": os.path.basename(f),
+            "attributes_str": attr
+        }
+        result = post_file(SHOCK_URL+"/node", fformat, f, data=data, auth=mgrast_auth['token'])
         # compute file info
         info = obj_from_url(API_URL+"/inbox/info/"+result['id'], auth=mgrast_auth['token'])
-        print info['status']
+        print(info['status'])
         # compute sequence stats
         if info['stats_info']['file_type'] in ['fasta', 'fastq']:
             stats = obj_from_url(API_URL+"/inbox/stats/"+result['id'], auth=mgrast_auth['token'])
-            print stats['status'].replace("stats computation", "validation")
+            print(stats['status'].replace("stats computation", "validation"))
 
 def upload_archive(afile):
     attr = json.dumps({
@@ -346,32 +209,41 @@ def upload_archive(afile):
         sys.stderr.write("ERROR: input file %s is incorrect archive format\n"%afile)
         sys.exit(1)
     # POST to shock / unpack
-    result = post_node(SHOCK_URL+"/node", "upload", afile, attr, auth="mgrast "+mgrast_auth['token'])
-    unpack = unpack_node(SHOCK_URL+"/node", result['id'], aformat, attr, auth="mgrast "+mgrast_auth['token'])
+    data = {
+        "file_name": os.path.basename(afile),
+        "attributes_str": attr
+    }
+    result = post_file(SHOCK_URL+"/node", "upload", afile, data=data, auth=mgrast_auth['token'])
+    data = {
+        "unpack_node": result['data']['id'],
+        "archive_format": aformat,
+        "attributes_str": attr
+    }
+    unpack = obj_from_url(SHOCK_URL+"/node", data=data, auth=mgrast_auth['token'])
     # process new nodes
-    for node in unpack:
+    for node in unpack['data']:
         # compute file info
         info = obj_from_url(API_URL+"/inbox/info/"+node['id'], auth=mgrast_auth['token'])
-        print info['status']
+        print(info['status'])
         # compute sequence stats
         if info['stats_info']['file_type'] in ['fasta', 'fastq']:
             stats = obj_from_url(API_URL+"/inbox/stats/"+node['id'], auth=mgrast_auth['token'])
-            print stats['status'].replace("stats computation", "validation")
+            print(stats['status'].replace("stats computation", "validation"))
 
 def rename(fid, fname):
     data = {"name": fname, "file": fid}
     result = obj_from_url(API_URL+"/inbox/rename", data=json.dumps(data), auth=mgrast_auth['token'])
-    print result['status']
+    print(result['status'])
 
 def validate(fformat, files, get_info=False):
     for f in files:
         data = obj_from_url(API_URL+"/inbox/"+f, auth=mgrast_auth['token'])
         if ('data_type' in data) and (data['data_type'] == fformat):
-            print "%s (%s) is a valid %s file"%(data['filename'], f, fformat)
+            print("%s (%s) is a valid %s file"%(data['filename'], f, fformat))
         elif fformat == 'sequence':
             if data['stats_info']['file_type'] in ['fasta', 'fastq']:
                 info = obj_from_url(API_URL+"/inbox/stats/"+f, auth=mgrast_auth['token'])
-                print info['status'].replace("stats computation", "validation")
+                print(info['status'].replace("stats computation", "validation"))
             else:
                 sys.stderr.write("ERROR: %s (%s) is not a fastq or fasta file\n"%(data['filename'], f))
         elif fformat == 'metadata':
@@ -380,9 +252,9 @@ def validate(fformat, files, get_info=False):
                 if get_info:
                     return info
                 else:
-                    print info['status']
+                    print(info['status'])
                     if info['status'].startswith('invalid'):
-                        print info['error']
+                        print(info['error'])
             else:
                 sys.stderr.write("ERROR: %s (%s) is not a spreadsheet file\n"%(data['filename'], f))
 
@@ -417,12 +289,12 @@ def compute(action, files, retain, joinfile, rc_index):
     else:
         sys.stderr.write("ERROR: invalid compute option. use one of: %s\n"%", ".join(compute_options))
     info = obj_from_url(API_URL+"/inbox/"+action, data=json.dumps(data), auth=mgrast_auth['token'])
-    print info['status']
+    print(info['status'])
 
 def delete(files):
     for f in files:
         result = obj_from_url(API_URL+"/inbox/"+f, auth=mgrast_auth['token'], method='DELETE')
-        print result['status']
+        print(result['status'])
 
 def submit(files, project, metadata):
     mdata = None
@@ -430,7 +302,7 @@ def submit(files, project, metadata):
         # TODO metadata stuff
         minfo = validate('metadata', [metadata], get_info=True)
         if minfo['status'].startswith('invalid') or ('extracted' not in minfo):
-            print minfo['error'] if 'error' in minfo else 'ERROR: unable to validate metadata '+metadata
+            print(minfo['error'] if 'error' in minfo else 'ERROR: unable to validate metadata '+metadata)
             return
         mdata = obj_from_url(API_URL+"/inbox/"+minfo['extracted'], auth=mgrast_auth['token'])
     info = []
@@ -458,24 +330,24 @@ def submit(files, project, metadata):
         data = {"input_id": i['id'], "metagenome_id": rjob['metagenome_id']}
         sjob = obj_from_url(API_URL+"/job/submit", data=json.dumps(data), auth=mgrast_auth['token'])
         mgids.append(rjob['metagenome_id'])
-        print "metagenome %s created for file %s (%s). pipeline id is: %s"%(rjob['metagenome_id'], i['filename'], i['id'], sjob['awe_id'])
+        print("metagenome %s created for file %s (%s). pipeline id is: %s"%(rjob['metagenome_id'], i['filename'], i['id'], sjob['awe_id']))
     # apply metadata
     if mdata and metadata:
         data = {"node_id": metadata, "metagenome": mgids}
         result = obj_from_url(API_URL+"/metadata/import", data=json.dumps(data), auth=mgrast_auth['token'])
         project = result['project']
         if result['errors']:
-            print "ERROR: adding metadata: "+result['errors']
+            print("ERROR: adding metadata: "+result['errors'])
         else:
-            print "metadata added for metagenomes"
-    print "metagenomes added to project: "+project
+            print("metadata added for metagenomes")
+    print("metagenomes added to project: "+project)
 
 
 def main(args):
     global mgrast_auth, API_URL, SHOCK_URL
     OptionParser.format_description = lambda self, formatter: self.description
     OptionParser.format_epilog = lambda self, formatter: self.epilog
-    parser = OptionParser(usage='', description=prehelp, epilog=posthelp)
+    parser = OptionParser(usage='', description=prehelp%VERSION, epilog=posthelp%AUTH_LIST)
     parser.add_option("-u", "--mgrast_url", dest="mgrast_url", default=API_URL, help="MG-RAST API url")
     parser.add_option("-s", "--shock_url", dest="shock_url", default=SHOCK_URL, help="Shock API url")
     parser.add_option("-t", "--token", dest="token", default=None, help="MG-RAST token")
@@ -541,14 +413,15 @@ def main(args):
         return 1
     
     # explict login
+    token = get_auth_token(opts)
     if action == "login":
-        if not opts.token:
-            opts.token = raw_input('Enter your MG-RAST auth token: ')
-        login(opts.token)
+        if not token:
+            token = input('Enter your MG-RAST auth token: ')
+        login(token)
         return 0
     
     # get auth object, get from token if no login
-    mgrast_auth = get_auth(opts.token)
+    mgrast_auth = get_auth(token)
     if not mgrast_auth:
         return 1
     
