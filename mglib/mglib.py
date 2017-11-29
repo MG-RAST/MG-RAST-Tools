@@ -1,17 +1,26 @@
+from __future__ import print_function
+import io
 import os
 import sys
 import time
 import copy
-import urllib2
-import urlparse
 import base64
 import json
 import string
 import random
 import subprocess
-import cStringIO
 from poster.encode import multipart_encode
 from poster.streaminghttp import register_openers
+
+try:  # python3
+    from urllib.parse import urlparse, urlencode, parse_qs
+    from urllib.request import urlopen, Request
+    from urllib.error import HTTPError
+except ImportError:  # python2
+    from urlparse import urlparse, parse_qs
+    from urllib import urlencode
+    from urllib2 import urlopen, Request, HTTPError
+
 
 # don't buffer stdout
 #sys.stdout = os.fdopen(sys.stdout.fileno(), 'w', 0)
@@ -32,15 +41,16 @@ def body_from_url(url, accept, auth=None, data=None, debug=False, method=None):
         header['Content-Type'] = 'application/json'
     if debug:
         if data:
-            print "data:\t"+data
-        print "header:\t"+json.dumps(header)
-        print "url:\t"+url
+            print("data:\t"+data)
+        print("header:\t"+json.dumps(header))
+        print("url:\t"+url)
     try:
-        req = urllib2.Request(url, data, headers=header)
+        print("Making request "+url, file=sys.stderr)
+        req = Request(url, data, headers=header)
         if method:
             req.get_method = lambda: method
-        res = urllib2.urlopen(req)
-    except urllib2.HTTPError, error:
+        res = urlopen(req)
+    except HTTPError, error:
         try:
             eobj = json.loads(error.read())
             if 'ERROR' in eobj:
@@ -48,7 +58,7 @@ def body_from_url(url, accept, auth=None, data=None, debug=False, method=None):
             elif 'error' in eobj:
                 sys.stderr.write("ERROR (%s): %s\n" %(error.code, eobj['error'][0]))
         except:
-            sys.stderr.write("ERROR (%s): %s\n" %(error.code, error.read()))
+            sys.stderr.write("ERROR (%s): %s\n" %(error.code, error.read().decode("utf8")))
         finally:
             sys.exit(1)
     if not res:
@@ -59,11 +69,11 @@ def body_from_url(url, accept, auth=None, data=None, debug=False, method=None):
 # return python struct from JSON output of MG-RAST or Shock API
 def obj_from_url(url, auth=None, data=None, debug=False, method=None):
     result = body_from_url(url, 'application/json', auth=auth, data=data, debug=debug, method=method)
-    obj = json.loads(result.read())
+    obj = json.loads(res.read().decode("utf8"))
     if obj is None:
         sys.stderr.write("ERROR: return structure not valid json format\n")
         sys.exit(1)
-    if len(obj.keys()) == 0:
+    if len(list(obj.keys())) == 0:
         sys.stderr.write("ERROR: no data available\n")
         sys.exit(1)
     if 'ERROR' in obj:
@@ -84,7 +94,7 @@ def file_from_url(url, handle, auth=None, data=None, debug=False):
         chunk = result.read(8192)
         if not chunk:
             break
-        handle.write(chunk)
+        handle.write(chunk.decode('utf8'))
 
 # print to stdout results of MG-RAST API
 def stdout_from_url(url, auth=None, data=None, debug=False):
@@ -92,7 +102,7 @@ def stdout_from_url(url, auth=None, data=None, debug=False):
 
 # return python struct from JSON output of asynchronous MG-RAST API
 def async_rest_api(url, auth=None, data=None, debug=False, delay=15):
-    parameters = urlparse.parse_qs(url.split("?")[1])
+    parameters = parse_qs(url.split("?")[1])
     assert "asynchronous" in parameters, "Must specify asynchronous=1 for asynchronous call!"
     submit = obj_from_url(url, auth=auth, data=data, debug=debug)
     if not (('status' in submit) and (submit['status'] == 'submitted') and ('url' in submit)):
@@ -100,7 +110,7 @@ def async_rest_api(url, auth=None, data=None, debug=False, delay=15):
     result = obj_from_url(submit['url'], debug=debug)
     while result['status'] != 'done':
         if debug:
-            print "waiting %d seconds ..."%delay
+            print("waiting %d seconds ..."%delay)
         time.sleep(delay)
         result = obj_from_url(submit['url'], debug=debug)
     if 'ERROR' in result['data']:
@@ -112,18 +122,18 @@ def async_rest_api(url, auth=None, data=None, debug=False, delay=15):
 def post_file(url, keyname, filename, data={}, auth=None, debug=False):
     register_openers()
     if debug:
-        print "data:\t"+json.dumps(data)
+        print("data:\t"+json.dumps(data))
     data[keyname] = open(filename)
     datagen, header = multipart_encode(data)
     if auth:
         header['Authorization'] = 'mgrast '+auth
     if debug:
-        print "header:\t"+json.dumps(header)
-        print "url:\t"+url
+        print("header:\t"+json.dumps(header))
+        print("url:\t"+url)
     try:
-        req = urllib2.Request(url, datagen, header)
-        res = urllib2.urlopen(req)
-    except urllib2.HTTPError, error:
+        req = Request(url, datagen, header)
+        res = urlopen(req)
+    except HTTPError, error:
         try:
             eobj = json.loads(error.read())
             if 'ERROR' in eobj:
@@ -137,7 +147,7 @@ def post_file(url, keyname, filename, data={}, auth=None, debug=False):
     if not res:
         sys.stderr.write("ERROR: no results returned\n")
         sys.exit(1)
-    obj = json.loads(res.read())
+    obj = json.loads(res.read().decode("utf8"))
     if obj is None:
         sys.stderr.write("ERROR: return structure not valid json format\n")
         sys.exit(1)
@@ -212,7 +222,7 @@ def metadata_from_biom(biom, term):
     for col in biom['columns']:
         value = 'null'
         if ('metadata' in col) and col['metadata']:
-            for v in col['metadata'].itervalues():
+            for v in col['metadata'].values():
                 if ('data' in v) and (term in v['data']):
                     value = v['data'][term]
         vals.append(value)
@@ -407,45 +417,6 @@ def login_from_token(token):
         parts[key] = val
     return parts['un']
 
-def png_shock_ref(png_file, ref_file, token):
-    try:
-        import shock
-    except:
-        sys.stderr.write("ERROR: missing shock library\n")
-        sys.exit(1)
-    shock_client = shock.Client(SHOCK_URL, token)
-    attr = {'type': 'image', 'file_format': 'png', 'name': png_file}
-    node = shock_client.upload(attr=json.dumps(attr), data=png_file)
-    shock_client.delete_acl(node['id'], 'read', login_from_token(token))
-    wref = {
-        'name': png_file,
-        'dataType': 'image',
-        'fileType': 'png',
-        'created': node['created_on'],
-        'ref': {
-            'ID': node['id'],
-            'URL': "%s/node/%s"%(SHOCK_URL, node['id'])
-        }
-    }
-    ref_hdl = open(ref_file, 'w')
-    ref_hdl.write(json.dumps(wref)+"\n")
-    ref_hdl.close()
-
-def load_to_ws(wname, otype, oname, obj):
-    if not _cmd_exists('ws-load'):
-        sys.stderr.write('ERROR: missing workspace client\n')
-    tmp_ws = 'tmp_'+random_str()+'.txt'
-    json.dump(obj, open(tmp_ws, 'w'))
-    ws_cmd = "ws-load %s %s %s -w %s"%(otype, oname, tmp_ws, wname)
-    process = subprocess.Popen(ws_cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
-    output, error = process.communicate()
-    os.remove(tmp_ws)
-    if error:
-        sys.stderr.write(error)
-        sys.exit(1)
-    else:
-        sys.stdout.write("%s saved in workspace %s as type %s\n"%(oname, wname, otype))
-
 def random_str(size=8):
     chars = string.ascii_letters + string.digits
     return ''.join(random.choice(chars) for x in range(size))
@@ -454,7 +425,7 @@ def random_str(size=8):
 def execute_r(cmd, debug=False):
     r_cmd = "echo '%s' | R --vanilla --slave --silent"%cmd
     if debug:
-        print r_cmd
+        print(r_cmd)
     else:
         process = subprocess.Popen(r_cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
         output, error = process.communicate()

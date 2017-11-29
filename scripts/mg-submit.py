@@ -93,7 +93,7 @@ def listall():
         row = [ s['id'], s['type'], s['status'], s['timestamp'] ]
         pt.add_row(row)
     pt.align = "l"
-    print pt
+    print(pt)
 
 def status(sid):
     data = obj_from_url(API_URL+"/submission/"+sid+'?full=1', auth=mgrast_auth['token'])
@@ -109,7 +109,7 @@ def status(sid):
     pt_summary = PrettyTable(["submission ID", "type", "project", "submit time", "input file ID", "input file name", "input file size", "status"])
     pt_summary.add_row([data['id'], data['type'], data['project'], data['info']['submittime'], "\n".join(fids), "\n".join(fnames), "\n".join(fsizes), data['state']])
     pt_summary.align = "l"
-    print pt_summary
+    print(pt_summary)
     # submission status
     if ('preprocessing' in data) and data['preprocessing']:
         pt_status = PrettyTable(["submission step", "step name", "step status", "step inputs"])
@@ -119,7 +119,7 @@ def status(sid):
                 pstatus += "\n"+p['error']
             pt_status.add_row( [i, p['stage'], pstatus, "\n".join(p['inputs'])] )
         pt_status.align = "l"
-        print pt_status
+        print(pt_status)
     # metagenome info
     if ('metagenomes' in data) and data['metagenomes']:
         pt_mg = PrettyTable(["metagenome ID", "metagenome name", "status", "remaining steps", "submit time", "complete time", "pipeline ID"])
@@ -136,7 +136,7 @@ def status(sid):
                 remain = len(m['task'])
             pt_mg.add_row( [m['userattr']['id'], m['userattr']['name'], state, remain, m['submittime'], m['completedtime'], m['id']] )
         pt_mg.align = "l"
-        print pt_mg
+        print(pt_mg)
 
 def wait_on_complete(sid, json_out):
     listed_mgs = set()
@@ -147,7 +147,7 @@ def wait_on_complete(sid, json_out):
         time.sleep(synch_pause)
         data = obj_from_url(API_URL+"/submission/"+sid, auth=mgrast_auth['token'])
         # check for global errors
-        if isinstance(data['status'], basestring):
+        if isinstance(data['status'], str):
             sys.stderr.write("ERROR: %s\n"%data['status'])
             sys.exit(1)
         # check for submission errors
@@ -162,7 +162,7 @@ def wait_on_complete(sid, json_out):
         if total_mg > 0:
             for mg in data['status']['metagenomes']:
                 if mg['id'] not in listed_mgs:
-                    print "metagenome analysis started: "+mg['id']
+                    print("metagenome analysis started: "+mg['id'])
                     listed_mgs.add(mg['id'])
                 if mg['status'] == "completed":
                     done_mg += 1
@@ -176,13 +176,13 @@ def wait_on_complete(sid, json_out):
         jhdl = open(json_out, 'w')
         for mg in data['status']['metagenomes']:
             if mg['status'] == "completed":
-                print "metagenome analysis completed: "+mg['id']
+                print("metagenome analysis completed: "+mg['id'])
                 mgdata = obj_from_url(API_URL+"/metagenome/"+mg['id']+"?verbosity=full", auth=mgrast_auth['token'])
                 mgs.append(mgdata)
             elif mg['status'] == "suspend":
-                print "metagenome analysis failed: "+mg['id']
+                print("metagenome analysis failed: "+mg['id'])
                 if "error" in mg:
-                    print "[error] "+mg['error']
+                    print("[error] "+mg['error'])
         if len(mgs) == 1:
             # output single dict
             json.dump(mgs[0], jhdl)
@@ -199,11 +199,11 @@ def wait_on_complete(sid, json_out):
         for mg in data['status']['metagenomes']:
             pt_mg.add_row( [mg['id'], mg['name'], mg['status'], mg['timestamp']] )
         pt_mg.align = "l"
-        print pt_mg
+        print(pt_mg)
 
 def delete(sid):
     data = obj_from_url(API_URL+"/submission/"+sid, auth=mgrast_auth['token'], method='DELETE')
-    print data['status']
+    print(data['status'])
 
 def seqs_from_json(json_in, tmp_dir):
     files = []
@@ -310,20 +310,20 @@ def submit(stype, files, opts):
     
     # submit it
     if opts.verbose:
-        print "Submitting to MG-RAST with the following parameters:"
-        print json.dumps(data, sort_keys=True, indent=4)
+        print("Submitting to MG-RAST with the following parameters:")
+        print(json.dumps(data, sort_keys=True, indent=4))
     result = obj_from_url(API_URL+"/submission/submit", data=json.dumps(data), auth=mgrast_auth['token'])
     if opts.verbose and (not opts.debug):
-        print json.dumps(result)
+        print(json.dumps(result))
     if opts.debug:
         pprint.pprint(result)
     elif opts.synch or opts.json_out:
-        print "Project ID: "+result['project']
-        print "Submission ID: "+result['id']
+        print("Project ID: "+result['project'])
+        print("Submission ID: "+result['id'])
         wait_on_complete(result['id'], opts.json_out)
     else:
-        print "Project ID: "+result['project']
-        print "Submission ID: "+result['id']
+        print("Project ID: "+result['project'])
+        print("Submission ID: "+result['id'])
         status(result['id'])
 
 def upload(files, verbose):
@@ -352,22 +352,22 @@ def upload(files, verbose):
         }
         if verbose:
             if len(files) > 1:
-                print "Uploading file %d of %d (%s) to MG-RAST Shock"%(i+1, len(files), f)
+                print("Uploading file %d of %d (%s) to MG-RAST Shock"%(i+1, len(files), f))
             else:
-                print "Uploading file %s to MG-RAST Shock"%(f)
+                print("Uploading file %s to MG-RAST Shock"%(f))
         result = post_file(SHOCK_URL+"/node", fformat, f, data=data, auth=mgrast_auth['token'], debug=verbose)
         if verbose:
-            print json.dumps(result)
+            print(json.dumps(result))
             if len(files) > 1:
-                print "Setting info for file %d of %d (%s) in MG-RAST inbox"%(i+1, len(files), f)
+                print("Setting info for file %d of %d (%s) in MG-RAST inbox"%(i+1, len(files), f))
             else:
-                print "Setting info for file %s in MG-RAST inbox"%(f)
+                print("Setting info for file %s in MG-RAST inbox"%(f))
         # compute file info
         info = obj_from_url(API_URL+"/inbox/info/"+result['data']['id'], auth=mgrast_auth['token'], debug=verbose)
         if verbose:
-            print json.dumps(info)
+            print(json.dumps(info))
         else:
-            print info['status']
+            print(info['status'])
         fids.append(result['data']['id'])
     return fids
 
@@ -392,15 +392,15 @@ def archive_upload(afile, verbose):
         sys.exit(1)
     # POST to shock / unpack
     if verbose:
-        print "Uploading file %s to MG-RAST Shock"%(afile)
+        print("Uploading file %s to MG-RAST Shock"%(afile))
     data = {
         "file_name": os.path.basename(afile),
         "attributes_str": attr
     }
     result = post_file(SHOCK_URL+"/node", "upload", afile, data=data, auth=mgrast_auth['token'], debug=verbose)
     if verbose:
-        print json.dumps(result)
-        print "Unpacking archive file %s"%(afile)
+        print(json.dumps(result))
+        print("Unpacking archive file %s"%(afile))
     data = {
         "unpack_node": result['data']['id'],
         "archive_format": aformat,
@@ -408,7 +408,7 @@ def archive_upload(afile, verbose):
     }
     unpack = obj_from_url(SHOCK_URL+"/node", data=data, auth=mgrast_auth['token'], debug=verbose)
     if verbose:
-        print json.dumps(unpack)
+        print(json.dumps(unpack))
     fids = map(lambda x: x['id'], unpack['data'])
     return fids
 
@@ -467,7 +467,7 @@ def main(args):
     SHOCK_URL = opts.shock_url
     
     if opts.verbose and opts.debug:
-        print "##### Running in Debug Mode #####"
+        print("##### Running in Debug Mode #####")
     
     # validate inputs
     if action not in valid_actions:
@@ -495,7 +495,7 @@ def main(args):
     token = get_auth_token(opts)
     if action == "login":
         if not token:
-            token = raw_input('Enter your MG-RAST auth token: ')
+            token = input('Enter your MG-RAST auth token: ')
         login(token)
         return 0
     
@@ -507,15 +507,15 @@ def main(args):
     # actions
     if action == "list":
         if opts.verbose:
-            print "Listing all submissions for "+mgrast_auth['login']
+            print("Listing all submissions for "+mgrast_auth['login'])
         listall()
     elif action == "status":
         if opts.verbose:
-            print "Status for submission"+args[1]
+            print("Status for submission"+args[1])
         status(args[1])
     elif action == "delete":
         if opts.verbose:
-            print "Deleting submission"+args[1]
+            print("Deleting submission"+args[1])
         delete(args[1])
     elif action == "submit":
         # process input json if exists
@@ -528,7 +528,7 @@ def main(args):
             opts.mgname = os.path.splitext(opts.json_out)[0]
         # submit it
         if opts.verbose:
-            print "Starting submission %s for %d files"%(stype, len(infiles))
+            print("Starting submission %s for %d files"%(stype, len(infiles)))
         submit(stype, infiles, opts)
 
     return 0

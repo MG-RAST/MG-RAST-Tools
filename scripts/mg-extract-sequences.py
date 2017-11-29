@@ -1,7 +1,6 @@
 #!/usr/bin/env python
 
 import sys
-import urllib
 from operator import itemgetter
 from optparse import OptionParser
 from mglib.mglib import *
@@ -67,7 +66,7 @@ def main(args):
     for sfield in SEARCH_FIELDS:
         if hasattr(opts, sfield) and getattr(opts, sfield):
             params.append( (sfield, getattr(opts, sfield)) )
-    url = opts.url+'/metagenome?'+urllib.urlencode(params, True)
+    url = opts.url+'/metagenome?'+urlencode(params, True)
 
     # retrieve query results
     result = obj_from_url(url, auth=token)
@@ -97,7 +96,7 @@ def main(args):
             params.append(('filter', opts.function))
             if opts.level:
                 params.append(('filter_level', opts.level))
-        url = opts.url+'/annotation/sequence/'+mg+'?'+urllib.urlencode(params, True)
+        url = opts.url+'/annotation/sequence/'+mg+'?'+urlencode(params, True)
         # output data
         safe_print('Results from '+mg+":\n")
         stdout_from_url(url, auth=token)

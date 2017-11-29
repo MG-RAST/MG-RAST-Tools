@@ -93,16 +93,16 @@ def main(args):
     # actions
     if action == "get-info":
         data = obj_from_url(opts.url+'/project/'+pid+'?verbosity=full&nocache=1', auth=token)
-        print json.dumps(data, sort_keys=True, indent=4)
+        print(json.dumps(data, sort_keys=True, indent=4))
     elif action == "get-metadata":
         data = obj_from_url(opts.url+'/metadata/export/'+pid, auth=token)
-        print json.dumps(data, sort_keys=True, indent=4)
+        print(json.dumps(data, sort_keys=True, indent=4))
     elif action == "update-metadata":
         result = post_file(opts.url+'/metadata/update', 'upload', opts.mdfile, auth=token, data=json.dumps({'project': pid}, separators=(',',':')))
-        print json.dumps(data, sort_keys=True, indent=4)
+        print(json.dumps(data, sort_keys=True, indent=4))
     elif action == "make-public":
         data = obj_from_url(opts.url+'/project/'+pid+'/makepublic', auth=token)
-        print json.dumps(data, sort_keys=True, indent=4)
+        print(json.dumps(data, sort_keys=True, indent=4))
     elif action == "submit-ebi":
         debug = 1 if opts.debug else 0
         info  = {
@@ -115,10 +115,10 @@ def main(args):
             for mg in proj['metagenomes']:
                 info['metagenome_taxonomy'][mg['metagenome_id']] = opts.taxa
         data = obj_from_url(opts.url+'/submission/ebi', auth=token, data=json.dumps(info, separators=(',',':')))
-        print json.dumps(data, sort_keys=True, indent=4)
+        print(json.dumps(data, sort_keys=True, indent=4))
     elif action == "status-ebi":
         data = obj_from_url(opts.url+'/submission/'+pid, auth=token)
-        print json.dumps(data, sort_keys=True, indent=4)
+        print(json.dumps(data, sort_keys=True, indent=4))
     
     return 0
 

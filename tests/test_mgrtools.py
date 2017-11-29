@@ -142,7 +142,7 @@ def test_mg_get_annotation_set():
     assert stat == 0
 
 def test_mg_get_sequences_for_function():
-    s='''mg-get-sequences-for-function.py --id mgm4441680.3 --name Central carbohydrate metabolism --level level2 --source Subsystems --evalue 10'''
+    s='''mg-get-sequences-for-function.py --id mgm4441680.3 --name Central\ carbohydrate\ metabolism --level level2 --source Subsystems --evalue 10'''
     stat, out, err = runme(s) 
     assert stat == 0
 
