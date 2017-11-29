@@ -1,15 +1,15 @@
 
-default:
-	python2 setup.py build
+default: 
+	python setup.py build
 
-install:
-	python2 setup.py install 
+install: default
+	python setup.py install 
 
-clean:
-	python2 setup.py clean
+clean2:
+	python setup.py clean
 
 test: 
-	./setup.py develop
+	python ./setup.py develop
 	py.test -m 'not known_failing and not huge'
 
 coverage:
