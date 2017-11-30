@@ -8,6 +8,7 @@
 import urllib2, json, sys
 from operator import itemgetter
 from prettytable import PrettyTable
+from mglib.mglib import async_rest_api, sparse_to_dense
 def obj_from_url(url, data=None):
     req = urllib2.Request(url, data)
     res = urllib2.urlopen(req)
@@ -26,17 +27,19 @@ if len(sys.argv) > 1:
 # <codecell>
 
 # get BIOM dump for SEED functions
-seed_func = obj_from_url(api+'/matrix/function?id='+mg+'&source=SEED')
+seed_func = async_rest_api(api+'/matrix/function?id='+mg+'&source=SEED')
 
 # <codecell>
 
 # get BIOM dump for SEED md5s
-seed_md5 = obj_from_url(api+'/matrix/feature?id='+mg+'&source=SEED')
-
+#   THIS DOES NOT SEEM TO WORK
+SEED_URI = api+'/matrix/feature?id='+mg+'&source=SEED'
+print(SEED_URI)
+seed_md5 = async_rest_api(SEED_URI)
 # <codecell>
-
+print(seed_md5)
 # set of seed md5
-md5_set = set( map(lambda x: x['id'], seed_md5['rows']) )
+md5_set = set( [ x['id'] for x in seed_md5['rows'] ] )
 
 # <codecell>
 
