@@ -182,19 +182,11 @@ def upload(files):
         }
         result = post_file(SHOCK_URL+"/node", fformat, f, data=data, auth=mgrast_auth['token'])
         # compute file info
-<<<<<<< HEAD
-        info = obj_from_url(API_URL+"/inbox/info/"+result['data']['id'], auth=mgrast_auth['token'])
-        print(info['status'])
-        # compute sequence stats
-        if info['stats_info']['file_type'] in ['fasta', 'fastq']:
-            stats = obj_from_url(API_URL+"/inbox/stats/"+result['data']['id'], auth=mgrast_auth['token'])
-=======
         info = obj_from_url(API_URL+"/inbox/info/"+result['id'], auth=mgrast_auth['token'])
         print(info['status'])
         # compute sequence stats
         if info['stats_info']['file_type'] in ['fasta', 'fastq']:
             stats = obj_from_url(API_URL+"/inbox/stats/"+result['id'], auth=mgrast_auth['token'])
->>>>>>> 10b155dc4a101f7859d170f536b3a0fa74185892
             print(stats['status'].replace("stats computation", "validation"))
 
 def upload_archive(afile):
