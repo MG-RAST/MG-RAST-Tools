@@ -412,12 +412,12 @@ def kbid_lookup(ids, reverse=False):
     data = obj_from_url(API_URL+'/job/'+request, data=post)
     return data['data']
 
-def get_auth_token(opts):
+def get_auth_token(opts=None):
     if 'KB_AUTH_TOKEN' in os.environ:
         return os.environ['KB_AUTH_TOKEN']
     if 'MGRKEY' in os.environ:
         return os.environ['MGRKEY']
-    if opts.token:
+    if hasattr(opts, "token"):
         return opts.token
     elif hasattr(opts, 'user') and hasattr(opts, 'passwd') and (opts.user or opts.passwd):
         if opts.user and opts.passwd:

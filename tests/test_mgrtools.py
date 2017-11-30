@@ -116,6 +116,7 @@ def test_mg_compare_taxa():
     s = '''mg-compare-taxa.py --ids mgm4441679.3,mgm4441680.3,mgm4441681.3,mgm4441682.3 --level class --source RefSeq --format text | mg-changing-annotation --input - --format text --groups {"group1":["mgm4441679.3","mgm4441680.3"],"group2":["mgm4441681.3","mgm4441682.3"]} --top 5 --stat_test Kruskal-Wallis'''
     stat, out, err = runme(s) 
 
+@pytest.mark.huge
 def test_mg_compare_alpha_diversity():
     s= '''mg-compare-alpha-diversity.py --ids mgm4441679.3,mgm4441680.3,mgm4441681.3,mgm4441682.3 --level class --source RefSeq'''
     stat, out, err = runme(s) 

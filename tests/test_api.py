@@ -12,7 +12,7 @@ def test_heartbeat():
     for service in SERVICES:
         URI = APIURL + "heartbeat/" + service
         obj_detail = obj_from_url(URI)
-        assert obj_detail["status"] == "0", "Failed heartbeat on " + service
+        assert obj_detail["status"] == 1, "Failed heartbeat on " + service
     return 1 
 
 def test_async():
