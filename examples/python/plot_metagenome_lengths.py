@@ -10,16 +10,15 @@ plots a graph using data from the web interface'''
 import urllib2, json, sys, os
 import numpy as np
 from prettytable import PrettyTable
+from mglib.mglib import get_auth_token
 
 # MG-RAST API url
 API_URL = "http://api.metagenomics.anl.gov/1"
 
 # <codecell>
 # Assign the value of key from the OS environment
-try:
-    key = os.environ["MGRKEY"]
-except KeyError:
-    key = ""
+
+key = get_auth_token()
 
 # retrieve the data by sending at HTTP GET request to the MG-RAST API
 ACCESSIONNUMBER = "mgm4440613.3" # this is a public job

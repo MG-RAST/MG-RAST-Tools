@@ -5,7 +5,7 @@ default:
 install: default
 	python setup.py install 
 
-clean2:
+clean:
 	python setup.py clean
 
 test: 

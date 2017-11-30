@@ -3,13 +3,12 @@
 dumps what it gets'''
 
 import urllib2, json, sys, os
+from mglib.mglib import get_auth_token
 
 API_URL = "http://api.metagenomics.anl.gov/1"
 # Assign the value of key from the OS environment
-try:
-    MGRKEY = os.environ["MGRKEY"]
-except KeyError:
-    MGRKEY = ""
+
+MGRKEY = get_auth_token()
 
 # assign parameters
 metagenome = "mgm4447943.3"
