@@ -8,6 +8,7 @@ import os
 import re
 from optparse import OptionParser
 import urllib2
+from mglib.mglib import get_auth_token
 
 # MG-RAST API url
 API_URL = "http://api.metagenomics.anl.gov/1"
@@ -37,10 +38,7 @@ example: download_metagenome_sequences.py  MGR4440613.3'''
     parser = OptionParser(usage)
     (opts, args) = parser.parse_args()
 # Assign the value of key from the OS environment
-    try:
-        key = os.environ["MGRKEY"]
-    except KeyError:
-        key = ""
+    key = get_auth_token()
     if len(key) == 25:
         sys.stderr.write("Using MGR webkey %s\n" % key)
     else:

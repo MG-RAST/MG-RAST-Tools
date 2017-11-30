@@ -3,14 +3,12 @@
 plots a graph using data from the web interface'''
 
 import urllib2, json, sys, os
-from mglib.mglib import async_rest_api, sparse_to_dense
+from mglib.mglib import async_rest_api, sparse_to_dense, get_auth_token
 DEBUG=0
 API_URL = "http://api.metagenomics.anl.gov/1"
 # Assign the value of key from the OS environment
-try:
-    key = os.environ["MGRKEY"]
-except KeyError:
-    key = ""
+
+key = get_auth_token()
 
 # assign parameters
 metagenomes = ["mgm4447943.3", "mgm4447102.3"]

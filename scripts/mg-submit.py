@@ -108,7 +108,7 @@ def status(sid):
     
     fids = [x['id'] for x in data['status']['inputs']]
     fnames = [x['filename'] for x in data['status']['inputs']]
-    fsizes  [ str(x['filesize']) for x in data['inputs'] ] 
+    fsizes = [ str(x['filesize']) for x in data['inputs'] ] 
 
     # submission summary
     pt_summary = PrettyTable(["submission ID", "type", "project", "submit time", "input file ID", "input file name", "input file size", "status"])
