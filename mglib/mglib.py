@@ -122,11 +122,16 @@ def async_rest_api(url, auth=None, data=None, debug=False, delay=15):
     if not (('status' in submit) and (submit['status'] == 'submitted') and ('url' in submit)):
         sys.stderr.write("ERROR: return data invalid format\n:%s"%json.dumps(submit))
     result = obj_from_url(submit['url'], debug=debug)
-    while result['status'] != 'done':
-        if debug:
-            print("waiting %d seconds ..."%delay)
-        time.sleep(delay)
-        result = obj_from_url(submit['url'], debug=debug)
+    try:
+        while result['status'] != 'done':
+            if debug:
+                print("waiting %d seconds ..."%delay)
+            time.sleep(delay)
+            result = obj_from_url(submit['url'], debug=debug)
+    except KeyError:
+        print("Error in response to "+url, file=sys.stderr)
+        print("Does not contain 'status' field, likely API syntax error", file=sys.stderr)
+        sys.exit(1)
     if 'ERROR' in result['data']:
         sys.stderr.write("ERROR: %s\n" %result['data']['ERROR'])
         sys.exit(1)
