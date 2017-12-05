@@ -104,11 +104,11 @@ def test_jsonviewer():
     stat, out, err = runme(s2) 
 
 def test_mg_abundant_functions():
-    s = '''mg-abundant-functions.py --id mgm4441680.3 --level level3 --source Subsystems --top 20 --evalue 8'''
+    s = '''mg-abundant-functions.py --id mgm4662210.3 --level level3 --source Subsystems --top 20 --evalue 8'''
     stat, out, err = runme(s) 
 
 def test_mg_abundant_taxa():
-    s = '''mg-abundant-taxa.py --id mgm4441680.3 --level genus --source RefSeq --top 20 --evalue 8'''
+    s = '''mg-abundant-taxa.py --id mgm4662210.3 --level genus --source RefSeq --top 20 --evalue 8'''
     stat, out, err = runme(s) 
 
 @pytest.mark.huge
@@ -123,6 +123,7 @@ def test_mg_compare_alpha_diversity():
 
 def test_mg_compare_functions():
     s='''mg-compare-functions.py --ids mgm4441679.3,mgm4441680.3,mgm4441681.3,mgm4441682.3 --level level2 --source KO --format text --evalue 8'''
+    s='''mg-compare-functions.py --ids mgm4662210.3,mgm4662211.3,mgm4662212.3,mgm4662235.3 --level level2 --source KO --format text --evalue 8'''
     stat, out, err = runme(s) 
 
 def test_mg_display_statistics():
@@ -138,7 +139,7 @@ def test_mg_download():
 #    stat, out, err = runme(s) 
 
 def test_mg_get_annotation_set():
-    s='''mg-get-annotation-set.py --id mgm4441680.3 --top 5 --level genus --source SEED'''
+    s='''mg-get-annotation-set.py --id mgm4750361.3 --top 5 --level genus --source RefSeq'''
     stat, out, err = runme(s) 
     assert stat == 0
 

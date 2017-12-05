@@ -25,7 +25,7 @@ Output
     Tab-delimited list of function and abundance sorted by abundance (largest first). 'top' option controls number of rows returned.
 
 EXAMPLES
-    mg-abundant-functions --id "mgm4441680.3" --level level3 --source Subsystems --top 20 --evalue 8
+    mg-abundant-functions --id " mgm4750361.3" --level level3 --source SubSystems --top 20 --evalue 8
 
 SEE ALSO
     -

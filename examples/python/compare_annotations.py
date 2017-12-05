@@ -27,17 +27,17 @@ if len(sys.argv) > 1:
 # <codecell>
 
 # get BIOM dump for SEED functions
-seed_func = async_rest_api(api+'/matrix/function?id='+mg+'&source=SEED')
+seed_func = async_rest_api(api+'/matrix/function?id='+mg+'&source=SEED&asynchronous=1')
 
 # <codecell>
 
 # get BIOM dump for SEED md5s
 #   THIS DOES NOT SEEM TO WORK
-SEED_URI = api+'/matrix/feature?id='+mg+'&source=SEED'
-print(SEED_URI)
+SEED_URI = api+'/matrix/feature?id='+mg+'&source=SEED&asynchronous=1'
+print("SEED_URI " + SEED_URI)
 seed_md5 = async_rest_api(SEED_URI)
 # <codecell>
-print(seed_md5)
+print("SEED_MD5 " + seed_md5)
 # set of seed md5
 md5_set = set( [ x['id'] for x in seed_md5['rows'] ] )
 
