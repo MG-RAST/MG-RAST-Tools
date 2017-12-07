@@ -7,8 +7,7 @@ import sys
 import os
 import re
 from optparse import OptionParser
-import urllib2
-from mglib.mglib import get_auth_token
+from mglib.mglib import get_auth_token, file_from_url
 
 # MG-RAST API url
 API_URL = "http://api.metagenomics.anl.gov/1"
@@ -25,12 +24,8 @@ def retrieveMGRbyaccession(accessionno, key):
     else:
         s1 = "%s/download/mgm%s?file=050.1&auth=%s" % (API_URL, a, key)
     sys.stderr.write("Retrieving %s\n" % s1)
-    try:
-        opener = urllib2.urlopen(s1)
-        open("%s.gz" % a, "w").write(opener.read())
-    except urllib2.HTTPError, e:
-        print "Error with HTTP request: %d %s\n%s" % (e.code, e.reason, e.read())
-        sys.exit(255)
+    with open("%s.gz" % a, "w") as FH:
+        opener = file_from_url(s1, FH)
 
 if __name__ == '__main__':
     usage  = '''usage: download_metagenome_sequences.py <accession number>

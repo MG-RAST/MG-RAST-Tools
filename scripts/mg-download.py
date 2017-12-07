@@ -105,7 +105,7 @@ def main(args):
         downdir = os.path.join(downdir, opts.project)
         if not os.path.isdir(downdir):
             os.mkdir(downdir)
-    for mg, files in all_files.iteritems():
+    for mg, files in all_files.items():
         mgdir = os.path.join(downdir, mg)
         if not os.path.isdir(mgdir):
             os.mkdir(mgdir)

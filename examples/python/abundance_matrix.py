@@ -3,7 +3,7 @@
 plots a graph using data from the web interface'''
 
 from __future__ import print_function
-import urllib2, json, sys, os
+import json, sys, os
 from mglib.mglib import async_rest_api, sparse_to_dense, get_auth_token
 from optparse import OptionParser
 

@@ -5,14 +5,10 @@
 # <codecell>
 
 # function to get python struct from API url
-import urllib2, json
+import json
 from operator import itemgetter
 from prettytable import PrettyTable
-def obj_from_url(url, data=None):
-    req = urllib2.Request(url, data)
-    res = urllib2.urlopen(req)
-    obj = json.loads(res.read())
-    return obj
+from mglib.mglib import obj_from_url, async_rest_api
 
 # <codecell>
 
@@ -33,20 +29,20 @@ api = 'http://api.metagenomics.anl.gov/1'
 # <codecell>
 
 # get BIOM dump for RefSeq organisms, class taxa
-refseq_class = obj_from_url(api+'/matrix/organism?id='+'&id='.join(mgs)+'&source=RefSeq&group_level=class')
+refseq_class = async_rest_api(api+'/matrix/organism?id='+'&id='.join(mgs)+'&source=RefSeq&group_level=class&asynchronous=1')
 
 # <codecell>
 
 # build POST data for pcoa compute
-rows = map(lambda x: x['id'], refseq_class['rows'])
-cols = map(lambda x: x['id'], refseq_class['columns'])
+rows = map(lambda x: x['id'], refseq_class['data']['rows'])
+cols = map(lambda x: x['id'], refseq_class['data']['columns'])
 matrix = sparse_to_dense(refseq_class['data'], len(rows), len(cols))
 post_data = {"distance": "bray-curtis", "columns": cols, "rows": rows, "data": matrix}
 
 # <codecell>
 
 # get PCO data products via API
-pcoa = obj_from_url(api+'/compute/pcoa', json.dumps(post_data, separators=(',',':')))
+pcoa = async_rest_api(api+'/compute/pcoa', json.dumps(post_data, separators=(',',':')))
 
 # <codecell>
 
