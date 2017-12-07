@@ -53,9 +53,9 @@ def test_mg_biom2taxa_help():
     stat, out, err = runme('mg-biom2taxa -h')
     assert 'DESCRIPTION' in out
 
-def test_mg_upload2shock_help():
-    stat, out, err = runme('mg-upload2shock.py -h')
-    assert 'DESCRIPTION' in out
+# def test_mg_upload2shock_help():
+#   stat, out, err = runme('mg-upload2shock.py -h')
+#   assert 'DESCRIPTION' in out
 
 binscripts = ['mg-abundant-functions.py',
 'mg-abundant-taxa.py',
@@ -88,8 +88,7 @@ binscripts = ['mg-abundant-functions.py',
 'mg-search-metagenomes.py',
 'mg-select-significance.py',
 'mg-stable-annotation.py',
-'mg-submit.py',
-'mg-upload2ws.py' ]
+'mg-submit.py']
 
 def test_binscripts_help():
     for binscript in binscripts:

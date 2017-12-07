@@ -25,7 +25,7 @@ Output
     Tab-delimited list of annotations: feature list, function, abundance for function, avg evalue for function, organism
 
 EXAMPLES
-    mg-get-annotation-set --id " mgm4750361.3" --top 5 --level genus --source RefSeq
+    mg-get-annotation-set --id "mgm4750361.3" --top 5 --level genus --source RefSeq
 
 SEE ALSO
     -
