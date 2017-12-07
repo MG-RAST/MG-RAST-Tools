@@ -119,7 +119,7 @@ def main(args):
                 return 1
             for m in mg_list:
                 found_g = None
-                for g, mgs in gdata[opts.group_pos-1].iteritems():
+                for g, mgs in gdata[opts.group_pos-1].items():
                     if m in mgs:
                         found_g = g
                         break

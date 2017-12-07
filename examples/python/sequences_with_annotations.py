@@ -2,8 +2,8 @@
 '''This script retrieves the table of sequence id, sequence, and annotation from the MG-RAST API and
 dumps what it gets'''
 
-import urllib2, json, sys, os
-from mglib.mglib import get_auth_token
+import json, sys, os
+from mglib.mglib import get_auth_token, body_from_url
 
 API_URL = "http://api.metagenomics.anl.gov/1"
 # Assign the value of key from the OS environment
@@ -26,12 +26,7 @@ base_url = base_url + "?type=%s&source=%s&auth=%s&evalue=%s" % (annotation_type,
 
 # retrieve the data by sending at HTTP GET request to the MG-RAST API
 sys.stderr.write("Retrieving %s\n" % base_url)
-try:
-    opener = urllib2.urlopen(base_url)
-except urllib2.HTTPError, e:
-    print "Error with HTTP request: %d %s\n%s" % (e.code, e.reason, e.read())
-    sys.exit(255)
-opener.addheaders = [('User-agent', 'abundance_matrix.py')]
+contents = body_from_url(base_url, accept="text/plain")
 
-for line in opener:
-    sys.stdout.write(line)
+for line in contents:
+    sys.stdout.write(line.decode("utf8"))

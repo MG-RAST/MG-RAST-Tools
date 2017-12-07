@@ -91,7 +91,7 @@ def main(args):
     # just list
     if opts.list:
         pt = PrettyTable(["Metagenome", "File Name", "File ID", "Checksum", "Byte Size"])
-        for mg, files in all_files.iteritems():
+        for mg, files in all_files.items():
             for f in files:
                 fsize = f['file_size'] if f['file_size'] else 0
                 pt.add_row([mg, f['file_name'], f['file_id'], f['file_md5'], fsize])

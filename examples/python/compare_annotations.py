@@ -63,14 +63,14 @@ x = PrettyTable(["SEED annotation", "abundance"])
 x.align["SEED annotation"] = "l"
 for st in seed_top:
     x.add_row([st[0], st[1]])
-print x
+print(x)
 
 # <codecell>
 
 # for each of the top seed hits retrieve the md5s / only keep those in metagenome
 for i, x in enumerate(seed_top):
     url = api+'/m5nr/function/'+x[0].replace(' ', '%20')+'?exact=1&source=SEED&limit=100000'
-    print url
+    print(url)
     annot = obj_from_url(url)
     md5s = set()
     for a in annot['data']:
@@ -85,20 +85,20 @@ x = PrettyTable(["SEED annotation", "abundance", "md5s"])
 x.align["SEED annotation"] = "l"
 for st in seed_top:
     x.add_row([st[0], st[1], len(st[2])])
-print x
+print(x)
 
 # <codecell>
 
 # retrieve unique functions for each md5 set in GenBank space
 for i, x in enumerate(seed_top):
-    print x[0]
+    print(x[0])
     if len(x[2]) == 0:
         seed_top[i].append([])
         continue
     data = {'source': 'GenBank', 'data': x[2], 'limit': 100000}
     annot = obj_from_url(api+'/m5nr/md5', json.dumps(data, separators=(',',':')))
     if 'ERROR' in annot:
-        print annot['ERROR']
+        print(annot['ERROR'])
         continue
     funcs = dict([(a['function'], 1) for a in annot['data']])
     seed_top[i].append(funcs.keys())
@@ -110,7 +110,7 @@ x = PrettyTable(["SEED annotation", "abundance", "md5s", "GenBank annotations"])
 x.align["SEED annotation"] = "l"
 for st in seed_top:
     x.add_row([st[0], st[1], len(st[2]), len(st[3])])
-print x
+print(x)
 
 # <codecell>
 

@@ -413,7 +413,7 @@ def archive_upload(afile, verbose):
     }
     unpack = obj_from_url(SHOCK_URL+"/node", data=data, auth=mgrast_auth['token'], debug=verbose)
     if verbose:
-        print json.dumps(unpack)
+        print(json.dumps(unpack))
     fids =  [x['id'] for x in unpack['data']] 
     return fids
 
