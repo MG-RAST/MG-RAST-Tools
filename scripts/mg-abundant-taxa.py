@@ -24,7 +24,7 @@ Output
     Tab-delimited list of taxon and abundance sorted by abundance (largest first). 'top' option controls number of rows returned.
 
 EXAMPLES
-    mg-abundant-taxa --id " mgm4750361.3" --level genus --source RefSeq --top 20 --evalue 8
+    mg-abundant-taxa --id "mgm4750361.3" --level genus --source RefSeq --top 20 --evalue 8
 
 SEE ALSO
     -
@@ -92,16 +92,22 @@ def main(args):
         url = opts.url+'/m5nr/taxonomy?'+urlencode(params, True)
         data = obj_from_url(url)
         sub_ann = set( map(lambda x: x[opts.level], data['data']) )
-    
+    if biom['matrix_type'] == "dense":
+        data = biom['data']
+    else:
+        data = sparse_to_dense(biom['data'], len(biom['rows']), len(biom['cols']))
+    rows = [biom['rows'][i]['id'] for i in range(len(biom['rows']))]
+    datalist = [biom['data'][i][0] for i in range(len(biom['rows']))]
+    data2 = zip( rows, datalist)
     # sort data
-    for d in sorted(biom['data'], key=itemgetter(2), reverse=True):
-        name = biom['rows'][d[0]]['id']
+    for d in sorted(data2, key=itemgetter(1), reverse=True):
+        name = d[0]
         if len(top_ann) >= opts.top:
             break
         if sub_ann and (name not in sub_ann):
             continue
-        top_ann[name] = d[2]
-    
+        top_ann[name] = d[1]
+
     # output data
     for k, v in sorted(top_ann.items(), key=itemgetter(1), reverse=True):
         safe_print("%s\t%d\n" %(k, v))
