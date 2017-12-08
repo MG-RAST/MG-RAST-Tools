@@ -18,7 +18,3 @@ setup(name='mglib',
      )
 
 
-if not sys.version_info[0:2] == (2, 7):
-    sys.stderr.write('ERROR: MG-RAST Tools requires Python 2.7.')
-    exit(1)
-
