@@ -81,9 +81,9 @@ def main(args):
     # output data
     try:
         sub_rows = rows[row_start:row_end]
-	out_hdl.write( "\t%s\n" %"\t".join(cols[col_start:col_end]) )
+        out_hdl.write( "\t%s\n" %"\t".join(cols[col_start:col_end]) )
         for i, d in enumerate(data[row_start:row_end]):
-	    out_hdl.write( "%s\t%s\n" %(sub_rows[i], "\t".join(map(str, d[col_start:col_end]))) )
+            out_hdl.write( "%s\t%s\n" %(sub_rows[i], "\t".join(map(str, d[col_start:col_end]))) )
         out_hdl.close()
     except:
         sys.stderr.write("ERROR: unable to sub-select BIOM, inputted positions are out of bounds\n")
