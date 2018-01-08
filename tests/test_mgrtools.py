@@ -1,7 +1,6 @@
 from __future__ import print_function
 
 import pytest
-#import mglib
 
 from subprocess import Popen, PIPE
 import subprocess
@@ -43,19 +42,19 @@ def test_always_succeeds():
 
 def test_mginbox_help():
     stat, out, err = runme('mg-inbox.py -h')
-    assert 'DESCRIPTION' in out
+    assert b'DESCRIPTION' in out
  
 def test_mg_biom2metadata_help():
     stat, out, err = runme('mg-biom2metadata -h')
-    assert 'DESCRIPTION' in out
+    assert b'DESCRIPTION' in out
 
 def test_mg_biom2taxa_help():
     stat, out, err = runme('mg-biom2taxa -h')
-    assert 'DESCRIPTION' in out
+    assert b'DESCRIPTION' in out
 
 # def test_mg_upload2shock_help():
 #   stat, out, err = runme('mg-upload2shock.py -h')
-#   assert 'DESCRIPTION' in out
+#   assert b'DESCRIPTION' in out
 
 binscripts = ['mg-abundant-functions.py',
 'mg-abundant-taxa.py',
@@ -94,7 +93,7 @@ def test_binscripts_help():
     for binscript in binscripts:
           print("Invoking " + binscript+" -h") 
           stat, out, err = runme(binscript + " -h") 
-          assert 'DESCRIPTION' in out
+          assert b'DESCRIPTION' in out
 
 def test_jsonviewer():
     s = '''echo '{"a": {"b": {"c": [1, 2, 3, 4, 5]}}, "x": ["y", "z"], "foo": "bar"}' | jsonviewer'''
@@ -160,7 +159,7 @@ def test_mg_inbox_view():
     s='''mg-inbox.py view all'''
     stat, out, err = runme(s) 
     assert stat == 0
-def test_mb_kegg2ss():
+def test_mg_kegg2ss():
     s = '''mg-kegg2ss.py --input - --output text'''
     stat, out, err = runme(s) 
     assert stat == 0
