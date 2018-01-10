@@ -21,7 +21,7 @@ DESCRIPTION
 
 posthelp = """
 Output
-    BLAST m8 format - tab-delimited list of: query sequence id, hit m5nr id, percentage identity, alignment length,	number of mismatches, number of gap openings, query start, query end, hit start, hit end, e-value, bit score, semicolon seperated list of annotations
+    BLAST m8 format - tab-delimited list of: query sequence id, hit m5nr id, percentage identity, alignment length, number of mismatches, number of gap openings, query start, query end, hit start, hit end, e-value, bit score, semicolon seperated list of annotations
 
 EXAMPLES
     mg-get-similarity-for-function --id "mgm4441680.3" --name "Central carbohydrate metabolism" --level level2 --source Subsystems --evalue 10

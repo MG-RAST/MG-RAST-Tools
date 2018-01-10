@@ -51,7 +51,7 @@ def main(args):
     for f in args:
         if not os.path.isfile(f):
             sys.stderr.write("ERROR: %s is not a valid file\n")
-    	    return 1
+            return 1
     # get first
     try:
         biom = json.load(open(args[0], 'r'))
@@ -70,14 +70,14 @@ def main(args):
             b = json.load(open(f, 'r'))
         except:
             sys.stderr.write("ERROR: %s BIOM data not correct format\n"%f)
-    	    return 1
+            return 1
 
         if opts.retain_dups:
             input_num += 1
             for index in range(len(b['columns'])):
                 b['columns'][index]['id'] = b['columns'][index]['id'] + "_" + str(input_num)
 
-    	biom = merge_biom(biom, b)
+        biom = merge_biom(biom, b)
     
     safe_print(json.dumps(biom)+"\n")
     return 0
