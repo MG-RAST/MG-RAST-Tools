@@ -5,10 +5,11 @@ plots a graph using data from the web interface'''
 from __future__ import print_function
 import sys
 from optparse import OptionParser
-from mglib.mglib import async_rest_api, sparse_to_dense, get_auth_token
+from mglib.mglib import async_rest_api, get_auth_token
 
 DEBUG = 0
 API_URL = "http://api.metagenomics.anl.gov/1"
+
 
 if __name__ == '__main__':
     usage = "usage: %prog -i <input sequence file> -o <output file>"
@@ -22,7 +23,7 @@ if __name__ == '__main__':
     parser.add_option("-n", "--ngth", dest="length", default="15", help="leNgth of hit")
 #    parser.add_option("-v", "--verbose", dest="verbose", action="store_true", default=True, help="Verbose [default off]")
     parser.add_option("-k", "--token", dest="token", type="str", help="Auth token")
-    parser.add_option("-m", "--metagenomes", dest="metagenomes", default="mgm4447943.3,mgm4447102.3", type="str", help="Metagenome list")
+    parser.add_option("-m", "--metagenomes", dest="metagenomes", default="mgm4447943.3", type="str", help="Metagenome list")
 
     (opts, args) = parser.parse_args()
     key = get_auth_token(opts)
@@ -35,44 +36,31 @@ if __name__ == '__main__':
     evalue = opts.evalue
 
 # construct API call
-    base_url = API_URL + "/matrix/organism"
-    if opts.call == "function" or opts.source == "SubSystems":
-        base_url = API_URL + "/matrix/function"
+    base_url = API_URL + "/profile/{}".format(metagenomes)
     base_url = base_url + "?asynchronous=1&group_level=%s&result_type=%s&auth=%s&source=%s&evalue=%s&" % (group_level, result_type, key, source, evalue)
     URI = base_url + "&".join(["id=%s" % m for m in metagenomes.split(",")])
+    URI = base_url 
     print(URI, file=sys.stderr)
 # retrieve the data by sending at HTTP GET request to the MG-RAST API
 
     jsonstructure = async_rest_api(URI, auth=key)
-
+    jsondata = jsonstructure["data"]
 # unpack and display the data table
-    cols = [x["id"] for x in jsonstructure["columns"]]
-    rows = [x["id"] for x in jsonstructure["rows"]]
-    matrixtype = jsonstructure["type"]
+    cols = jsonstructure["columns"]
+#    rows = [x["id"] for x in jsondata["rows"]]
 
-    if matrixtype == "sparse":
-        data = sparse_to_dense(jsonstructure["data"], len(rows), len(cols))
-    else:
-        data = jsonstructure["data"]
+    data = jsonstructure["data"]
 
     if DEBUG:
         print(jsonstructure)
         print("COLS", cols)
-        print("ROWS", rows)
-        print("TYPE", matrixtype)
         print("DATA", data)
     h = data
 
     sys.stdout.write("Taxon\t")
     for j in range(0, len(cols)):
-        sys.stdout.write(cols[j])
+        sys.stdout.write(cols[j] +"\t")
     sys.stdout.write("\n")
-    for i in range(0, len(rows)):
-        sys.stdout.write(rows[i])
-        for j in range(0, len(cols)):
-            sys.stdout.write("\t")
-            try:
-                sys.stdout.write(str(h[i][j]))
-            except KeyError:
-                sys.stdout.write("0")
+    for i in range(0, len(data)):
+        sys.stdout.write("\t".join([str(s) for s in h[i]]))
         sys.stdout.write("\n")
