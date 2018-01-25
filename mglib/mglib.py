@@ -116,8 +116,11 @@ def stdout_from_url(url, auth=None, data=None, debug=False):
 
 # return python struct from JSON output of asynchronous MG-RAST API
 def async_rest_api(url, auth=None, data=None, debug=False, delay=15):
-    parameters = parse_qs(url.split("?")[1])
-    assert "asynchronous" in parameters, "Must specify asynchronous=1 for asynchronous call!"
+    try:
+        parameters = parse_qs(url.split("?")[1])
+        assert "asynchronous" in parameters, "Must specify asynchronous=1 for asynchronous call!"
+    except:
+        parameters = {"asynchronous": 1}
     submit = obj_from_url(url, auth=auth, data=data, debug=debug)
     if not (('status' in submit) and (submit['status'] == 'submitted') and ('url' in submit)):
         sys.stderr.write("ERROR: return data invalid format\n:%s"%json.dumps(submit))
@@ -131,9 +134,11 @@ def async_rest_api(url, auth=None, data=None, debug=False, delay=15):
     except KeyError:
         print("Error in response to "+url, file=sys.stderr)
         print("Does not contain 'status' field, likely API syntax error", file=sys.stderr)
+        print(result, file=sys.stderr)
         sys.exit(1)
     if 'ERROR' in result['data']:
         sys.stderr.write("ERROR: %s\n" %result['data']['ERROR'])
+        print(result, file=sys.stderr)
         sys.exit(1)
     return result['data']
 
@@ -350,7 +355,11 @@ def biom_to_matrix(biom, col_name=False, sig_stats=False):
         cols = [c['name'] for c in biom['columns']]
     else:
         cols = [c['id'] for c in biom['columns']]
-    rows = [r['id'] for r in biom['rows']]
+    try:
+        rows = [";".join(r['metadata']['taxonomy']) for r in biom['rows']]
+    except KeyError:
+        rows = [r['id'] for r in biom['rows']]
+#        rows = [";".join(r['metadata']['hierarchy']) for r in biom['rows']]
     if biom['matrix_type'] == 'sparse':
         data = sparse_to_dense(biom['data'], len(rows), len(cols))
     else:
