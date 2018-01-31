@@ -45,6 +45,8 @@ SEARCH_FIELDS = ["function", "organism", "md5", "name", "metadata", "biome", "fe
 # return response body from MG-RAST or Shock API
 def body_from_url(url, accept, auth=None, data=None, debug=False, method=None):
     header = {'Accept': accept}
+    scriptname = os.path.basename(sys.argv[0])
+    header['User-Agent'] = 'mglib:' + scriptname
     if auth:
         header['Authorization'] = 'mgrast '+auth
     if data or method:
