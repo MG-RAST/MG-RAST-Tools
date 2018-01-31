@@ -20,6 +20,7 @@ if __name__ == '__main__':
 
     (opts, args) = parser.parse_args()
     key = get_auth_token(opts)
+
 # assign parameters
     URI = args[0]
 

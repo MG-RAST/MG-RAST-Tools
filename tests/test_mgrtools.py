@@ -52,6 +52,7 @@ def test_mg_biom2taxa_help():
     stat, out, err = runme('mg-biom2taxa -h')
     assert b'DESCRIPTION' in out
 
+
 # def test_mg_upload2shock_help():
 #   stat, out, err = runme('mg-upload2shock.py -h')
 #   assert b'DESCRIPTION' in out
@@ -118,6 +119,14 @@ def test_mg_compare_taxa():
 def test_mg_compare_alpha_diversity():
     s= '''mg-compare-alpha-diversity.py --ids mgm4441679.3,mgm4441680.3,mgm4441681.3,mgm4441682.3 --level class --source RefSeq'''
     stat, out, err = runme(s) 
+
+def test_annotation():
+    stat, out, err = runme('annotation_table.py')
+    assert b'Arcanobacterium' in out
+
+def test_abundance():
+    stat, out, err = runme('abundance_matrix.py')
+    assert b'Archaea' in out
 
 def test_mg_compare_functions():
     s='''mg-compare-functions.py --ids mgm4441679.3,mgm4441680.3,mgm4441681.3,mgm4441682.3 --level level2 --source KO --format text --evalue 8'''
