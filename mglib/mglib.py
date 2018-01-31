@@ -16,7 +16,6 @@ except ImportError:
 from poster.encode import multipart_encode
 from poster.streaminghttp import register_openers
 import requests
-import io
 from requests_toolbelt import MultipartEncoder
 
 try:  # python3
@@ -53,7 +52,7 @@ def body_from_url(url, accept, auth=None, data=None, debug=False, method=None):
         header['Content-Type'] = 'application/json'
     if debug:
         if data:
-            print("data:\t"+data)
+            print("data:\t"+repr(data))
         print("header:\t"+json.dumps(header))
         print("url:\t"+url)
     try:
@@ -136,11 +135,11 @@ def async_rest_api(url, auth=None, data=None, debug=False, delay=15):
     except KeyError:
         print("Error in response to "+url, file=sys.stderr)
         print("Does not contain 'status' field, likely API syntax error", file=sys.stderr)
-        print(result, file=sys.stderr)
+        print(json.dumps(result), file=sys.stderr)
         sys.exit(1)
     if 'ERROR' in result['data']:
         sys.stderr.write("ERROR: %s\n" %result['data']['ERROR'])
-        print(result, file=sys.stderr)
+        print(json.dumps(result), file=sys.stderr)
         sys.exit(1)
     return result['data']
 
@@ -183,6 +182,7 @@ def post_file(url, keyname, filename, data={}, auth=None, debug=False):
         if not chunk:
             break
         handle.write(chunk.decode('utf8'))
+    return(obj)
 
 # POST file to Shock
 def post_node(url, keyname, filename, attr, auth=None):

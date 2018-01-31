@@ -324,13 +324,13 @@ def submit(stype, files, opts):
         pprint.pprint(result)
     elif opts.synch or opts.json_out:
         print("Project ID: "+result['project'])
-        print("Submission ID: "+result['id'])
-        print("submission started: "+result['id'])
-        wait_on_complete(result['id'], opts.json_out)
+        print("Submission ID: "+result['data']['id'])
+        print("submission started: "+result['data']['id'])
+        wait_on_complete(result['data']['id'], opts.json_out)
     else:
         print("Project ID: "+result['project'])
-        print("Submission ID: "+result['id'])
-        status(result['id'])
+        print("Submission ID: "+result['data']['id'])
+        status(result['data']['id'])
 
 def upload(files, verbose):
     fids = []
@@ -369,11 +369,11 @@ def upload(files, verbose):
             else:
                 print("Setting info for file %s in MG-RAST inbox"%(f))
         # compute file info
-        info = obj_from_url(API_URL+"/inbox/info/"+result['id'], auth=mgrast_auth['token'])
+        info = obj_from_url(API_URL+"/inbox/info/"+result['data']['id'], auth=mgrast_auth['token'])
         if verbose:
             print(json.dumps(info))
         print(info['status'])
-        fids.append(result['id'])
+        fids.append(result['data']['id'])
     return fids
 
 def archive_upload(afile, verbose):
