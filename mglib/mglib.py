@@ -153,8 +153,6 @@ def post_file(url, keyname, filename, data={}, auth=None, debug=False):
     if auth:
         header['Authorization'] = 'mgrast '+auth
     if debug:
-        if data:
-            print("data:\t"+json.dumps(data))
         print("header:\t"+json.dumps(header))
         print("url:\t"+url)
     try:
@@ -183,39 +181,6 @@ def post_file(url, keyname, filename, data={}, auth=None, debug=False):
             break
         handle.write(chunk.decode('utf8'))
     return(obj)
-
-# POST file to Shock
-def post_node(url, keyname, filename, attr, auth=None):
-    data = {
-        keyname: (os.path.basename(filename), open(filename)),
-        'attributes': ('unknown', io.StringIO(attr))
-    }
-    mdata = MultipartEncoder(fields=data)
-    headers = {'Content-Type': mdata.content_type}
-    if auth:
-        headers['Authorization'] = auth
-    try:
-        req = requests.post(url, headers=headers, data=mdata, allow_redirects=True)
-        rj = req.json()
-    except:
-        sys.stderr.write("Unable to connect to Shock server")
-        sys.exit(1)
-    if rj and rj['error']:
-        sys.stderr.write("Shock error %s: %s"%(rj['status'], rj['error'][0]))
-        sys.exit(1)
-    if not (req.ok):
-        sys.stderr.write("Unable to connect to Shock server")
-        sys.exit(1)
-    if len(obj.keys()) == 0:
-        sys.stderr.write("ERROR: no data available\n")
-        sys.exit(1)
-    if 'ERROR' in obj:
-        sys.stderr.write("ERROR: %s\n" %obj['ERROR'])
-        sys.exit(1)
-    if ('error' in obj) and obj['error']:
-        sys.stderr.write("ERROR: %s\n" %obj['error'][0])
-        sys.exit(1)
-    return obj
 
 # safe handling of stdout for piping
 def safe_print(text):
