@@ -154,7 +154,7 @@ def post_file(url, keyname, filename, data={}, auth=None, debug=False):
         header['Authorization'] = 'mgrast '+auth
     if debug:
         if data:
-            print("data:\t"+data)
+            print("data:\t"+json.dumps(data))
         print("header:\t"+json.dumps(header))
         print("url:\t"+url)
     try:
