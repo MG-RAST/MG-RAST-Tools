@@ -324,13 +324,13 @@ def submit(stype, files, opts):
         pprint.pprint(result)
     elif opts.synch or opts.json_out:
         print("Project ID: "+result['project'])
-        print("Submission ID: "+result['data']['id'])
-        print("submission started: "+result['data']['id'])
-        wait_on_complete(result['data']['id'], opts.json_out)
+        print("Submission ID: "+result['id'])
+        print("submission started: "+result['id'])
+        wait_on_complete(result['id'], opts.json_out)
     else:
         print("Project ID: "+result['project'])
-        print("Submission ID: "+result['data']['id'])
-        status(result['data']['id'])
+        print("Submission ID: "+result['id'])
+        status(result['id'])
 
 def upload(files, verbose):
     fids = []
