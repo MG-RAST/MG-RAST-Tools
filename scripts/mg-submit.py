@@ -369,11 +369,11 @@ def upload(files, verbose):
             else:
                 print("Setting info for file %s in MG-RAST inbox"%(f))
         # compute file info
-        info = obj_from_url(API_URL+"/inbox/info/"+result['id'], auth=mgrast_auth['token'])
+        info = obj_from_url(API_URL+"/inbox/info/"+result['data']['id'], auth=mgrast_auth['token'])
         if verbose:
             print(json.dumps(info))
         print(info['status'])
-        fids.append(result['id'])
+        fids.append(result['data']['id'])
     return fids
 
 def archive_upload(afile, verbose):
