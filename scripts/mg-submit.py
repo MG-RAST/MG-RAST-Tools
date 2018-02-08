@@ -97,8 +97,8 @@ def listall():
 
 def status(sid):
     data = obj_from_url(API_URL+"/submission/"+sid+'?full=1', auth=mgrast_auth['token'])
+    
     # check for errors
-<<<<<<< HEAD
     if ('error' in data) and data['error']:
         sys.stderr.write("ERROR: %s\n"%data['error'])
         sys.exit(1)
@@ -106,19 +106,13 @@ def status(sid):
     fids   = map(lambda x: x['id'], data['inputs'])
     fnames = map(lambda x: x['filename'], data['inputs'])
     fsizes = map(lambda x: str(x['filesize']), data['inputs'])
-=======
-    if isinstance(data['status'], str):
-        sys.stderr.write("ERROR: %s\n"%data['status'])
-        sys.exit(1)
     
-    fids = [x['id'] for x in data['status']['inputs']]
-    fnames = [x['filename'] for x in data['status']['inputs']]
->>>>>>> 10b155dc4a101f7859d170f536b3a0fa74185892
     # submission summary
     pt_summary = PrettyTable(["submission ID", "type", "project", "submit time", "input file ID", "input file name", "input file size", "status"])
     pt_summary.add_row([data['id'], data['type'], data['project'], data['info']['submittime'], "\n".join(fids), "\n".join(fnames), "\n".join(fsizes), data['state']])
     pt_summary.align = "l"
     print(pt_summary)
+    
     # submission status
     if ('preprocessing' in data) and data['preprocessing']:
         pt_status = PrettyTable(["submission step", "step name", "step status", "step inputs"])
@@ -129,6 +123,7 @@ def status(sid):
             pt_status.add_row( [i, p['stage'], pstatus, "\n".join(p['inputs'])] )
         pt_status.align = "l"
         print(pt_status)
+    
     # metagenome info
     if ('metagenomes' in data) and data['metagenomes']:
         pt_mg = PrettyTable(["metagenome ID", "metagenome name", "status", "remaining steps", "submit time", "complete time", "pipeline ID"])
@@ -329,10 +324,6 @@ def submit(stype, files, opts):
     elif opts.synch or opts.json_out:
         print("Project ID: "+result['project'])
         print("Submission ID: "+result['id'])
-<<<<<<< HEAD
-=======
-        print("submission started: "+result['id'])
->>>>>>> 10b155dc4a101f7859d170f536b3a0fa74185892
         wait_on_complete(result['id'], opts.json_out)
     else:
         print("Project ID: "+result['project'])
