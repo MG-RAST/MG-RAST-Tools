@@ -4,6 +4,30 @@ import os
 
 from mglib.mglib import obj_from_url, async_rest_api, get_auth_token, API_URL
 
+def test_nonexist():
+    URI = API_URL + '/matrix/organism?id=mgm4454394.3'  # mgm4454394.3 is deleted
+    try:
+        response = async_rest_api(URI, auth="")
+        pass
+    except SystemExit:
+        pass
+
+def test_500():
+    URI = API_URL + '/nonexistentapicall'
+    try:
+        response = async_rest_api(URI, auth="")
+        assert False
+    except SystemExit:
+        pass
+ 
+def test_private():
+    URI = API_URL + '/matrix/organism?id=mgm4454266.3'  # mgm4454266.3 is private
+    try:
+        response = async_rest_api(URI, auth="")
+        assert False
+    except SystemExit:
+        pass
+
 def test_heartbeat():
     URI0 = API_URL + "heartbeat"   
     obj = obj_from_url(URI0)
