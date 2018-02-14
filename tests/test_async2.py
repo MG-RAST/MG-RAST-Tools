@@ -5,7 +5,7 @@ from mglib.mglib import get_auth_token, async_rest_api, API_URL
 def test_async():
     URI = API_URL + '/matrix/organism?hit_type=single&group_level=strain&evalue=15&source=RefSeq&result_type=abundance&id=mgm4653783.3&asynchronous=1'
     token = get_auth_token(None)
-    print("MG-RAST token: " + token)
+    print("MG-RAST token: ", token)
     response = async_rest_api(URI, auth=token)
     print(repr(response))
 #    print("writing test_async.txt")

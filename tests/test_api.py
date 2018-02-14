@@ -28,6 +28,14 @@ def test_private():
     except SystemExit:
         pass
 
+def test_badkey():
+    URI = API_URL + '/matrix/organism?id=mgm4454266.3'  # mgm4454266.3 is private
+    try:
+        response = async_rest_api(URI, auth="ABCDEFGThisIsOneNoGoodKey")
+        assert False
+    except SystemExit:
+        pass
+
 def test_heartbeat():
     URI0 = API_URL + "heartbeat"   
     obj = obj_from_url(URI0)

@@ -398,7 +398,7 @@ def get_auth_token(opts=None):
         return os.environ['KB_AUTH_TOKEN']
     if 'MGRKEY' in os.environ:
         return os.environ['MGRKEY']
-    if hasattr(opts, "token"):
+    if hasattr(opts, "token") and opts.token is not None:
         return opts.token
     elif hasattr(opts, 'user') and hasattr(opts, 'passwd') and (opts.user or opts.passwd):
         if opts.user and opts.passwd:
@@ -407,7 +407,7 @@ def get_auth_token(opts=None):
             sys.stderr.write("ERROR: both username and password are required\n")
             sys.exit(1)
     else:
-        return None
+        return ""
 
 def get_auth(token):
     if token:
