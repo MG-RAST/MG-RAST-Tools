@@ -168,6 +168,7 @@ def test_mg_get_similarity_for_taxon():
     s='''mg-get-similarity-for-function.py --id mgm4441680.3 --name Central\ carbohydrate\ metabolism --level level2 --source Subsystems --evalue 10'''
     stat, out, err = runme(s) 
     assert stat == 0
+@pytest.mark.requires_auth
 def test_mg_inbox_view():
     s='''mg-inbox.py view all'''
     stat, out, err = runme(s) 
@@ -185,6 +186,7 @@ def test_mg_search_metagenomes():
     s='''mg-search-metagenomes.py --help'''
     stat, out, err = runme(s) 
     assert stat == 0
+@pytest.mark.requires_auth
 def test_mg_submit():
     s='''mg-submit.py list'''
     stat, out, err = runme(s) 
