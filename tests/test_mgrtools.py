@@ -1,3 +1,4 @@
+#!/usr/bin/env python
 from __future__ import print_function
 
 import pytest
@@ -43,11 +44,13 @@ def test_always_succeeds():
 def test_mginbox_help():
     stat, out, err = runme('mg-inbox.py -h')
     assert b'DESCRIPTION' in out
- 
+
+@pytest.mark.known_failing 
 def test_mg_biom2metadata_help():
     stat, out, err = runme('mg-biom2metadata -h')
     assert b'DESCRIPTION' in out
 
+@pytest.mark.known_failing
 def test_mg_biom2taxa_help():
     stat, out, err = runme('mg-biom2taxa -h')
     assert b'DESCRIPTION' in out
@@ -90,6 +93,7 @@ binscripts = ['mg-abundant-functions.py',
 'mg-stable-annotation.py',
 'mg-submit.py']
 
+@pytest.mark.known_failing
 def test_binscripts_help():
     for binscript in binscripts:
           print("Invoking " + binscript+" -h") 
@@ -144,7 +148,7 @@ def test_mg_download():
 #def test_mg_extract_sequences():
 #    s='''mg-extract-sequences.py --function protease --biome marine'''
 #    stat, out, err = runme(s) 
-
+@pytest.mark.known_failing
 def test_mg_get_annotation_set():
     s='''mg-get-annotation-set.py --id mgm4750361.3 --top 5 --level genus --source RefSeq'''
     stat, out, err = runme(s) 
@@ -168,6 +172,7 @@ def test_mg_inbox_view():
     s='''mg-inbox.py view all'''
     stat, out, err = runme(s) 
     assert stat == 0
+@pytest.mark.known_failing
 def test_mg_kegg2ss():
     s = '''mg-kegg2ss.py --input - --output text'''
     stat, out, err = runme(s) 
