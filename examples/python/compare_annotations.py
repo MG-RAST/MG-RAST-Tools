@@ -8,7 +8,7 @@
 import urllib2, json, sys
 from operator import itemgetter
 from prettytable import PrettyTable
-from mglib.mglib import async_rest_api, sparse_to_dense
+from mglib.mglib import async_rest_api, sparse_to_dense, API_URL
 def obj_from_url(url, data=None):
     req = urllib2.Request(url, data)
     res = urllib2.urlopen(req)
@@ -19,7 +19,6 @@ def obj_from_url(url, data=None):
 
 # variables
 mg = 'mgm4447943.3'
-api = 'http://api.metagenomics.anl.gov/1'
 hypo = ['hypothetical', 'hyphothetical', 'putative']
 if len(sys.argv) > 1:
     mg = sys.argv[1]
@@ -27,13 +26,13 @@ if len(sys.argv) > 1:
 # <codecell>
 
 # get BIOM dump for SEED functions
-seed_func = async_rest_api(api+'/matrix/function?id='+mg+'&source=SEED&asynchronous=1')
+seed_func = async_rest_api(API_URL+'/matrix/function?id='+mg+'&source=SEED&asynchronous=1')
 
 # <codecell>
 
 # get BIOM dump for SEED md5s
 #   THIS DOES NOT SEEM TO WORK
-SEED_URI = api+'/matrix/feature?id='+mg+'&source=SEED&asynchronous=1'
+SEED_URI = API_URL+'/matrix/feature?id='+mg+'&source=SEED&asynchronous=1'
 print("SEED_URI " + SEED_URI)
 seed_md5 = async_rest_api(SEED_URI)
 # <codecell>
@@ -69,7 +68,7 @@ print(x)
 
 # for each of the top seed hits retrieve the md5s / only keep those in metagenome
 for i, x in enumerate(seed_top):
-    url = api+'/m5nr/function/'+x[0].replace(' ', '%20')+'?exact=1&source=SEED&limit=100000'
+    url = API_URL+'/m5nr/function/'+x[0].replace(' ', '%20')+'?exact=1&source=SEED&limit=100000'
     print(url)
     annot = obj_from_url(url)
     md5s = set()
@@ -96,7 +95,7 @@ for i, x in enumerate(seed_top):
         seed_top[i].append([])
         continue
     data = {'source': 'GenBank', 'data': x[2], 'limit': 100000}
-    annot = obj_from_url(api+'/m5nr/md5', json.dumps(data, separators=(',',':')))
+    annot = obj_from_url(API_URL+'/m5nr/md5', json.dumps(data, separators=(',',':')))
     if 'ERROR' in annot:
         print(annot['ERROR'])
         continue

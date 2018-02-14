@@ -1,9 +1,9 @@
 #!/usr/bin/env python
 
 import mglib
-import urllib
-from mglib.mglib import get_auth_token, async_rest_api 
-APIURL = "http://api.metagenomics.anl.gov/"
+from mglib.mglib import get_auth_token, async_rest_api, API_URL
+
+APIURL = API_URL
 
 def test_async():
     URI = APIURL + 'matrix/organism?id=mgm4440275.3&id=mgm4440276.3&id=mgm4440281.3&group_level=phylum&source=RDP&hit_type=single&result_type=abundance&evalue=1&identity=60&length=15&taxid=0'

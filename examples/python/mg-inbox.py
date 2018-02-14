@@ -8,7 +8,7 @@ import urllib2
 import StringIO
 from operator import itemgetter
 from optparse import OptionParser
-
+from mglib.mglib import API_URL, SHOCK_URL
 try:
     from prettytable import PrettyTable
 except ImportError:
@@ -82,9 +82,6 @@ SEE ALSO
 AUTHORS
     Jared Bischof, Travis Harrison, Folker Meyer, Tobias Paczian, Andreas Wilke
 """
-
-API_URL = "http://api.metagenomics.anl.gov"
-SHOCK_URL = "http://shock.metagenomics.anl.gov"
 
 auth_file   = os.path.join(os.path.expanduser('~'), ".mgrast_auth")
 mgrast_auth = {}

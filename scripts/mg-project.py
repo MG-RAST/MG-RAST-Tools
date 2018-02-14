@@ -10,7 +10,7 @@ import getpass
 from operator import itemgetter
 from optparse import OptionParser
 from prettytable import PrettyTable
-from mglib import *
+from mglib.mglib import get_auth_token, post_file, obj_from_url, API_URL, SHOCK_URL, VERSION, AUTH_LIST
 
 prehelp = """
 NAME
@@ -51,12 +51,11 @@ AUTHORS
 """
 
 synch_pause = 900
-mgrast_auth = {}
 valid_actions = ["get-info", "get-metadata", "update-metadata", "make-public", "submit-ebi", "status-ebi"]
 
 
 def main(args):
-    global mgrast_auth, API_URL, SHOCK_URL
+    global API_URL, SHOCK_URL
     OptionParser.format_description = lambda self, formatter: self.description
     OptionParser.format_epilog = lambda self, formatter: self.epilog
     parser = OptionParser(usage='', description=prehelp%VERSION, epilog=posthelp%AUTH_LIST)

@@ -7,11 +7,7 @@ import sys
 import os
 import re
 from optparse import OptionParser
-from mglib.mglib import get_auth_token, file_from_url
-
-# MG-RAST API url
-API_URL = "http://api.metagenomics.anl.gov/1"
-
+from mglib.mglib import get_auth_token, file_from_url, API_URL
 
 def retrieveMGRbyaccession(accessionno, key):
     '''Retrieve raw data from MG-RAST API using curl and dump result into file named <accession>.gz'''
@@ -25,7 +21,7 @@ def retrieveMGRbyaccession(accessionno, key):
         s1 = "%s/download/mgm%s?file=050.1&auth=%s" % (API_URL, a, key)
     sys.stderr.write("Retrieving %s\n" % s1)
     with open("%s.gz" % a, "w") as FH:
-        opener = file_from_url(s1, FH)
+        file_from_url(s1, FH)
 
 if __name__ == '__main__':
     usage  = '''usage: download_metagenome_sequences.py <accession number>
