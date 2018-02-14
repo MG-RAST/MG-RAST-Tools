@@ -6,10 +6,9 @@ from __future__ import print_function
 import sys
 from optparse import OptionParser
 import json
-from mglib.mglib import async_rest_api, get_auth_token
+from mglib.mglib import async_rest_api, get_auth_token, API_URL
 
 DEBUG = 0
-API_URL = "http://api.metagenomics.anl.gov/1"
 
 if __name__ == '__main__':
     usage = "usage: %prog [options]  URI"
