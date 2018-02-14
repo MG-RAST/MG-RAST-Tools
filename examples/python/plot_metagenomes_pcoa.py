@@ -8,7 +8,7 @@
 import json
 from operator import itemgetter
 from prettytable import PrettyTable
-from mglib.mglib import obj_from_url, async_rest_api
+from mglib.mglib import obj_from_url, async_rest_api, API_URL
 
 # <codecell>
 
@@ -24,12 +24,11 @@ def sparse_to_dense(sMatrix, rmax, cmax):
 
 # variables
 mgs = ['mgm4443749.3','mgm4443746.3','mgm4443747.3','mgm4443750.3','mgm4443762.3']
-api = 'http://api.metagenomics.anl.gov/1'
 
 # <codecell>
 
 # get BIOM dump for RefSeq organisms, class taxa
-refseq_class = async_rest_api(api+'/matrix/organism?id='+'&id='.join(mgs)+'&source=RefSeq&group_level=class&asynchronous=1')
+refseq_class = async_rest_api(API_URL+'/matrix/organism?id='+'&id='.join(mgs)+'&source=RefSeq&group_level=class&asynchronous=1')
 
 # <codecell>
 
@@ -42,7 +41,7 @@ post_data = {"distance": "bray-curtis", "columns": cols, "rows": rows, "data": m
 # <codecell>
 
 # get PCO data products via API
-pcoa = async_rest_api(api+'/compute/pcoa', json.dumps(post_data, separators=(',',':')))
+pcoa = async_rest_api(API_URL+'/compute/pcoa', json.dumps(post_data, separators=(',',':')))
 
 # <codecell>
 

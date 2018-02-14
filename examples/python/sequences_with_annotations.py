@@ -3,11 +3,9 @@
 dumps what it gets'''
 
 import json, sys, os
-from mglib.mglib import get_auth_token, body_from_url
+from mglib.mglib import get_auth_token, body_from_url, API_URL
 
-API_URL = "http://api.metagenomics.anl.gov/1"
 # Assign the value of key from the OS environment
-
 MGRKEY = get_auth_token()
 
 # assign parameters
@@ -20,7 +18,6 @@ assert source in ["RefSeq", "GenBank", "IMG", "SEED", "TrEMBL", "SwissProt",
     "PATRIC", "KEGG", "RDP", "Greengenes", "LSU", "SSU", "Subsystems", "NOG", "COG", "KO"]
 
 # construct API call
-# http://api.metagenomics.anl.gov/1/annotation/sequence/mgm4447943.3?type=feature&source=GenBank
 base_url = API_URL + "/annotation/sequence/%s" % metagenome
 base_url = base_url + "?type=%s&source=%s&auth=%s&evalue=%s" % (annotation_type, source, MGRKEY, e_value)
 

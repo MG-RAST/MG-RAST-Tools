@@ -194,7 +194,7 @@ def main(args):
     else:
         header = ['r-value', 'p-value']
         if opts.output == 'full':
-            header = keep+header
+            header = header
         if opts.fdr:
             header.append('fdr')
         safe_print("\t%s\n"%"\t".join(header))
