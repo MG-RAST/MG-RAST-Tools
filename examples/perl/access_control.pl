@@ -12,5 +12,5 @@ $ua->agent("MyClient/0.1 ");
 $ua->default_header('AUTH' => '12345');
 
 # retrieve data requiring authentication
-print $ua->get("http://api.metagenomics.anl.gov/1/metagenome/mgm12345.3")->content;
+print $ua->get("http://api.mg-rast.org/1/metagenome/mgm12345.3")->content;
 

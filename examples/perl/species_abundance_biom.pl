@@ -21,7 +21,7 @@ die "Don't recognize format of $metagenome" unless $metagenome =~ m/\d\d\d\d\d\d
 
 
 # retrieve the data
-my $base_url = "http://api.metagenomics.anl.gov/1/matrix/organism";
+my $base_url = "http://api.mg-rast.org/1/matrix/organism";
 my $url=$base_url.uri_escape((defined($key)?"?auth=$key&":"?")."id=$metagenome&source=$source");
 #print "url: $url\n";
 my $content = $ua->get($url)->content;

@@ -26,7 +26,7 @@ my $file_suffix = '.fastq.gz';
 my $filename;
 # retrieve the data
 foreach my $file_id ('050.1', '050.2') {
-	my $base_url = "http://api.metagenomics.anl.gov/1/download/$metagenome?file=".$file_id;
+	my $base_url = "http://api.mg-rast.org/1/download/$metagenome?file=".$file_id;
 	my $url = $base_url."&auth=$key";
 	print STDERR "Retrieving $url\n";
 	
