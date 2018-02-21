@@ -3,8 +3,7 @@
 import sys
 from operator import itemgetter
 from optparse import OptionParser
-import mglib.mglib
-from mglib.mglib import *
+from mglib import *
 
 prehelp = """
 NAME

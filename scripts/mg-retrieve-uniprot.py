@@ -3,7 +3,7 @@
 import sys
 from operator import itemgetter
 from optparse import OptionParser
-from mglib.mglib import *
+from mglib import *
 
 UNIPROT_URL = "http://www.uniprot.org/uniprot/"
 
