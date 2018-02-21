@@ -3,7 +3,7 @@ make_public_list<- function(num_mg=10, verbose=FALSE){
   # this script will create a list of the first 10 public metagenomes
   require(RJSONIO, RCurl) # required, non base packages
   
-  my_call <- paste("https://api.mg-rast.org/metagenome?status=public&limit=", num_mg, sep="")
+  my_call <- paste("https://api.mg-rast.org/search?status=public&limit=", num_mg, sep="")
 
   if(verbose==TRUE){print(my_call)}
   
