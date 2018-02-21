@@ -13,7 +13,7 @@
 
 *.out
 *.err
-*.gz
+*.fasta.gz
 
 # os x files
 *.DS_Store
