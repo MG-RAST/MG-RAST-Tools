@@ -4,7 +4,7 @@ import os
 import sys
 import json
 from optparse import OptionParser
-from mglib import biom_to_matrix
+from mglib import biom_to_matrix, AUTH_LIST, VERSION
 
 prehelp = """
 NAME

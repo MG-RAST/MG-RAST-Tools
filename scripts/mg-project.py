@@ -1,16 +1,9 @@
 #!/usr/bin/env python
 
-import os
 import sys
 import json
-import time
-import pprint
-import base64
-import getpass
-from operator import itemgetter
 from optparse import OptionParser
-from prettytable import PrettyTable
-from mglib import get_auth_token, post_file, obj_from_url, API_URL, SHOCK_URL, VERSION, AUTH_LIST
+from mglib import get_auth_token, post_file, obj_from_url, VERSION, AUTH_LIST, API_URL
 
 prehelp = """
 NAME
@@ -55,7 +48,6 @@ valid_actions = ["get-info", "get-metadata", "update-metadata", "make-public", "
 
 
 def main(args):
-    global API_URL, SHOCK_URL
     OptionParser.format_description = lambda self, formatter: self.description
     OptionParser.format_epilog = lambda self, formatter: self.epilog
     parser = OptionParser(usage='', description=prehelp%VERSION, epilog=posthelp%AUTH_LIST)

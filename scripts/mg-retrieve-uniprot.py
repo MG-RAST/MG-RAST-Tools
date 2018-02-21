@@ -1,9 +1,8 @@
 #!/usr/bin/env python
 
 import sys
-from operator import itemgetter
 from optparse import OptionParser
-from mglib import *
+from mglib import VERSION, API_URL, AUTH_LIST, urlencode, obj_from_url, stdout_from_url
 
 UNIPROT_URL = "http://www.uniprot.org/uniprot/"
 

@@ -4,7 +4,7 @@ import os
 import sys
 import json
 from optparse import OptionParser
-from mglib import *
+from mglib import obj_from_url, tab_to_matrix, AUTH_LIST, API_URL, biom_to_matrix, VERSION
 
 prehelp = """
 NAME

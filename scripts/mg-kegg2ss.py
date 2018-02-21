@@ -1,9 +1,10 @@
 #!/usr/bin/env python
 
 import sys
-from collections import defaultdict
+import os
+import json
 from optparse import OptionParser
-from mglib import *
+from mglib import API_URL, obj_from_url, VERSION, AUTH_LIST, biom_to_matrix, safe_print
 
 prehelp = """
 NAME

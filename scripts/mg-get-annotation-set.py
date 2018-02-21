@@ -1,10 +1,12 @@
 #!/usr/bin/env python
 
 import sys
+import os
+import json
 from collections import defaultdict
 from operator import itemgetter
 from optparse import OptionParser
-from mglib import *
+from mglib import get_auth_token, urlencode, async_rest_api, VERSION, API_URL, AUTH_LIST, sparse_to_dense, obj_from_url
 
 prehelp = """
 NAME

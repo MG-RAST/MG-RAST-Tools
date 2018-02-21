@@ -2,10 +2,10 @@
 
 import os
 import sys
+import json
 import copy
-from operator import itemgetter
 from optparse import OptionParser
-from mglib import *
+from mglib import get_auth_token, AUTH_LIST, VERSION, API_URL, urlencode, async_rest_api, merge_biom, obj_from_url, biom_to_tab
 
 prehelp = """
 NAME

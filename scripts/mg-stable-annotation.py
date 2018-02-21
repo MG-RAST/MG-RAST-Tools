@@ -3,9 +3,8 @@
 import os
 import sys
 import json
-from operator import itemgetter
 from optparse import OptionParser
-from mglib import *
+from mglib import VERSION, AUTH_LIST, random_str, safe_print, biom_to_tab, execute_r
 
 prehelp = """
 NAME

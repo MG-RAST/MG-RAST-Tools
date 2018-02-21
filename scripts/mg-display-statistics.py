@@ -2,9 +2,8 @@
 
 import sys
 import math
-from operator import itemgetter
 from optparse import OptionParser
-from mglib import *
+from mglib import safe_print, VERSION, API_URL, AUTH_LIST, obj_from_url, get_auth_token
 import mglib.aplotter as aplotter
 
 prehelp = """

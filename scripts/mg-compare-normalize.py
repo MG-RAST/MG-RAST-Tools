@@ -4,7 +4,8 @@ import os
 import sys
 import json
 from optparse import OptionParser
-from mglib import *
+from mglib import AUTH_LIST, VERSION, API_URL, random_str, biom_to_tab, biom_to_matrix, execute_r, tab_to_matrix, obj_from_url
+
 
 prehelp = """
 NAME
