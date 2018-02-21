@@ -26,7 +26,7 @@ sub new {
     my $self = {
         json => $json,
         agent => $agent,
-        api_server => $h{api_server} || 'http://api.metagenomics.anl.gov',
+        api_server => $h{api_server} || 'http://api.mg-rast.org',
         token => $h{'auth'}
     };
    
