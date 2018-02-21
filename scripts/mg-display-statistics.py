@@ -4,7 +4,7 @@ import sys
 import math
 from operator import itemgetter
 from optparse import OptionParser
-from mglib import *
+from mglib.mglib import *
 import mglib.aplotter as aplotter
 
 prehelp = """

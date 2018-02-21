@@ -3,7 +3,7 @@
 import sys
 from collections import defaultdict
 from optparse import OptionParser
-from mglib import *
+from mglib.mglib import *
 
 prehelp = """
 NAME

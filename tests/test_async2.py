@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-from mglib import get_auth_token, async_rest_api, API_URL
+from mglib.mglib import get_auth_token, async_rest_api, API_URL
 
 def test_async():
     URI = API_URL + '/matrix/organism?hit_type=single&group_level=strain&evalue=15&source=RefSeq&result_type=abundance&id=mgm4653783.3&asynchronous=1'

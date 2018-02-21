@@ -4,7 +4,7 @@ import sys
 from collections import defaultdict
 from operator import itemgetter
 from optparse import OptionParser
-from mglib import *
+from mglib.mglib import *
 
 prehelp = """
 NAME

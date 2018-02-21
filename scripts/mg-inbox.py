@@ -8,7 +8,7 @@ import base64
 from operator import itemgetter
 from optparse import OptionParser
 from prettytable import PrettyTable
-from mglib import *
+from mglib.mglib import *
 
 prehelp = """
 NAME
