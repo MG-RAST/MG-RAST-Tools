@@ -28,7 +28,7 @@ my $response;
 my $content;
 my $filename;
 # retrieve the data
-my $base_url = "http://api.metagenomics.anl.gov/1/annotation/sequence/$metagenome?"; 
+my $base_url = "http://api.mg-rast.org/1/annotation/sequence/$metagenome?"; 
 my $url = $base_url."&auth=$key"."&type=$annotation_type&source=$source&evalue=$e_value";
 print STDERR "Retrieving $url\n";
 	

@@ -17,7 +17,7 @@ my @ids= ('4447943.3', '4447192.3', '4447103.3', '4447102.3', '4447101.3', '4447
 my $id_str = "id=mgm".join("&id=mgm", @ids);
 
 # obtain COG abundance info for e^-10 and better BLAST results
-my $base_url = "http://api.metagenomics.anl.gov/1/matrix/function";
+my $base_url = "http://api.mg-rast.org/1/matrix/function";
 my $url = $base_url.uri_escape("?$id_str&result_type=abundance&source=COG&evalue=10");
 
 my $content = $ua->get($url)->content;

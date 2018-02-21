@@ -9,7 +9,7 @@ my $ua = LWP::UserAgent->new;
 $ua->agent("MyClient/0.1 ");
 
 # create url specifying search criteria 
-my $base_url = "http://api.metagenomics.anl.gov/1/metagenome";
+my $base_url = "http://api.mg-rast.org/1/metagenome";
 my $url = $base_url.uri_escape("?biome=marine&function=protease&country=Mexico");
 
 # retrieve response in json
