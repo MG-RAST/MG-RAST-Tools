@@ -1,5 +1,6 @@
 import os
 auth_file = os.path.join(os.path.expanduser('~'), ".mgrast_auth")
+VERSION = 1
 API_URL = "https://api.mg-rast.org"
 SHOCK_URL = "https://shock.mg-rast.org"
 AUTH_LIST = "Jared Bischof, Travis Harrison, Folker Meyer, Tobias Paczian, Andreas Wilke"
