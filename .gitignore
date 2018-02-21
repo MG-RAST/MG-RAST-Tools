@@ -2,6 +2,11 @@
 *.pyc
 .ipynb_checkpoints
 
+# git ignore setup.py dirs
+/build/*
+/dist/*
+/mglib.egg-info/*
+
 # ignore files with # and ~
 *\#*
 *\~*
