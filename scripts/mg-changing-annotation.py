@@ -5,7 +5,7 @@ import sys
 import json
 from operator import itemgetter
 from optparse import OptionParser
-from mglib.mglib import *
+from mglib import *
 
 prehelp = """
 NAME

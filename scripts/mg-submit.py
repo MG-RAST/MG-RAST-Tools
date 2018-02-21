@@ -10,7 +10,7 @@ import getpass
 from operator import itemgetter
 from optparse import OptionParser
 from prettytable import PrettyTable
-from mglib.mglib import *
+from mglib import *
 
 prehelp = """
 NAME

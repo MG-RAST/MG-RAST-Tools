@@ -3,7 +3,7 @@
 import sys
 from operator import itemgetter
 from optparse import OptionParser
-from mglib.mglib import *
+from mglib import get_auth_token, obj_from_url
 
 prehelp = """
 NAME

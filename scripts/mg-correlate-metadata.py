@@ -7,7 +7,7 @@ from collections import defaultdict
 from optparse import OptionParser
 import numpy as np
 from scipy import stats
-from mglib.mglib import *
+from mglib import *
 
 prehelp = """
 NAME

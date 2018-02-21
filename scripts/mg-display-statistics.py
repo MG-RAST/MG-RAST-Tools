@@ -4,8 +4,8 @@ import sys
 import math
 from operator import itemgetter
 from optparse import OptionParser
-from mglib.mglib import *
-import mglib.mglib.aplotter as aplotter
+from mglib import *
+import mglib.aplotter as aplotter
 
 prehelp = """
 NAME

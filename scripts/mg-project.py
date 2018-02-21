@@ -10,7 +10,7 @@ import getpass
 from operator import itemgetter
 from optparse import OptionParser
 from prettytable import PrettyTable
-from mglib.mglib import get_auth_token, post_file, obj_from_url, API_URL, SHOCK_URL, VERSION, AUTH_LIST
+from mglib import get_auth_token, post_file, obj_from_url, API_URL, SHOCK_URL, VERSION, AUTH_LIST
 
 prehelp = """
 NAME

@@ -4,7 +4,7 @@ import os
 import sys
 import json
 from optparse import OptionParser
-from mglib.mglib import *
+from mglib import biom_to_matrix
 
 prehelp = """
 NAME
