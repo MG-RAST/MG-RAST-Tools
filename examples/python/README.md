@@ -1,1 +1,0 @@
-### Examples for python usages of the MG-RAST API go here
