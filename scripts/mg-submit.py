@@ -500,7 +500,7 @@ def main(args):
              ((args[1] == "pairjoin_demultiplex") and (len(args) != 5)) ):
             sys.stderr.write("ERROR: submit %s missing file(s)\n"%args[1])
             return 1
-        if ((args[1] == "demultiplex") or (args[1] == "pairjoin_demultiplex")) and (! (opts.metadata or opts.barcode)):
+        if ((args[1] == "demultiplex") or (args[1] == "pairjoin_demultiplex")) and (not (opts.metadata or opts.barcode)):
             sys.stderr.write("ERROR: submit %s requires either metadata or barcode file\n"%args[1])
             return 1
     
