@@ -101,9 +101,14 @@ def status(sid):
         sys.stderr.write("ERROR: %s\n"%data['error'])
         sys.exit(1)
     
-    fids   = map(lambda x: x['id'], data['inputs'])
-    fnames = map(lambda x: x['filename'], data['inputs'])
-    fsizes = map(lambda x: str(x['filesize']), data['inputs'])
+    try:
+        fids   = map(lambda x: x['id'], data['inputs'])
+        fnames = map(lambda x: x['filename'], data['inputs'])
+        fsizes = map(lambda x: str(x['filesize']), data['inputs'])
+    except:
+        fids   = map(lambda x: x['id'], data['inputs'].values())
+        fnames = map(lambda x: x['filename'], data['inputs'].values())
+        fsizes = map(lambda x: str(x['filesize']), data['inputs'].values())
     
     # submission summary
     pt_summary = PrettyTable(["submission ID", "type", "project", "submit time", "input file ID", "input file name", "input file size", "status"])
