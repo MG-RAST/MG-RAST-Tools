@@ -130,7 +130,7 @@ def status(sid):
     
     # metagenome info
     if ('metagenomes' in data) and data['metagenomes']:
-        pt_mg = PrettyTable(["metagenome ID", "metagenome name", "status", "remaining steps", "submit time", "complete time", "pipeline ID"])
+        pt_mg = PrettyTable(["metagenome ID", "metagenome name", "status", "current steps", "submit time", "complete time", "pipeline ID"])
         for m in data['metagenomes']:
             state = "in-progress"
             if len(m['state']) == 1:
