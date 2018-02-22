@@ -26,12 +26,13 @@ SYNOPSIS
         delete <submission id>
         submit simple <seq file> [<seq file>, <seq file>, ...]
         submit batch <seq files in archive>
-        submit demultiplex <seq file> <barcode file> [<index file>, --rc_index]
+        submit demultiplex <seq file> [<index file>, --barcode <barcode file>, --rc_index]
         submit pairjoin <pair1 seq file> <pair2 seq file> [--retain, --mg_name <name>]
-        submit pairjoin_demultiplex <pair1 seq file> <pair2 seq file> <index file> <barcode file> [--retain, --rc_index]
+        submit pairjoin_demultiplex <pair1 seq file> <pair2 seq file> <index file> [--barcode <barcode file>, --retain, --rc_index]
     
     Note:
         each 'submit' action must include one of: --project_id, --project_name, --metadata
+        pairjoin or pairjoin_demultiplex must contain one of: --barcode, --metadata
 
 DESCRIPTION
     MG-RAST submission client
@@ -101,9 +102,14 @@ def status(sid):
         sys.stderr.write("ERROR: %s\n"%data['error'])
         sys.exit(1)
     
-    fids   = map(lambda x: x['id'], data['inputs'])
-    fnames = map(lambda x: x['filename'], data['inputs'])
-    fsizes = map(lambda x: str(x['filesize']), data['inputs'])
+    try:
+        fids   = map(lambda x: x['id'], data['inputs'])
+        fnames = map(lambda x: x['filename'], data['inputs'])
+        fsizes = map(lambda x: str(x['filesize']), data['inputs'])
+    except:
+        fids   = map(lambda x: x['id'], data['inputs'].values())
+        fnames = map(lambda x: x['filename'], data['inputs'].values())
+        fsizes = map(lambda x: str(x['filesize']), data['inputs'].values())
     
     # submission summary
     pt_summary = PrettyTable(["submission ID", "type", "project", "submit time", "input file ID", "input file name", "input file size", "status"])
@@ -124,7 +130,7 @@ def status(sid):
     
     # metagenome info
     if ('metagenomes' in data) and data['metagenomes']:
-        pt_mg = PrettyTable(["metagenome ID", "metagenome name", "status", "remaining steps", "submit time", "complete time", "pipeline ID"])
+        pt_mg = PrettyTable(["metagenome ID", "metagenome name", "status", "current steps", "submit time", "complete time", "pipeline ID"])
         for m in data['metagenomes']:
             state = "in-progress"
             if len(m['state']) == 1:
@@ -255,6 +261,9 @@ def submit(stype, files, opts):
     data = {}
     if opts.debug:
         data['debug'] = 1
+    if opts.barcode:
+        bids = upload([opts.barcode], opts.verbose)
+        data['barcode_file'] = bids[0]
     if opts.metadata:
         mids = upload([opts.metadata], opts.verbose)
         data['metadata_file'] = mids[0]
@@ -267,7 +276,6 @@ def submit(stype, files, opts):
         data['seq_files'] = fids
     elif stype == 'demultiplex':
         data['multiplex_file'] = fids[0]
-        data['barcode_file'] = fids[1]
         data['rc_index'] = 1 if opts.rc_index else 0
         if len(fids) == 3:
             data["index_file"] = fids[2]
@@ -281,7 +289,6 @@ def submit(stype, files, opts):
         data['pair_file_1'] = fids[0]
         data['pair_file_2'] = fids[1]
         data['index_file'] = fids[2]
-        data['barcode_file'] = fids[3]
         data['retain'] = 1 if opts.retain else 0
         data['rc_index'] = 1 if opts.rc_index else 0
     
@@ -429,6 +436,7 @@ def main(args):
     parser.add_option("", "--project_name", dest="project_name", default=None, help="project name")
     # pairjoin / demultiplex options
     parser.add_option("", "--mg_name", dest="mgname", default=None, help="name of pair-merge metagenome if not in metadata, default is UUID")
+    parser.add_option("", "--barcode", dest="barcode", default=None, help="barcode file: metagenome_name \\t barcode_sequence")
     parser.add_option("", "--retain", dest="retain", action="store_true", default=False, help="retain non-overlapping sequences in pair-merge")
     parser.add_option("", "--rc_index", dest="rc_index", action="store_true", default=False, help="barcodes in index file are reverse compliment of mapping file")
     # pipeline flags
@@ -487,10 +495,13 @@ def main(args):
             return 1
         if ( ((args[1] == "simple") and (len(args) < 3)) or
              ((args[1] == "batch") and (len(args) != 3)) or
-             ((args[1] == "demultiplex") and (len(args) < 4)) or
+             ((args[1] == "demultiplex") and (len(args) < 3)) or
              ((args[1] == "pairjoin") and (len(args) != 4)) or
-             ((args[1] == "pairjoin_demultiplex") and (len(args) != 6)) ):
+             ((args[1] == "pairjoin_demultiplex") and (len(args) != 5)) ):
             sys.stderr.write("ERROR: submit %s missing file(s)\n"%args[1])
+            return 1
+        if ((args[1] == "demultiplex") or (args[1] == "pairjoin_demultiplex")) and (not (opts.metadata or opts.barcode)):
+            sys.stderr.write("ERROR: submit %s requires either metadata or barcode file\n"%args[1])
             return 1
     
     # explict login
