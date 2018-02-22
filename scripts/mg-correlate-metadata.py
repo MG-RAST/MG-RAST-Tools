@@ -3,11 +3,10 @@
 import os
 import sys
 import json
-from collections import defaultdict
 from optparse import OptionParser
 import numpy as np
 from scipy import stats
-from mglib.mglib import *
+from mglib import safe_print, VERSION, AUTH_LIST, biom_to_matrix, metadata_from_biom, tab_to_matrix
 
 prehelp = """
 NAME

@@ -6,7 +6,7 @@ from __future__ import print_function
 import sys
 from optparse import OptionParser
 import json
-from mglib.mglib import async_rest_api, get_auth_token, API_URL
+from mglib import async_rest_api, get_auth_token
 
 DEBUG = 0
 

@@ -1,10 +1,10 @@
 #!/usr/bin/env python
 
 import sys
-from operator import itemgetter
+import os
 from optparse import OptionParser
 from prettytable import PrettyTable
-from mglib.mglib import *
+from mglib import VERSION, get_auth_token, AUTH_LIST, API_URL, obj_from_url, file_from_url
 
 prehelp = """
 NAME

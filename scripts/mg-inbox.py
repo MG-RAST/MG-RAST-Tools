@@ -3,12 +3,10 @@
 import os
 import sys
 import json
-import time
-import base64
 from operator import itemgetter
 from optparse import OptionParser
 from prettytable import PrettyTable
-from mglib.mglib import *
+from mglib import VERSION, API_URL, AUTH_LIST, get_auth_token, obj_from_url, SHOCK_URL, post_file, get_auth, login
 
 prehelp = """
 NAME

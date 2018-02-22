@@ -2,7 +2,7 @@
 
 import os
 
-from mglib.mglib import obj_from_url, async_rest_api, get_auth_token, API_URL
+from mglib import obj_from_url, async_rest_api, get_auth_token, API_URL
 
 def test_nonexist():
     URI = API_URL + '/matrix/organism?id=mgm4454394.3'  # mgm4454394.3 is deleted

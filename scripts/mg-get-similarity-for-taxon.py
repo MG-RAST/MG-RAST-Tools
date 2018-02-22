@@ -1,9 +1,8 @@
 #!/usr/bin/env python
 
 import sys
-from operator import itemgetter
 from optparse import OptionParser
-from mglib.mglib import *
+from mglib import AUTH_LIST, VERSION, API_URL, get_auth_token, urlencode, stdout_from_url
 
 prehelp = """
 NAME

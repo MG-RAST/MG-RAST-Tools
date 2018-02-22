@@ -4,7 +4,7 @@ import os
 import sys
 import json
 from optparse import OptionParser
-from mglib.mglib import *
+from mglib import merge_biom, AUTH_LIST, VERSION, safe_print
 
 prehelp = """
 NAME

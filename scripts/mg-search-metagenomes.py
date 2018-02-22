@@ -1,10 +1,8 @@
 #!/usr/bin/env python
 
 import sys
-import time
-from operator import itemgetter
 from optparse import OptionParser
-from mglib.mglib import *
+from mglib import get_auth_token, SEARCH_FIELDS, urlencode, VERSION, AUTH_LIST, API_URL, obj_from_url, safe_print
 
 prehelp = """
 NAME
