@@ -82,7 +82,7 @@ def main(args):
     
     # actions
     if action == "get-info":
-        data = obj_from_url(opts.url+'/project/'+pid+'?verbosity=full&nocache=1', auth=token)
+        data = obj_from_url(opts.url+'/project/'+pid+'?verbosity=verbose&nocache=1', auth=token)
         print(json.dumps(data, sort_keys=True, indent=4))
     elif action == "get-metadata":
         data = obj_from_url(opts.url+'/metadata/export/'+pid, auth=token)
