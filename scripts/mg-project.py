@@ -61,7 +61,6 @@ def main(args):
     
     # get inputs
     (opts, args) = parser.parse_args()
-    API_URL = opts.url
     
     # validate inputs
     if len(args) < 1:
@@ -101,10 +100,7 @@ def main(args):
             'debug': debug
         }
         if opts.taxa:
-            info['metagenome_taxonomy'] = {}
-            proj = obj_from_url(opts.url+'/project/'+pid+'?verbosity=verbose&nocache=1', auth=token)
-            for mg in proj['metagenomes']:
-                info['metagenome_taxonomy'][mg['metagenome_id']] = opts.taxa
+            info['project_taxonomy'] = opts.taxa
         data = obj_from_url(opts.url+'/submission/ebi', auth=token, data=json.dumps(info, separators=(',',':')))
         print(json.dumps(data, sort_keys=True, indent=4))
     elif action == "status-ebi":
