@@ -27,6 +27,8 @@ except ImportError:  # python2
     from urllib import urlencode
     from urllib2 import urlopen, Request, HTTPError
 
+from .__init__ import API_URL
+
 if not sys.version_info[0:2][0] == 3 and not sys.version_info[0:2] == (2, 7) :
     sys.stderr.write('ERROR: MG-RAST Tools requires at least Python 2.7.')
     exit(1)
