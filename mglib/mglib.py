@@ -120,8 +120,11 @@ def async_rest_api(url, auth=None, data=None, debug=False, delay=15):
     except:
         parameters = {"asynchronous": 1}
     submit = obj_from_url(url, auth=auth, data=data, debug=debug)
+# If "status" is nor present, or if "status" is somehow not "submitted" 
+# assume this is not an asynchronous call and it's done.
     if not (('status' in submit) and (submit['status'] == 'submitted') and ('url' in submit)):
-        sys.stderr.write("ERROR: return data invalid format\n:%s"%json.dumps(submit))
+        return(submit)
+#        sys.stderr.write("ERROR: return data invalid format\n:%s"%json.dumps(submit))
     result = obj_from_url(submit['url'], debug=debug)
     try:
         while result['status'] != 'done':

@@ -45,10 +45,10 @@ if __name__ == '__main__':
     jsonstructure = async_rest_api(URI, auth=key)
     jsondata = jsonstructure["data"]
 # unpack and display the data table
-    cols = jsonstructure["columns"]
+    cols = jsondata["columns"]
 #    rows = [x["id"] for x in jsondata["rows"]]
 
-    data = jsonstructure["data"]
+    data = jsondata["data"]
 
     if DEBUG:
         print(jsonstructure)
