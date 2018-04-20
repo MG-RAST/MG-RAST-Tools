@@ -56,7 +56,6 @@ if __name__ == '__main__':
         print("DATA", data)
     h = data
 
-    sys.stdout.write("Taxon\t")
     for j in range(0, len(cols)):
         sys.stdout.write(cols[j] +"\t")
     sys.stdout.write("\n")

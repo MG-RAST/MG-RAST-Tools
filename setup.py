@@ -12,7 +12,7 @@ setup(name='mglib',
     url='https://github.com/MG-RAST/MG-RAST-Tools',
     packages=['mglib'],
     scripts=glob.glob('scripts/[a-z]*') + glob.glob('examples/python/*.py'),
-    install_requires=  ['prettytable >= 0.7', 'shock >= 0.1.30', 
+    install_requires=  ['prettytable >= 0.7', 
                           'requests_toolbelt >= 0.8', 'setuptools > 28.0',
                          'poster >= 0.8.1' ]
      )
