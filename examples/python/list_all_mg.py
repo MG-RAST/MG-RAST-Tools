@@ -37,14 +37,12 @@ jsonstructure = obj_from_url(base_url)
 total_count = int(jsonstructure["total_count"])
 sys.stderr.write("Total number of records: {:d}\n".format(total_count))
 
-next_url = jsonstructure["next"]
-
 for i in range(0, total_count / limit +1):
     sys.stderr.write("Page {:d}\t".format(i))
-    base_url = next_url
     jsonstructure = obj_from_url(base_url)
     printlist(jsonstructure)
     try:
         next_url = jsonstructure["next"]
+        base_url = next_url
     except KeyError:
         break
