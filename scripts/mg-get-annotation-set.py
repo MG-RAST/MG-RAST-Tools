@@ -191,10 +191,12 @@ def main(args):
                  ('hide_metadata', '1') ]
     t_url = opts.url+'/matrix/organism?'+urlencode(t_params, True)
     biom = async_rest_api(t_url, auth=token, debug=opts.debug)
-    for d in sorted(biom['data'], key=itemgetter(2), reverse=True):
+    r = [i["id"] for i in biom["rows"]]
+    d = [i[0] for i in biom["data"]]  
+    for d in sorted(zip(r,d), key=itemgetter(1), reverse=True):
         if (opts.top > 0) and (len(top_taxa) >= opts.top):
             break
-        top_taxa.append( biom['rows'][d[0]]['id'] )
+        top_taxa.append(r)
     
     # get feature data (from full profile)
     f_params = [
@@ -202,6 +204,7 @@ def main(args):
         ('source', opts.source)
     ]
     f_url = "%s/profile/%s?%s"%(opts.url, opts.id, urlencode(params, True))
+    print("Fetching", f_url)
     pbiom = async_rest_api(f_url, auth=token, debug=opts.debug)
     
     # get filtered md5s

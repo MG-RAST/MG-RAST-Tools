@@ -27,6 +27,8 @@ except ImportError:  # python2
     from urllib import urlencode
     from urllib2 import urlopen, Request, HTTPError
 
+from .__init__ import API_URL
+
 if not sys.version_info[0:2][0] == 3 and not sys.version_info[0:2] == (2, 7) :
     sys.stderr.write('ERROR: MG-RAST Tools requires at least Python 2.7.')
     exit(1)
@@ -118,8 +120,13 @@ def async_rest_api(url, auth=None, data=None, debug=False, delay=60):
     except:
         parameters = {"asynchronous": 1}
     submit = obj_from_url(url, auth=auth, data=data, debug=debug)
+# If "status" is nor present, or if "status" is somehow not "submitted" 
+# assume this is not an asynchronous call and it's done.
+    if ('status' in submit) and (submit['status'] == 'done') and ('url' in submit):
+        return obj_from_url(submit["url"], debug=debug)
     if not (('status' in submit) and (submit['status'] == 'submitted') and ('url' in submit)):
-        sys.stderr.write("ERROR: return data invalid format\n:%s"%json.dumps(submit))
+        return(submit)
+#        sys.stderr.write("ERROR: return data invalid format\n:%s"%json.dumps(submit))
     result = obj_from_url(submit['url'], debug=debug)
     try:
         while result['status'] != 'done':

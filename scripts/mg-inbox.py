@@ -8,6 +8,8 @@ from optparse import OptionParser
 from prettytable import PrettyTable
 from mglib import VERSION, API_URL, AUTH_LIST, get_auth_token, obj_from_url, SHOCK_URL, post_file, get_auth, login
 
+DEBUG = 0
+
 prehelp = """
 NAME
     mg-inbox
@@ -70,7 +72,7 @@ validate_options = ["sequence", "metadata"]
 compute_options  = ["sff2fastq", "demultiplex", "pairjoin", "pairjoin_demultiplex"]
 
 def check_ids(files):
-    data = obj_from_url(API_URL+"/inbox", auth=mgrast_auth['token'])
+    data = obj_from_url(API_URL+"/inbox", auth=mgrast_auth['token'], debug=DEBUG)
     if len(data['files']) == 0:
         sys.stderr.write("ERROR: Your inbox is empty, please upload first.\n")
         sys.exit(1)
@@ -81,7 +83,7 @@ def check_ids(files):
             sys.exit(1)
 
 def view(vtype):
-    data = obj_from_url(API_URL+"/inbox", auth=mgrast_auth['token'])
+    data = obj_from_url(API_URL+"/inbox", auth=mgrast_auth['token'], debug=DEBUG)
     files = sorted(data['files'], key=itemgetter('timestamp'))
     action_set = [x for x in files if ("actions" in x) and (len(x['actions']) > 0)]
     has_action = True if len(action_set) > 0 else False
@@ -180,11 +182,11 @@ def upload(files):
         }
         result = post_file(SHOCK_URL+"/node", fformat, f, data=data, auth=mgrast_auth['token'])
         # compute file info
-        info = obj_from_url(API_URL+"/inbox/info/"+result['id'], auth=mgrast_auth['token'])
+        info = obj_from_url(API_URL+"/inbox/info/"+result['data']['id'], auth=mgrast_auth['token'], debug=DEBUG)
         print(info['status'])
         # compute sequence stats
         if info['stats_info']['file_type'] in ['fasta', 'fastq']:
-            stats = obj_from_url(API_URL+"/inbox/stats/"+result['id'], auth=mgrast_auth['token'])
+            stats = obj_from_url(API_URL+"/inbox/stats/"+result['data']['id'], auth=mgrast_auth['token'], debug=DEBUG)
             print(stats['status'].replace("stats computation", "validation"))
 
 def upload_archive(afile):
@@ -217,36 +219,36 @@ def upload_archive(afile):
         "archive_format": aformat,
         "attributes_str": attr
     }
-    unpack = obj_from_url(SHOCK_URL+"/node", data=data, auth=mgrast_auth['token'])
+    unpack = obj_from_url(SHOCK_URL+"/node", data=data, auth=mgrast_auth['token'], debug=DEBUG)
     # process new nodes
     for node in unpack['data']:
         # compute file info
-        info = obj_from_url(API_URL+"/inbox/info/"+node['id'], auth=mgrast_auth['token'])
+        info = obj_from_url(API_URL+"/inbox/info/"+node['id'], auth=mgrast_auth['token'], debug=DEBUG)
         print(info['status'])
         # compute sequence stats
         if info['stats_info']['file_type'] in ['fasta', 'fastq']:
-            stats = obj_from_url(API_URL+"/inbox/stats/"+node['id'], auth=mgrast_auth['token'])
+            stats = obj_from_url(API_URL+"/inbox/stats/"+node['id'], auth=mgrast_auth['token'], debug=DEBUG)
             print(stats['status'].replace("stats computation", "validation"))
 
 def rename(fid, fname):
     data = {"name": fname, "file": fid}
-    result = obj_from_url(API_URL+"/inbox/rename", data=json.dumps(data), auth=mgrast_auth['token'])
+    result = obj_from_url(API_URL+"/inbox/rename", data=json.dumps(data), auth=mgrast_auth['token'], debug=DEBUG)
     print(result['status'])
 
 def validate(fformat, files, get_info=False):
     for f in files:
-        data = obj_from_url(API_URL+"/inbox/"+f, auth=mgrast_auth['token'])
+        data = obj_from_url(API_URL+"/inbox/"+f, auth=mgrast_auth['token'], debug=DEBUG)
         if ('data_type' in data) and (data['data_type'] == fformat):
             print("%s (%s) is a valid %s file"%(data['filename'], f, fformat))
         elif fformat == 'sequence':
             if data['stats_info']['file_type'] in ['fasta', 'fastq']:
-                info = obj_from_url(API_URL+"/inbox/stats/"+f, auth=mgrast_auth['token'])
+                info = obj_from_url(API_URL+"/inbox/stats/"+f, auth=mgrast_auth['token'], debug=DEBUG)
                 print(info['status'].replace("stats computation", "validation"))
             else:
                 sys.stderr.write("ERROR: %s (%s) is not a fastq or fasta file\n"%(data['filename'], f))
         elif fformat == 'metadata':
             if data['stats_info']['file_type'] == 'excel':
-                info = obj_from_url(API_URL+"/inbox/validate/"+f, auth=mgrast_auth['token'])
+                info = obj_from_url(API_URL+"/inbox/validate/"+f, auth=mgrast_auth['token'], debug=DEBUG)
                 if get_info:
                     return info
                 else:
@@ -286,12 +288,12 @@ def compute(action, files, retain, joinfile, rc_index):
         }
     else:
         sys.stderr.write("ERROR: invalid compute option. use one of: %s\n"%", ".join(compute_options))
-    info = obj_from_url(API_URL+"/inbox/"+action, data=json.dumps(data), auth=mgrast_auth['token'])
+    info = obj_from_url(API_URL+"/inbox/"+action, data=json.dumps(data), auth=mgrast_auth['token'], debug=DEBUG)
     print(info['status'])
 
 def delete(files):
     for f in files:
-        result = obj_from_url(API_URL+"/inbox/"+f, auth=mgrast_auth['token'], method='DELETE')
+        result = obj_from_url(API_URL+"/inbox/"+f, auth=mgrast_auth['token'], method='DELETE', debug=DEBUG)
         print(result['status'])
 
 def submit(files, project, metadata):
@@ -302,10 +304,10 @@ def submit(files, project, metadata):
         if minfo['status'].startswith('invalid') or ('extracted' not in minfo):
             print(minfo['error'] if 'error' in minfo else 'ERROR: unable to validate metadata '+metadata)
             return
-        mdata = obj_from_url(API_URL+"/inbox/"+minfo['extracted'], auth=mgrast_auth['token'])
+        mdata = obj_from_url(API_URL+"/inbox/"+minfo['extracted'], auth=mgrast_auth['token'], debug=DEBUG)
     info = []
     for f in files:
-        x = obj_from_url(API_URL+"/inbox/"+f, auth=mgrast_auth['token'])
+        x = obj_from_url(API_URL+"/inbox/"+f, auth=mgrast_auth['token'], debug=DEBUG)
         if ('data_type' in x) and (x['data_type'] == 'sequence'):
             info.append(x)
         else:
@@ -316,23 +318,23 @@ def submit(files, project, metadata):
     for i in info:
         # reserve job
         data = {"input_id": i['id'], "name": os.path.splitext(i['filename'])[0]}
-        rjob = obj_from_url(API_URL+"/job/reserve", data=json.dumps(data), auth=mgrast_auth['token'])
+        rjob = obj_from_url(API_URL+"/job/reserve", data=json.dumps(data), auth=mgrast_auth['token'], debug=DEBUG)
         # create job
         data = {"input_id": i['id'], "metagenome_id": rjob['metagenome_id']}
-        obj_from_url(API_URL+"/job/create", data=json.dumps(data), auth=mgrast_auth['token'])
+        obj_from_url(API_URL+"/job/create", data=json.dumps(data), auth=mgrast_auth['token'], debug=DEBUG)
         # add to project
         if project:
             data = {"project_id": project, "metagenome_id": rjob['metagenome_id']}
-            obj_from_url(API_URL+"/job/addproject", data=json.dumps(data), auth=mgrast_auth['token'])
+            obj_from_url(API_URL+"/job/addproject", data=json.dumps(data), auth=mgrast_auth['token'], debug=DEBUG)
         # submit job
         data = {"input_id": i['id'], "metagenome_id": rjob['metagenome_id']}
-        sjob = obj_from_url(API_URL+"/job/submit", data=json.dumps(data), auth=mgrast_auth['token'])
+        sjob = obj_from_url(API_URL+"/job/submit", data=json.dumps(data), auth=mgrast_auth['token'], debug=DEBUG)
         mgids.append(rjob['metagenome_id'])
         print("metagenome %s created for file %s (%s). pipeline id is: %s"%(rjob['metagenome_id'], i['filename'], i['id'], sjob['awe_id']))
     # apply metadata
     if mdata and metadata:
         data = {"node_id": metadata, "metagenome": mgids}
-        result = obj_from_url(API_URL+"/metadata/import", data=json.dumps(data), auth=mgrast_auth['token'])
+        result = obj_from_url(API_URL+"/metadata/import", data=json.dumps(data), auth=mgrast_auth['token'], debug=DEBUG)
         project = result['project']
         if result['errors']:
             print("ERROR: adding metadata: "+result['errors'])
@@ -354,12 +356,19 @@ def main(args):
     parser.add_option("-j", "--joinfile", dest="joinfile", default=None, help="name of resulting pair-merge file (without extension), default is <pair 1 filename>_<pair 2 filename>")
     parser.add_option("", "--retain", dest="retain", action="store_true", default=False, help="retain non-overlapping sequences in pair-merge")
     parser.add_option("", "--rc_index", dest="rc_index", action="store_true", default=False, help="barcodes in index file are reverse compliment of mapping file")
+    parser.add_option("-v", "--verbose", dest="verbose", action="store_true", default=False, help="Verbose STDOUT")
     
+    global DEBUG
     # get inputs
     (opts, args) = parser.parse_args()
     if len(args) < 1:
         sys.stderr.write("ERROR: missing action, please check usage with %s -h\n"%(sys.argv[0]))
         return 1
+    if opts.verbose:
+        print("DEBUG")
+        DEBUG = 1
+    else:
+        DEBUG = 0
     action = args[0]
     API_URL = opts.mgrast_url
     SHOCK_URL = opts.shock_url

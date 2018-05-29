@@ -1,10 +1,9 @@
 import os
 __all__ = ["mglib"]
-import mglib
 try:
-    from mglib.mglib import *
+    from .mglib.mglib import *
 except ImportError:
-    from mglib import *
+    from .mglib import *
 auth_file = os.path.join(os.path.expanduser('~'), ".mgrast_auth")
 VERSION = 1
 API_URL = "https://api.mg-rast.org/"
