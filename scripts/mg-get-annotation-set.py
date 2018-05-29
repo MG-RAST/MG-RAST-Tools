@@ -122,7 +122,7 @@ def annotations_for_taxa(opts, md5s, taxa, inverse=False):
         # get data from m5nr
         while True:
             # get paginated data
-            ann_data = obj_from_url(opts.url+'/m5nr/organism', data=json.dumps(tax_post, separators=(',',':')))
+            ann_data = obj_from_url(opts.url+'/m5nr/organism', data=json.dumps(tax_post, separators=(',',':')), debug=opts.debug)
             for a in ann_data['data']:
                 # skip md5s not in this set
                 if a['md5'] not in sub_md5s:
@@ -156,6 +156,7 @@ def main(args):
     parser.add_option("", "--evalue", type="int", dest="evalue", default=5, help="negative exponent value for maximum e-value cutoff, default is 5")
     parser.add_option("", "--identity", type="int", dest="identity", default=60, help="percent value for minimum % identity cutoff, default is 60")
     parser.add_option("", "--length", type="int", dest="length", default=15, help="value for minimum alignment length cutoff, default is 15")
+    parser.add_option("", "--debug", dest="debug", action="store_true", default=False, help="Run in debug mode")
     
     # get inputs
     (opts, args) = parser.parse_args()
@@ -187,33 +188,27 @@ def main(args):
                  ('identity', opts.identity),
                  ('length', opts.length),
                  ('result_type', 'abundance'),
-                 ('asynchronous', '1'),
                  ('hide_metadata', '1') ]
     t_url = opts.url+'/matrix/organism?'+urlencode(t_params, True)
-    biom = async_rest_api(t_url, auth=token)
+    biom = async_rest_api(t_url, auth=token, debug=opts.debug)
     for d in sorted(biom['data'], key=itemgetter(2), reverse=True):
         if (opts.top > 0) and (len(top_taxa) >= opts.top):
             break
         top_taxa.append( biom['rows'][d[0]]['id'] )
     
-    # get feature data
-    f_params = [ ('id', opts.id),
-                 ('source', opts.source),
-                 ('evalue', opts.evalue),
-                 ('identity', opts.identity),
-                 ('length', opts.length),
-                 ('asynchronous', '1'),
-                 ('hide_metadata', '1'),
-                 ('hide_annotation', '1') ]
-    f_url = opts.url+'/matrix/feature?'+urlencode(f_params, True)
-    # biom
-    abiom = async_rest_api(f_url+'&result_type=abundance', auth=token)
-    ebiom = async_rest_api(f_url+'&result_type=evalue', auth=token)
-    # matrix
-    amatrix = sparse_to_dense(abiom['data'], abiom['shape'][0], abiom['shape'][1])
-    ematrix = sparse_to_dense(ebiom['data'], ebiom['shape'][0], ebiom['shape'][1])
-    # all md5s
-    md5s = map(lambda x: x['id'], abiom['rows'])
+    # get feature data (from full profile)
+    f_params = [
+        ('format', 'biom'),
+        ('source', opts.source)
+    ]
+    f_url = "%s/profile/%s?%s"%(opts.url, opts.id, urlencode(params, True))
+    pbiom = async_rest_api(f_url, auth=token, debug=opts.debug)
+    
+    # get filtered md5s
+    md5s = []
+    for i in range(pbiom['shape'][0]):
+        if (pbiom['data'][i][1] <= (opts.evalue * -1)) and (pbiom['data'][i][2] >= opts.identity) and (pbiom['data'][i][3] >= opts.length):
+            md5s.append(pbiom['rows'][i]['id'])
     
     # set json object
     obj_id = ".".join([opts.id, opts.level, str(opts.top)])

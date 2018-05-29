@@ -111,7 +111,7 @@ def stdout_from_url(url, auth=None, data=None, debug=False):
     file_from_url(url, sys.stdout, auth=auth, data=data, debug=debug)
 
 # return python struct from JSON output of asynchronous MG-RAST API
-def async_rest_api(url, auth=None, data=None, debug=False, delay=15):
+def async_rest_api(url, auth=None, data=None, debug=False, delay=60):
     try:
         parameters = parse_qs(url.split("?")[1])
         assert "asynchronous" in parameters, "Must specify asynchronous=1 for asynchronous call!"
