@@ -191,11 +191,18 @@ def main(args):
                  ('hide_metadata', '1') ]
     t_url = opts.url+'/matrix/organism?'+urlencode(t_params, True)
     biom = async_rest_api(t_url, auth=token)
-    for d in sorted(biom['data'], key=itemgetter(2), reverse=True):
-        if (opts.top > 0) and (len(top_taxa) >= opts.top):
-            break
-        top_taxa.append( biom['rows'][d[0]]['id'] )
-    
+#    for d in sorted(biom['data'], key=itemgetter(2), reverse=True):
+#        if (opts.top > 0) and (len(top_taxa) >= opts.top):
+#            break
+#        top_taxa.append(biom['rows'][d[0]]['id'])
+#    c = [i["id"] for i in biom["data"]["columns"]]
+    r = [i["id"] for i in biom["rows"]]
+    d = [i[0] for i in biom["data"]]  
+    for d in sorted(zip(r,d), key=itemgetter(1), reverse=True):
+         if (opts.top > 0) and (len(top_taxa) >= opts.top):
+             break
+         top_taxa.append(r)
+
     # get feature data
     f_params = [ ('id', opts.id),
                  ('source', opts.source),
@@ -206,12 +213,14 @@ def main(args):
                  ('hide_metadata', '1'),
                  ('hide_annotation', '1') ]
     f_url = opts.url+'/matrix/feature?'+urlencode(f_params, True)
+    print("Fetching", f_url) 
     # biom
     abiom = async_rest_api(f_url+'&result_type=abundance', auth=token)
     ebiom = async_rest_api(f_url+'&result_type=evalue', auth=token)
+    assert abiom["data"] is not None
     # matrix
-    amatrix = sparse_to_dense(abiom['data'], abiom['shape'][0], abiom['shape'][1])
-    ematrix = sparse_to_dense(ebiom['data'], ebiom['shape'][0], ebiom['shape'][1])
+    amatrix = sparse_to_dense(abiom, abiom['shape'][0], abiom['shape'][1])
+    ematrix = sparse_to_dense(ebiom, ebiom['shape'][0], ebiom['shape'][1])
     # all md5s
     md5s = map(lambda x: x['id'], abiom['rows'])
     
