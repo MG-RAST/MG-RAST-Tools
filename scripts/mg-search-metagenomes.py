@@ -38,6 +38,9 @@ def display_search(data, fields):
     for d in data:
         row = []
         for f in fields:
+            if f not in d:
+                row.append("-")
+                continue
             try:
                 row.append( str(d[f]) )
             except:
@@ -54,7 +57,6 @@ def main(args):
     parser.add_option("", "--token", dest="token", default=None, help="OAuth token")
     parser.add_option("", "--order", dest="order", default=None, help="field metagenomes are ordered by, default is no ordering")
     parser.add_option("", "--direction", dest="direction", default="asc", help="direction of order. 'asc' for ascending order, 'desc' for descending order, default is asc")
-    parser.add_option("", "--match", dest="match", default="all", help="search logic. 'all' for metagenomes that match all search parameters, 'any' for metagenomes that match any search parameters, default is all")
     parser.add_option("", "--status", dest="status", default="public", help="types of metagenomes to return. 'both' for all data (public and private), 'public' for public data, 'private' for users private data, default is public")
     parser.add_option("", "--verbosity", dest="verbosity", default='minimal', help="amount of information to display. use keyword 'minimal' for id and name, use keyword 'full' for MIxS GSC metadata, default is minimal")
     for sfield in SEARCH_FIELDS:
@@ -68,8 +70,7 @@ def main(args):
     
     # build call url
     params = [ ('limit', '100'),
-               ('match', opts.match),
-               ('status', opts.status),
+               ('public', 0 if opts.status == 'private' else 1),
                ('verbosity', opts.verbosity if opts.verbosity == 'minimal' else 'mixs') ]
     for sfield in SEARCH_FIELDS:
         if hasattr(opts, sfield) and getattr(opts, sfield):
@@ -77,19 +78,15 @@ def main(args):
     if opts.order:
         params.append( ('order', opts.order) )
         params.append( ('direction', opts.direction) )
-    url = opts.url+'/metagenome?'+urlencode(params, True)
+    url = opts.url+'/search?'+urlencode(params, True)
     
     # retrieve data
-    fields = ['id']
+    fields = ['metagenome_id', 'public'] + SEARCH_FIELDS
     result = obj_from_url(url, auth=token)
     if len(result['data']) == 0:
         sys.stdout.write("No results found for the given search parameters\n")
         return 0
-    for sfield in SEARCH_FIELDS:
-        if sfield in result['data'][0]:
-            fields.append(sfield)
-    fields.append('status')
-    ids = [d['id'] for d in result['data']]
+    ids = [d['metagenome_id'] for d in result['data']]
     
     # output header
     safe_print("\t".join(fields)+"\n")
@@ -99,7 +96,7 @@ def main(args):
     while result['next']:
         url = result['next']
         result = obj_from_url(url, auth=token)
-        ids.extend([d['id'] for d in result['data']])
+        ids.extend([d['metagenome_id'] for d in result['data']])
         display_search(result['data'], fields)
     
     return 0
