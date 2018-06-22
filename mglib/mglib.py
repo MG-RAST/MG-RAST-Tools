@@ -113,7 +113,7 @@ def stdout_from_url(url, auth=None, data=None, debug=False):
     file_from_url(url, sys.stdout, auth=auth, data=data, debug=debug)
 
 # return python struct from JSON output of asynchronous MG-RAST API
-def async_rest_api(url, auth=None, data=None, debug=False, delay=15):
+def async_rest_api(url, auth=None, data=None, debug=False, delay=60):
     try:
         parameters = parse_qs(url.split("?")[1])
         assert "asynchronous" in parameters, "Must specify asynchronous=1 for asynchronous call!"
@@ -123,10 +123,9 @@ def async_rest_api(url, auth=None, data=None, debug=False, delay=15):
 # If "status" is nor present, or if "status" is somehow not "submitted" 
 # assume this is not an asynchronous call and it's done.
     if ('status' in submit) and (submit['status'] == 'done') and ('url' in submit):
-        return obj_from_url(submit["url"], debug=debug)
+        return submit['data']
     if not (('status' in submit) and (submit['status'] == 'submitted') and ('url' in submit)):
-        return(submit)
-#        sys.stderr.write("ERROR: return data invalid format\n:%s"%json.dumps(submit))
+        return submit
     result = obj_from_url(submit['url'], debug=debug)
     try:
         while result['status'] != 'done':

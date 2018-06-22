@@ -3,6 +3,7 @@
 import sys
 import os
 import json
+import pprint
 from collections import defaultdict
 from operator import itemgetter
 from optparse import OptionParser
@@ -39,9 +40,10 @@ AUTHORS
 FORMAT  = 'text'
 OUT_HDL = None
 OUT_OBJ = {}
+PP = pprint.PrettyPrinter(indent=4)
 
 # output annotations
-def output_annotation(md5s, func_md5, func_acc, amatrix, ematrix, otu, otu_num):
+def output_annotation(md5s, func_md5, func_acc, values, otu, otu_num):
     # check for data
     func_len = len(func_md5)
     if func_len == 0:
@@ -71,8 +73,8 @@ def output_annotation(md5s, func_md5, func_acc, amatrix, ematrix, otu, otu_num):
         sum_evalue = 0.0
         for i, m in enumerate(md5s):
             if m in func_md5[f]:
-                abund += amatrix[i][0]
-                sum_evalue += ematrix[i][0]
+                abund += values[i][0]
+                sum_evalue += values[i][1]
         avg_evalue = 10**(sum_evalue / len(func_md5[f]))
         # outputs
         if FORMAT == 'json':
@@ -117,18 +119,21 @@ def annotations_for_taxa(opts, md5s, taxa, inverse=False):
     for i in xrange(0, len(md5s), size):
         sub_md5s = md5s[i:i+size]
         tax_post['md5s'] = sub_md5s
-        tax_post['data'] = taxa
         tax_post['offset'] = 0
         # get data from m5nr
         while True:
             # get paginated data
-            ann_data = obj_from_url(opts.url+'/m5nr/organism', data=json.dumps(tax_post, separators=(',',':')))
+            print("xrange: %d, source: %s, tax_level: %s, taxa: %d, md5s: %d, limit: %d, offset: %d"%(i, tax_post['source'], tax_post['tax_level'], len(tax_post['data']), len(tax_post['md5s']), tax_post['limit'], tax_post['offset']))
+            ann_data = obj_from_url(opts.url+'/m5nr/organism', data=json.dumps(tax_post, separators=(',',':')), debug=opts.debug)
+            found = 0
             for a in ann_data['data']:
                 # skip md5s not in this set
                 if a['md5'] not in sub_md5s:
                     continue
                 func_md5[a['function']].add(a['md5'])
                 func_acc[a['function']].add(a['accession'])
+                found += 1
+            print("md5s: %d, anns: %d, found: %d"%(len(sub_md5s), len(ann_data['data']), found))
             # determine next paginated query
             if (ann_data['limit'] + ann_data['offset']) >= ann_data['total_count']:
                 break
@@ -156,6 +161,7 @@ def main(args):
     parser.add_option("", "--evalue", type="int", dest="evalue", default=5, help="negative exponent value for maximum e-value cutoff, default is 5")
     parser.add_option("", "--identity", type="int", dest="identity", default=60, help="percent value for minimum % identity cutoff, default is 60")
     parser.add_option("", "--length", type="int", dest="length", default=15, help="value for minimum alignment length cutoff, default is 15")
+    parser.add_option("", "--debug", dest="debug", action="store_true", default=False, help="Run in debug mode")
     
     # get inputs
     (opts, args) = parser.parse_args()
@@ -187,42 +193,31 @@ def main(args):
                  ('identity', opts.identity),
                  ('length', opts.length),
                  ('result_type', 'abundance'),
-                 ('asynchronous', '1'),
                  ('hide_metadata', '1') ]
     t_url = opts.url+'/matrix/organism?'+urlencode(t_params, True)
-    biom = async_rest_api(t_url, auth=token)
-#    for d in sorted(biom['data'], key=itemgetter(2), reverse=True):
-#        if (opts.top > 0) and (len(top_taxa) >= opts.top):
-#            break
-#        top_taxa.append(biom['rows'][d[0]]['id'])
-#    c = [i["id"] for i in biom["data"]["columns"]]
+    biom = async_rest_api(t_url, auth=token, debug=opts.debug)
     r = [i["id"] for i in biom["rows"]]
     d = [i[0] for i in biom["data"]]  
     for d in sorted(zip(r,d), key=itemgetter(1), reverse=True):
-         if (opts.top > 0) and (len(top_taxa) >= opts.top):
-             break
-         top_taxa.append(r)
-
-    # get feature data
-    f_params = [ ('id', opts.id),
-                 ('source', opts.source),
-                 ('evalue', opts.evalue),
-                 ('identity', opts.identity),
-                 ('length', opts.length),
-                 ('asynchronous', '1'),
-                 ('hide_metadata', '1'),
-                 ('hide_annotation', '1') ]
-    f_url = opts.url+'/matrix/feature?'+urlencode(f_params, True)
-    print("Fetching", f_url) 
-    # biom
-    abiom = async_rest_api(f_url+'&result_type=abundance', auth=token)
-    ebiom = async_rest_api(f_url+'&result_type=evalue', auth=token)
-    assert abiom["data"] is not None
-    # matrix
-    amatrix = sparse_to_dense(abiom, abiom['shape'][0], abiom['shape'][1])
-    ematrix = sparse_to_dense(ebiom, ebiom['shape'][0], ebiom['shape'][1])
-    # all md5s
-    md5s = map(lambda x: x['id'], abiom['rows'])
+        if (opts.top > 0) and (len(top_taxa) >= opts.top):
+            break
+        top_taxa.append(r)
+    
+    # get feature data (from full profile)
+    f_params = [
+        ('format', 'mgrast'),
+        ('condensed', 1),
+        ('source', opts.source)
+    ]
+    f_url = "%s/profile/%s?%s"%(opts.url, opts.id, urlencode(f_params, True))
+    pbiom = async_rest_api(f_url, auth=token, debug=opts.debug)
+    # get filtered md5s
+    md5s = []
+    values = []
+    for row in pbiom['data']:
+        if (row[2] <= (opts.evalue * -1)) and (row[3] >= opts.identity) and (row[4] >= opts.length):
+            md5s.append(row[0])
+            values.append([row[1], row[2]])
     
     # set json object
     obj_id = ".".join([opts.id, opts.level, str(opts.top)])
@@ -248,15 +243,15 @@ def main(args):
         # get annotations for individual taxa
         for i, taxa in enumerate(top_taxa):
             func_md5, func_acc = annotations_for_taxa(opts, md5s, [taxa])
-            output_annotation(md5s, func_md5, func_acc, amatrix, ematrix, taxa, i+1)
+            output_annotation(md5s, func_md5, func_acc, values, taxa, i+1)
         # get annotations for tail
         if opts.rest:
             func_md5, func_acc = annotations_for_taxa(opts, md5s, top_taxa, True)
-            output_annotation(md5s, func_md5, func_acc, amatrix, ematrix, 'tail', i+2)
+            output_annotation(md5s, func_md5, func_acc, values, 'tail', i+2)
     else:
         # get annotations for all taxa
         func_md5, func_acc = annotations_for_taxa(opts, md5s, top_taxa)
-        output_annotation(md5s, func_md5, func_acc, amatrix, ematrix, 'glob', 1)
+        output_annotation(md5s, func_md5, func_acc, values, 'glob', 1)
     
     # output for json format
     if opts.format == 'json':
