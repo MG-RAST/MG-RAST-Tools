@@ -249,15 +249,36 @@ def metadata_from_biom(biom, term):
         vals.append(value)
     return vals
 
+# turn profile format BIOM into matrix format, use only abundances
+def profile_to_matrix(p):
+    if p['columns'][0]['id'] != 'abundance':
+        # not a profile
+        return p
+    trim = True if len(p['columns']) > 1 else False
+    p['columns'][0]['id'] = p['id']
+    p['matrix_element_type'] = 'int'
+    p['matrix_element_value'] = 'abundance'
+    p['date'] = time.strftime("%Y-%m-%d %H:%M:%S")
+    if p['matrix_type'] == 'sparse':
+        p['data'] = sparse_to_dense(p['data'], p['shape'][0], p['shape'][1])
+    if trim:
+        p['columns'] = p['columns'][:1]
+        for i in range(len(p['rows'])):
+            p['data'][i] = p['data'][i][:1]
+    return p
+
 # merge two BIOM objects
 def merge_biom(b1, b2):
     """input: 2 biom objects of same 'type', 'matrix_element_type', and 'matrix_element_value'
     return: merged biom object, duplicate columns skipped, duplicate rows added"""
-    # hack for using in loop when one oif 2 is empty
+    # hack for using in loop when one of 2 is empty
     if b1 and (not b2):
         return b1
     if b2 and (not b1):
         return b2
+    # transform profile BIOM from UI export into matrix BIOM
+    b1 = profile_to_matrix(b1)
+    b2 = profile_to_matrix(b2)
     # validate
     if not (b1 and b2 and (b1['type'] == b2['type']) and (b1['matrix_element_type'] == b2['matrix_element_type']) and (b1['matrix_element_value'] == b2['matrix_element_value'])):
         sys.stderr.write("The inputed biom objects are not compatable for merging\n")
