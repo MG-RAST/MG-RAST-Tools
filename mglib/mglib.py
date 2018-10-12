@@ -8,6 +8,7 @@ import base64
 import json
 import string
 import random
+import hashlib
 import subprocess
 try:
     from StringIO import StringIO
@@ -100,13 +101,17 @@ def obj_from_url(url, auth=None, data=None, debug=False, method=None):
     return obj
 
 # print to file results of MG-RAST or Shock API
-def file_from_url(url, handle, auth=None, data=None, debug=False):
+def file_from_url(url, handle, auth=None, data=None, debug=False, sha1=False):
     result = body_from_url(url, 'text/plain', auth=auth, data=data, debug=debug)
+    sha1hash = hashlib.sha1()
     while True:
         chunk = result.read(8192)
         if not chunk:
             break
+        if sha1:
+            sha1hash.update(chunk)
         handle.write(chunk.decode('utf8'))
+    return sha1hash.hexdigest()
 
 # print to stdout results of MG-RAST API
 def stdout_from_url(url, auth=None, data=None, debug=False):
