@@ -55,10 +55,11 @@ def main(args):
     parser.add_option("", "--user", dest="user", default=None, help="OAuth username")
     parser.add_option("", "--passwd", dest="passwd", default=None, help="OAuth password")
     parser.add_option("", "--token", dest="token", default=None, help="OAuth token")
-    parser.add_option("", "--order", dest="order", default=None, help="field metagenomes are ordered by, default is no ordering")
+    parser.add_option("", "--limit", dest="limit", type="int", default=15, help="Number of results to show, if > 50 will use paginated queris to get all, default is 15")
+    parser.add_option("", "--order", dest="order", default=None, help="field metagenomes are ordered by, default is by score")
     parser.add_option("", "--direction", dest="direction", default="asc", help="direction of order. 'asc' for ascending order, 'desc' for descending order, default is asc")
     parser.add_option("", "--status", dest="status", default="public", help="types of metagenomes to return. 'both' for all data (public and private), 'public' for public data, 'private' for users private data, default is public")
-    parser.add_option("", "--verbosity", dest="verbosity", default='minimal', help="amount of information to display. use keyword 'minimal' for id and name, use keyword 'full' for MIxS GSC metadata, default is minimal")
+    parser.add_option("", "--index", dest="index", default=None, help="index to search against, default is main DB")
     for sfield in SEARCH_FIELDS:
         parser.add_option("", "--"+sfield, dest=sfield, default=None, help="search parameter: query string for "+sfield)
     
@@ -69,9 +70,12 @@ def main(args):
     token = get_auth_token(opts)
     
     # build call url
-    params = [ ('limit', '100'),
-               ('public', 0 if opts.status == 'private' else 1),
-               ('verbosity', opts.verbosity if opts.verbosity == 'minimal' else 'mixs') ]
+    total = 0
+    maxLimit = 50
+    params = [ ('limit', opts.limit if opts.limit < maxLimit else maxLimit),
+               ('public', 0 if opts.status == 'private' else 1) ]
+    if opts.index:
+        params.append( ('index', opts.index) )
     for sfield in SEARCH_FIELDS:
         if hasattr(opts, sfield) and getattr(opts, sfield):
             params.append( (sfield, getattr(opts, sfield)) )
@@ -83,20 +87,21 @@ def main(args):
     # retrieve data
     fields = ['metagenome_id', 'public'] + SEARCH_FIELDS
     result = obj_from_url(url, auth=token)
-    if len(result['data']) == 0:
+    found = len(result['data'])
+    if found == 0:
         sys.stdout.write("No results found for the given search parameters\n")
         return 0
-    ids = [d['metagenome_id'] for d in result['data']]
+    total += found
     
     # output header
     safe_print("\t".join(fields)+"\n")
     # output rows
     display_search(result['data'], fields)
     
-    while result['next']:
+    while ('next' in result) and result['next'] and (total < opts.limit):
         url = result['next']
         result = obj_from_url(url, auth=token)
-        ids.extend([d['metagenome_id'] for d in result['data']])
+        total += len(result['data'])
         display_search(result['data'], fields)
     
     return 0
