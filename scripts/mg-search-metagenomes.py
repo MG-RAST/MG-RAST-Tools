@@ -12,7 +12,7 @@ VERSION
     %s
 
 SYNOPSIS
-    mg-search-metagenomes [ --help, --user <user>, --passwd <password>, --token <oAuth token>, --order <field name> --direction <cv: 'asc', 'desc'> --match <cv: 'all, 'any'> --status <cv: 'both', 'public', 'private'> --verbosity <cv: 'minimal', 'full'> %s ]
+    mg-search-metagenomes [ --help, --user <user>, --passwd <password>, --token <oAuth token>, --order <field name> --direction <cv: 'asc', 'desc'> --match <cv: 'all, 'any'> --public ]
 
 DESCRIPTION
     Retrieve list of metagenomes based on search criteria.
@@ -58,8 +58,7 @@ def main(args):
     parser.add_option("", "--limit", dest="limit", type="int", default=15, help="Number of results to show, if > 50 will use paginated queris to get all, default is 15")
     parser.add_option("", "--order", dest="order", default=None, help="field metagenomes are ordered by, default is by score")
     parser.add_option("", "--direction", dest="direction", default="asc", help="direction of order. 'asc' for ascending order, 'desc' for descending order, default is asc")
-    parser.add_option("", "--status", dest="status", default="public", help="types of metagenomes to return. 'both' for all data (public and private), 'public' for public data, 'private' for users private data, default is public")
-    parser.add_option("", "--index", dest="index", default=None, help="index to search against, default is main DB")
+    parser.add_option("", "--public", dest="public",  action="store_true", default=False, help="return both private and public data if using authenticated search, default is private only. non-authenticated search only returns public.")
     for sfield in SEARCH_FIELDS:
         parser.add_option("", "--"+sfield, dest=sfield, default=None, help="search parameter: query string for "+sfield)
     
@@ -73,7 +72,7 @@ def main(args):
     total = 0
     maxLimit = 50
     params = [ ('limit', opts.limit if opts.limit < maxLimit else maxLimit),
-               ('public', 0 if opts.status == 'private' else 1) ]
+               ('public', 'yes' if opts.public or (not token) else 'no') ]
     if opts.index:
         params.append( ('index', opts.index) )
     for sfield in SEARCH_FIELDS:
