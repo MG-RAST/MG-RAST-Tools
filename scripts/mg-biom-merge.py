@@ -3,7 +3,7 @@
 import os
 import sys
 import json
-from optparse import OptionParser
+from argparse import ArgumentParser
 from mglib import merge_biom, AUTH_LIST, VERSION, safe_print
 
 prehelp = """
@@ -38,13 +38,13 @@ AUTHORS
 """
 
 def main(args):
-    OptionParser.format_description = lambda self, formatter: self.description
-    OptionParser.format_epilog = lambda self, formatter: self.epilog
-    parser = OptionParser(usage='', description=prehelp%VERSION, epilog=posthelp%AUTH_LIST)
-    parser.add_option("", "--retain_dup_ids", dest="retain_dups", action="store_true", default=False, help="append input number to duplicate input ID's rather than discarding duplicates, default is false")
+    ArgumentParser.format_description = lambda self, formatter: self.description
+    ArgumentParser.format_epilog = lambda self, formatter: self.epilog
+    parser = ArgumentParser(usage='', description=prehelp%VERSION, epilog=posthelp%AUTH_LIST)
+    parser.add_argument("--retain_dup_ids", dest="retain_dups", action="store_true", default=False, help="append input number to duplicate input ID's rather than discarding duplicates, default is false")
 
     # get inputs
-    (opts, args) = parser.parse_args()
+    opts = parser.parse_args()
     if len(args) < 2:
         sys.stderr.write("ERROR: must have at least 2 file inputs\n")
         return 1
@@ -83,4 +83,4 @@ def main(args):
     return 0
 
 if __name__ == "__main__":
-    sys.exit( main(sys.argv) )
+    sys.exit(main(sys.argv))

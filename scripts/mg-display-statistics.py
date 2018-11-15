@@ -2,7 +2,7 @@
 
 import sys
 import math
-from optparse import OptionParser
+from argparse import ArgumentParser
 from mglib import safe_print, VERSION, API_URL, AUTH_LIST, obj_from_url, get_auth_token
 import mglib.aplotter as aplotter
 
@@ -62,19 +62,19 @@ def plot_histo(cols, data, height, width):
     safe_print("\n".join(out)+"\n")
 
 def main(args):
-    OptionParser.format_description = lambda self, formatter: self.description
-    OptionParser.format_epilog = lambda self, formatter: self.epilog
-    parser = OptionParser(usage='', description=prehelp%VERSION, epilog=posthelp%AUTH_LIST)
-    parser.add_option("", "--id", dest="id", default=None, help="KBase Metagenome ID")
-    parser.add_option("", "--url", dest="url", default=API_URL, help="communities API url")
-    parser.add_option("", "--user", dest="user", default=None, help="OAuth username")
-    parser.add_option("", "--passwd", dest="passwd", default=None, help="OAuth password")
-    parser.add_option("", "--token", dest="token", default=None, help="OAuth token")
-    parser.add_option("", "--plot", dest="plot", action="store_true", default=False, help="display plot in ASCII art instead of table of numbers for: bp_profile, drisee, kmer, rarefaction, or taxa level")
-    parser.add_option("", "--stat", dest="stat", default='sequence', help="type of stat to display, use keyword: 'sequence', 'bp_profile', 'drisee', 'kmer', 'rarefaction', or taxa level name, default is sequence")
+    ArgumentParser.format_description = lambda self, formatter: self.description
+    ArgumentParser.format_epilog = lambda self, formatter: self.epilog
+    parser = ArgumentParser(usage='', description=prehelp%VERSION, epilog=posthelp%AUTH_LIST)
+    parser.add_argument("--id", dest="id", default=None, help="KBase Metagenome ID")
+    parser.add_argument("--url", dest="url", default=API_URL, help="communities API url")
+    parser.add_argument("--user", dest="user", default=None, help="OAuth username")
+    parser.add_argument("--passwd", dest="passwd", default=None, help="OAuth password")
+    parser.add_argument("--token", dest="token", default=None, help="OAuth token")
+    parser.add_argument("--plot", dest="plot", action="store_true", default=False, help="display plot in ASCII art instead of table of numbers for: bp_profile, drisee, kmer, rarefaction, or taxa level")
+    parser.add_argument("--stat", dest="stat", default='sequence', help="type of stat to display, use keyword: 'sequence', 'bp_profile', 'drisee', 'kmer', 'rarefaction', or taxa level name, default is sequence")
     
     # get inputs
-    (opts, args) = parser.parse_args()
+    opts = parser.parse_args()
     if not opts.id:
         sys.stderr.write("ERROR: id required\n")
         return 1
@@ -124,8 +124,8 @@ def main(args):
         if opts.plot:
             x, y = [], []
             for d in stats['qc']['kmer']['15_mer']['data']:
-                x.append( math.log(d[3], 10) )
-                y.append( math.log(d[0], 10) )
+                x.append(math.log(d[3], 10))
+                y.append(math.log(d[0], 10))
             aplotter.plot(x, y, output=sys.stdout, draw_axes=True, plot_slope=True, min_x=0, min_y=0)
         else:
             safe_print("\t".join(stats['qc']['kmer']['15_mer']['columns'])+"\n")
@@ -160,4 +160,4 @@ def main(args):
     return 0    
 
 if __name__ == "__main__":
-    sys.exit( main(sys.argv) )
+    sys.exit(main(sys.argv))

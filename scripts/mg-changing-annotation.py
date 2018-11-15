@@ -3,7 +3,7 @@
 import os
 import sys
 import json
-from optparse import OptionParser
+from argparse import ArgumentParser
 from mglib import safe_print, AUTH_LIST, VERSION, random_str, biom_to_tab, execute_r
 
 prehelp = """
@@ -42,18 +42,18 @@ AUTHORS
 """
 
 def main(args):
-    OptionParser.format_description = lambda self, formatter: self.description
-    OptionParser.format_epilog = lambda self, formatter: self.epilog
-    parser = OptionParser(usage='', description=prehelp%VERSION, epilog=posthelp%AUTH_LIST)
-    parser.add_option("", "--input", dest="input", default='-', help="input: filename or stdin (-), default is stdin")
-    parser.add_option("", "--format", dest="format", default='text', help="input format: 'text' for tabbed table, 'biom' for BIOM format, default is text")
-    parser.add_option("", "--groups", dest="groups", default=None, help="groups in JSON format - either as input string or filename")
-    parser.add_option("", "--rlib", dest="rlib", default=None, help="R lib path")
-    parser.add_option("", "--top", dest="top", type="int", default=10, help="display only the top N most changing groups, default is 10")
-    parser.add_option("", "--stat_test", dest="stat_test", default='Kruskal-Wallis', help="supported statistical tests, one of: Kruskal-Wallis, t-test-paired, Wilcoxon-paired, t-test-unpaired, Mann-Whitney-unpaired-Wilcoxon, ANOVA-one-way, default is Kruskal-Wallis")
+    ArgumentParser.format_description = lambda self, formatter: self.description
+    ArgumentParser.format_epilog = lambda self, formatter: self.epilog
+    parser = ArgumentParser(usage='', description=prehelp%VERSION, epilog=posthelp%AUTH_LIST)
+    parser.add_argument("--input", dest="input", default='-', help="input: filename or stdin (-), default is stdin")
+    parser.add_argument("--format", dest="format", default='text', help="input format: 'text' for tabbed table, 'biom' for BIOM format, default is text")
+    parser.add_argument("--groups", dest="groups", default=None, help="groups in JSON format - either as input string or filename")
+    parser.add_argument("--rlib", dest="rlib", default=None, help="R lib path")
+    parser.add_argument("--top", dest="top", type=int, default=10, help="display only the top N most changing groups, default is 10")
+    parser.add_argument("--stat_test", dest="stat_test", default='Kruskal-Wallis', help="supported statistical tests, one of: Kruskal-Wallis, t-test-paired, Wilcoxon-paired, t-test-unpaired, Mann-Whitney-unpaired-Wilcoxon, ANOVA-one-way, default is Kruskal-Wallis")
     
     # get inputs
-    (opts, args) = parser.parse_args()
+    opts = parser.parse_args()
     if (opts.input != '-') and (not os.path.isfile(opts.input)):
         sys.stderr.write("ERROR: input data missing\n")
         return 1
@@ -138,4 +138,4 @@ suppressMessages( group_stats_plot(
     
 
 if __name__ == "__main__":
-    sys.exit( main(sys.argv) )
+    sys.exit(main(sys.argv))

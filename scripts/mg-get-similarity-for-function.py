@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
 import sys
-from optparse import OptionParser
+from argparse import ArgumentParser
 from mglib import VERSION, AUTH_LIST, API_URL, urlencode, get_auth_token, stdout_from_url
 
 prehelp = """
@@ -33,23 +33,23 @@ AUTHORS
 """
 
 def main(args):
-    OptionParser.format_description = lambda self, formatter: self.description
-    OptionParser.format_epilog = lambda self, formatter: self.epilog
-    parser = OptionParser(usage='', description=prehelp%VERSION, epilog=posthelp%AUTH_LIST)
-    parser.add_option("", "--id", dest="id", default=None, help="KBase Metagenome ID")
-    parser.add_option("", "--url", dest="url", default=API_URL, help="communities API url")
-    parser.add_option("", "--user", dest="user", default=None, help="OAuth username")
-    parser.add_option("", "--passwd", dest="passwd", default=None, help="OAuth password")
-    parser.add_option("", "--token", dest="token", default=None, help="OAuth token")
-    parser.add_option("", "--name", dest="name", default=None, help="function name to filter by")
-    parser.add_option("", "--level", dest="level", default=None, help="function level to filter by")
-    parser.add_option("", "--source", dest="source", default='Subsystems', help="datasource to filter results by, default is Subsystems")
-    parser.add_option("", "--evalue", dest="evalue", default=5, help="negative exponent value for maximum e-value cutoff, default is 5")
-    parser.add_option("", "--identity", dest="identity", default=60, help="percent value for minimum % identity cutoff, default is 60")
-    parser.add_option("", "--length", dest="length", default=15, help="value for minimum alignment length cutoff, default is 15")
+    ArgumentParser.format_description = lambda self, formatter: self.description
+    ArgumentParser.format_epilog = lambda self, formatter: self.epilog
+    parser = ArgumentParser(usage='', description=prehelp%VERSION, epilog=posthelp%AUTH_LIST)
+    parser.add_argument("--id", dest="id", default=None, help="KBase Metagenome ID")
+    parser.add_argument("--url", dest="url", default=API_URL, help="communities API url")
+    parser.add_argument("--user", dest="user", default=None, help="OAuth username")
+    parser.add_argument("--passwd", dest="passwd", default=None, type=str, help="OAuth password")
+    parser.add_argument("--token", dest="token", default=None, type=str, help="OAuth token")
+    parser.add_argument("--name", dest="name", default=None, type=str, help="function name to filter by")
+    parser.add_argument("--level", dest="level", default=None, help="function level to filter by")
+    parser.add_argument("--source", dest="source", default='Subsystems', help="datasource to filter results by, default is Subsystems")
+    parser.add_argument("--evalue", dest="evalue", default=5, help="negative exponent value for maximum e-value cutoff, default is 5")
+    parser.add_argument("--identity", dest="identity", default=60, help="percent value for minimum % identity cutoff, default is 60")
+    parser.add_argument("--length", dest="length", default=15, help="value for minimum alignment length cutoff, default is 15")
     
     # get inputs
-    (opts, args) = parser.parse_args()
+    opts = parser.parse_args()
     if not opts.id:
         sys.stderr.write("ERROR: id required\n")
         return 1
@@ -79,4 +79,4 @@ def main(args):
     
 
 if __name__ == "__main__":
-    sys.exit( main(sys.argv) )
+    sys.exit(main(sys.argv))

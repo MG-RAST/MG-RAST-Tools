@@ -4,7 +4,7 @@ import os
 import sys
 import json
 from operator import itemgetter
-from optparse import OptionParser
+from argparse import ArgumentParser
 from prettytable import PrettyTable
 from mglib import VERSION, API_URL, AUTH_LIST, get_auth_token, obj_from_url, SHOCK_URL, post_file, get_auth, login
 
@@ -66,10 +66,10 @@ AUTHORS
 """
 
 mgrast_auth = {}
-valid_actions    = ["login", "view", "upload", "upload-archive", "rename", "validate", "compute", "delete", "submit", "submitall"]
-view_options     = ["all", "sequence"]
+valid_actions = ["login", "view", "upload", "upload-archive", "rename", "validate", "compute", "delete", "submit", "submitall"]
+view_options = ["all", "sequence"]
 validate_options = ["sequence", "metadata"]
-compute_options  = ["sff2fastq", "demultiplex", "pairjoin", "pairjoin_demultiplex"]
+compute_actions = ["sff2fastq", "demultiplex", "pairjoin", "pairjoin_demultiplex"]
 
 def check_ids(files):
     data = obj_from_url(API_URL+"/inbox", auth=mgrast_auth['token'], debug=DEBUG)
@@ -287,7 +287,7 @@ def compute(action, files, retain, joinfile, rc_index):
             "rc_index": 1 if rc_index else 0
         }
     else:
-        sys.stderr.write("ERROR: invalid compute option. use one of: %s\n"%", ".join(compute_options))
+        sys.stderr.write("ERROR: invalid compute ion. use one of: %s\n"%", ".join(compute_options))
     info = obj_from_url(API_URL+"/inbox/"+action, data=json.dumps(data), auth=mgrast_auth['token'], debug=DEBUG)
     print(info['status'])
 
@@ -345,22 +345,25 @@ def submit(files, project, metadata):
 
 def main(args):
     global mgrast_auth, API_URL, SHOCK_URL
-    OptionParser.format_description = lambda self, formatter: self.description
-    OptionParser.format_epilog = lambda self, formatter: self.epilog
-    parser = OptionParser(usage='', description=prehelp%VERSION, epilog=posthelp%AUTH_LIST)
-    parser.add_option("-u", "--mgrast_url", dest="mgrast_url", default=API_URL, help="MG-RAST API url")
-    parser.add_option("-s", "--shock_url", dest="shock_url", default=SHOCK_URL, help="Shock API url")
-    parser.add_option("-t", "--token", dest="token", default=None, help="MG-RAST token")
-    parser.add_option("-p", "--project", dest="project", default=None, help="project ID")
-    parser.add_option("-m", "--metadata", dest="metadata", default=None, help="metadata file ID")
-    parser.add_option("-j", "--joinfile", dest="joinfile", default=None, help="name of resulting pair-merge file (without extension), default is <pair 1 filename>_<pair 2 filename>")
-    parser.add_option("", "--retain", dest="retain", action="store_true", default=False, help="retain non-overlapping sequences in pair-merge")
-    parser.add_option("", "--rc_index", dest="rc_index", action="store_true", default=False, help="barcodes in index file are reverse compliment of mapping file")
-    parser.add_option("-v", "--verbose", dest="verbose", action="store_true", default=False, help="Verbose STDOUT")
+    ArgumentParser.format_description = lambda self, formatter: self.description
+    ArgumentParser.format_epilog = lambda self, formatter: self.epilog
+    parser = ArgumentParser(usage='', description=prehelp%VERSION, epilog=posthelp%AUTH_LIST)
+    parser.add_argument("-u", "--mgrast_url", dest="mgrast_url", default=API_URL, help="MG-RAST API url")
+    parser.add_argument("-s", "--shock_url", dest="shock_url", default=SHOCK_URL, help="Shock API url")
+    parser.add_argument("-t", "--token", dest="token", default=None, help="MG-RAST token")
+    parser.add_argument("-p", "--project", dest="project", default=None, help="project ID")
+    parser.add_argument("-m", "--metadata", dest="metadata", default=None, help="metadata file ID")
+    parser.add_argument("-j", "--joinfile", dest="joinfile", default=None, help="name of resulting pair-merge file (without extension), default is <pair 1 filename>_<pair 2 filename>")
+    parser.add_argument("--retain", dest="retain", action="store_true", default=False, help="retain non-overlapping sequences in pair-merge")
+    parser.add_argument("--rc_index", dest="rc_index", action="store_true", default=False, help="barcodes in index file are reverse compliment of mapping file")
+    parser.add_argument("-v", "--verbose", dest="verbose", action="store_true", default=False, help="Verbose STDOUT")
+    parser.add_argument("action", nargs="+", help="Action")
+ 
     
     global DEBUG
     # get inputs
-    (opts, args) = parser.parse_args()
+    opts = parser.parse_args()
+    args = opts.action
     if len(args) < 1:
         sys.stderr.write("ERROR: missing action, please check usage with %s -h\n"%(sys.argv[0]))
         return 1
@@ -378,7 +381,7 @@ def main(args):
         sys.stderr.write("ERROR: invalid action. use one of: %s\n"%", ".join(valid_actions))
         return 1
     elif (action == "view") and ((len(args) < 2) or (args[1] not in view_options)):
-        sys.stderr.write("ERROR: invalid view option. use one of: %s\n"%", ".join(view_options))
+        sys.stderr.write("ERROR: invalid view ion. use one of: %s\n"%", ".join(view_options))
         return 1
     elif (action in ["upload", "upload-archive", "delete", "submit"]) and (len(args) < 2):
         sys.stderr.write("ERROR: %s missing file\n"%action)
@@ -400,19 +403,19 @@ def main(args):
         return 1
     elif action == "validate":
         if (len(args) < 2) or (args[1] not in validate_options):
-            sys.stderr.write("ERROR: invalid validate option. use one of: %s\n"%", ".join(validate_options))
+            sys.stderr.write("ERROR: invalid validate ion. use one of: %s\n"%", ".join(validate_options))
             return 1
         if len(args) < 3:
             sys.stderr.write("ERROR: validate missing file\n")
             return 1
     elif action == "compute":
         if (len(args) < 2) or (args[1] not in compute_options):
-            sys.stderr.write("ERROR: invalid compute option. use one of: %s\n"%", ".join(compute_options))
+            sys.stderr.write("ERROR: invalid compute ion. use one of: %s\n"%", ".join(compute_options))
             return 1
-        if ( ((args[1] == "sff2fastq") and (len(args) != 3)) or
+        if (((args[1] == "sff2fastq") and (len(args) != 3)) or
              ((args[1] == "demultiplex") and (len(args) < 4)) or
              ((args[1] == "pairjoin") and (len(args) != 4)) or
-             ((args[1] == "pairjoin_demultiplex") and (len(args) != 6)) ):
+             ((args[1] == "pairjoin_demultiplex") and (len(args) != 6))):
             sys.stderr.write("ERROR: compute %s missing file(s)\n"%args[1])
             return 1
     elif (action == "submit") and (not opts.project) and (not opts.metadata):
@@ -458,6 +461,6 @@ def main(args):
     return 0
 
 if __name__ == "__main__":
-    sys.exit( main(sys.argv) )
+    sys.exit(main(sys.argv))
 
     

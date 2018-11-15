@@ -3,7 +3,7 @@
 import os
 import sys
 import json
-from optparse import OptionParser
+from argparse import ArgumentParser
 from mglib import biom_to_matrix, metadata_from_biom, tab_to_matrix, obj_from_url, AUTH_LIST, VERSION, API_URL
 
 prehelp = """
@@ -40,20 +40,20 @@ AUTHORS
 """
 
 def main(args):
-    OptionParser.format_description = lambda self, formatter: self.description
-    OptionParser.format_epilog = lambda self, formatter: self.epilog
-    parser = OptionParser(usage='', description=prehelp%VERSION, epilog=posthelp%AUTH_LIST)
-    parser.add_option("", "--url", dest="url", default=API_URL, help="communities API url")
-    parser.add_option("", "--input", dest="input", default='-', help="input: filename or stdin (-), default is stdin")
-    parser.add_option("", "--output", dest="output", default='-', help="output: filename or stdout (-), default is stdout")
-    parser.add_option("", "--format", dest="format", default='biom', help="input / output format: 'text' for tabbed table, 'biom' for BIOM / json format, default is biom")
-    parser.add_option("", "--metadata", dest="metadata", default=None, help="metadata field to group by, only for 'biom' input")
-    parser.add_option("", "--distance", dest="distance", default='bray-curtis', help="distance metric, one of: bray-curtis, euclidean, maximum, manhattan, canberra, minkowski, difference, default is bray-curtis")
-    parser.add_option("", "--name", dest="name", type="int", default=0, help="label columns by name, default is by id: 1=true, 0=false")
-    parser.add_option("", "--normalize", dest="normalize", type="int", default=0, help="normalize the input data, default is off: 1=true, 0=false")
+    ArgumentParser.format_description = lambda self, formatter: self.description
+    ArgumentParser.format_epilog = lambda self, formatter: self.epilog
+    parser = ArgumentParser(usage='', description=prehelp%VERSION, epilog=posthelp%AUTH_LIST)
+    parser.add_argument("--url", dest="url", default=API_URL, help="communities API url")
+    parser.add_argument("--input", dest="input", default='-', help="input: filename or stdin (-), default is stdin")
+    parser.add_argument("--output", dest="output", default='-', help="output: filename or stdout (-), default is stdout")
+    parser.add_argument("--format", dest="format", default='biom', help="input / output format: 'text' for tabbed table, 'biom' for BIOM / json format, default is biom")
+    parser.add_argument("--metadata", dest="metadata", default=None, help="metadata field to group by, only for 'biom' input")
+    parser.add_argument("--distance", dest="distance", default='bray-curtis', help="distance metric, one of: bray-curtis, euclidean, maximum, manhattan, canberra, minkowski, difference, default is bray-curtis")
+    parser.add_argument("--name", dest="name", type=int, default=0, help="label columns by name, default is by id: 1=true, 0=false")
+    parser.add_argument("--normalize", dest="normalize", type=int, default=0, help="normalize the input data, default is off: 1=true, 0=false")
     
     # get inputs
-    (opts, args) = parser.parse_args()
+    opts = parser.parse_args()
     if (opts.input != '-') and (not os.path.isfile(opts.input)):
         sys.stderr.write("ERROR: input data missing\n")
         return 1
@@ -108,11 +108,11 @@ def main(args):
     else:
         out_hdl.write("ID\tGroup\tPC1\tPC2\tPC3\tPC4\n")
         for d in pcoa['data']:
-            out_hdl.write( "%s\t%s\t%s\n" %(d['id'], gmap[d['id']] if (d['id'] in gmap) else "", "\t".join(map(str, d['pco'][0:4]))) )
+            out_hdl.write("%s\t%s\t%s\n" %(d['id'], gmap[d['id']] if (d['id'] in gmap) else "", "\t".join(map(str, d['pco'][0:4]))))
     
     out_hdl.close()
     return 0
     
 
 if __name__ == "__main__":
-    sys.exit( main(sys.argv) )
+    sys.exit(main(sys.argv))

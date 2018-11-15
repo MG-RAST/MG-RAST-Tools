@@ -2,7 +2,7 @@
 
 import sys
 from operator import itemgetter
-from optparse import OptionParser
+from argparse import ArgumentParser
 from mglib import get_auth_token, obj_from_url, async_rest_api, AUTH_LIST, sparse_to_dense, safe_print, API_URL, VERSION, urlencode
 
 prehelp = """
@@ -34,26 +34,26 @@ AUTHORS
 """
 
 def main(args):
-    OptionParser.format_description = lambda self, formatter: self.description
-    OptionParser.format_epilog = lambda self, formatter: self.epilog
-    parser = OptionParser(usage='', description=prehelp%VERSION, epilog=posthelp%AUTH_LIST)
-    parser.add_option("", "--id", dest="id", default=None, help="KBase Metagenome ID")
-    parser.add_option("", "--url", dest="url", default=API_URL, help="communities API url")
-    parser.add_option("", "--user", dest="user", default=None, help="OAuth username")
-    parser.add_option("", "--passwd", dest="passwd", default=None, help="OAuth password")
-    parser.add_option("", "--token", dest="token", default=None, help="OAuth token")
-    parser.add_option("", "--level", dest="level", default='species', help="taxon level to retrieve abundances for, default is species")
-    parser.add_option("", "--source", dest="source", default='SEED', help="datasource to filter results by, default is SEED")
-    parser.add_option("", "--filter_name", dest="filter_name", default=None, help="taxon name to filter by")
-    parser.add_option("", "--filter_level", dest="filter_level", default=None, help="taxon level to filter by")
-    parser.add_option("", "--top", dest="top", type="int", default=10, help="display only the top N taxa, default is 10")
-    parser.add_option("", "--evalue", dest="evalue", type="int", default=5, help="negative exponent value for maximum e-value cutoff, default is 5")
-    parser.add_option("", "--identity", dest="identity", type="int", default=60, help="percent value for minimum % identity cutoff, default is 60")
-    parser.add_option("", "--length", dest="length", type="int", default=15, help="value for minimum alignment length cutoff, default is 15")
-    parser.add_option("", "--version", type="int", dest="version", default=1, help="M5NR annotation version to use, default is 1")
+    ArgumentParser.format_description = lambda self, formatter: self.description
+    ArgumentParser.format_epilog = lambda self, formatter: self.epilog
+    parser = ArgumentParser(usage='', description=prehelp%VERSION, epilog=posthelp%AUTH_LIST)
+    parser.add_argument("--id", dest="id", default=None, help="KBase Metagenome ID")
+    parser.add_argument("--url", dest="url", default=API_URL, help="communities API url")
+    parser.add_argument("--user", dest="user", default=None, help="OAuth username")
+    parser.add_argument("--passwd", dest="passwd", default=None, help="OAuth password")
+    parser.add_argument("--token", dest="token", default=None, help="OAuth token")
+    parser.add_argument("--level", dest="level", default='species', help="taxon level to retrieve abundances for, default is species")
+    parser.add_argument("--source", dest="source", default='SEED', help="datasource to filter results by, default is SEED")
+    parser.add_argument("--filter_name", dest="filter_name", default=None, help="taxon name to filter by")
+    parser.add_argument("--filter_level", dest="filter_level", default=None, help="taxon level to filter by")
+    parser.add_argument("--top", dest="top", type=int, default=10, help="display only the top N taxa, default is 10")
+    parser.add_argument("--evalue", dest="evalue", type=int, default=5, help="negative exponent value for maximum e-value cutoff, default is 5")
+    parser.add_argument("--identity", dest="identity", type=int, default=60, help="percent value for minimum % identity cutoff, default is 60")
+    parser.add_argument("--length", dest="length", type=int, default=15, help="value for minimum alignment length cutoff, default is 15")
+    parser.add_argument("--version", type=int, dest="version", default=1, help="M5NR annotation version to use, default is 1")
     
     # get inputs
-    (opts, args) = parser.parse_args()
+    opts = parser.parse_args()
     opts.top = int(opts.top)
     if not opts.id:
         sys.stderr.write("ERROR: id required\n")
@@ -66,16 +66,16 @@ def main(args):
     token = get_auth_token(opts)
     
     # build url
-    params = [ ('id', opts.id),
-               ('group_level', opts.level),
-               ('source', opts.source),
-               ('evalue', opts.evalue),
-               ('identity', opts.identity),
-               ('length', opts.length),
-               ('version', opts.version),
-               ('result_type', 'abundance'),
-               ('asynchronous', '1'),
-               ('hide_metadata', '1') ]
+    params = [('id', opts.id),
+              ('group_level', opts.level),
+              ('source', opts.source),
+              ('evalue', opts.evalue),
+              ('identity', opts.identity),
+              ('length', opts.length),
+              ('version', opts.version),
+              ('result_type', 'abundance'),
+              ('asynchronous', '1'),
+              ('hide_metadata', '1')]
     url = opts.url+'/matrix/organism?'+urlencode(params, True)
 
     # retrieve data
@@ -85,20 +85,20 @@ def main(args):
     # get sub annotations
     sub_ann = set()
     if opts.filter_name and opts.filter_level:
-        params = [ ('filter', opts.filter_name),
-                   ('filter_level', opts.filter_level),
-                   ('min_level', opts.level),
-                   ('version', opts.version) ]
+        params = [('filter', opts.filter_name),
+                  ('filter_level', opts.filter_level),
+                  ('min_level', opts.level),
+                  ('version', opts.version)]
         url = opts.url+'/m5nr/taxonomy?'+urlencode(params, True)
         data = obj_from_url(url)
-        sub_ann = set( map(lambda x: x[opts.level], data['data']) )
+        sub_ann = set(map(lambda x: x[opts.level], data['data']))
     if biom['matrix_type'] == "dense":
         data = biom['data']
     else:
         data = sparse_to_dense(biom['data'], len(biom['rows']), len(biom['cols']))
     rows = [biom['rows'][i]['id'] for i in range(len(biom['rows']))]
     datalist = [biom['data'][i][0] for i in range(len(biom['rows']))]
-    data2 = zip( rows, datalist)
+    data2 = zip(rows, datalist)
     # sort data
     for d in sorted(data2, key=itemgetter(1), reverse=True):
         name = d[0]
@@ -116,4 +116,4 @@ def main(args):
     
 
 if __name__ == "__main__":
-    sys.exit( main(sys.argv) )
+    sys.exit(main(sys.argv))

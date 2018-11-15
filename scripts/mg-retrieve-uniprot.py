@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
 import sys
-from optparse import OptionParser
+from argparse import ArgumentParser
 from mglib import VERSION, API_URL, AUTH_LIST, urlencode, obj_from_url, stdout_from_url
 
 UNIPROT_URL = "http://www.uniprot.org/uniprot/"
@@ -35,17 +35,17 @@ AUTHORS
 """
 
 def main(args):
-    OptionParser.format_description = lambda self, formatter: self.description
-    OptionParser.format_epilog = lambda self, formatter: self.epilog
-    parser = OptionParser(usage='', description=prehelp%VERSION, epilog=posthelp%AUTH_LIST)
-    parser.add_option("", "--url", dest="url", default=API_URL, help="API url")
-    parser.add_option("", "--md5", dest="md5", default=None, help="sequence md5")
-    parser.add_option("", "--id", dest="id", default=None, help="accession ID")
-    parser.add_option("", "--source", dest="source", default='SwissProt', help="datasource to get record from, one of: SwissProt, TreMBL, InterPro")
-    parser.add_option("", "--version", dest="version", default='1', help="M5NR version to use, one of 1 or 9")
+    ArgumentParser.format_description = lambda self, formatter: self.description
+    ArgumentParser.format_epilog = lambda self, formatter: self.epilog
+    parser = ArgumentParser(usage='', description=prehelp%VERSION, epilog=posthelp%AUTH_LIST)
+    parser.add_argument("--url", dest="url", default=API_URL, help="API url")
+    parser.add_argument("--md5", dest="md5", default=None, help="sequence md5")
+    parser.add_argument("--id", dest="id", default=None, help="accession ID")
+    parser.add_argument("--source", dest="source", default='SwissProt', help="datasource to get record from, one of: SwissProt, TreMBL, InterPro")
+    parser.add_argument("--version", dest="version", default='1', help="M5NR version to use, one of 1 or 9")
     
     # get inputs
-    (opts, args) = parser.parse_args()
+    opts = parser.parse_args()
 
     # build url for m5nr query
     params = [ ('limit', '1'),
@@ -71,4 +71,4 @@ def main(args):
     return 0
     
 if __name__ == "__main__":
-    sys.exit( main(sys.argv) )
+    sys.exit(main(sys.argv))

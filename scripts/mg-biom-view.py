@@ -3,7 +3,7 @@
 import os
 import sys
 import json
-from optparse import OptionParser
+from argparse import ArgumentParser
 from mglib import biom_to_matrix, AUTH_LIST, VERSION
 
 prehelp = """
@@ -38,19 +38,19 @@ AUTHORS
 """
 
 def main(args):
-    OptionParser.format_description = lambda self, formatter: self.description
-    OptionParser.format_epilog = lambda self, formatter: self.epilog
-    parser = OptionParser(usage='', description=prehelp%VERSION, epilog=posthelp%AUTH_LIST)
-    parser.add_option("-i", "--input", dest="input", default='-', help="input: filename or stdin (-), default is stdin")
-    parser.add_option("-o", "--output", dest="output", default='-', help="input: filename or stdout (-), default is stdout")
-    parser.add_option("", "--row_start", dest="row_start", type="int", default=None, help="row position to start table with, default is first")
-    parser.add_option("", "--row_end", dest="row_end", type="int", default=None, help="row position to end table with, default is last")
-    parser.add_option("", "--col_start", dest="col_start", type="int", default=None, help="column position to start table with, default is first")
-    parser.add_option("", "--col_end", dest="col_end", type="int", default=None, help="column position to end table with, default is last")
-    parser.add_option("", "--stats", dest="stats", action="store_true", default=False, help="include significance stats in output, default is off")
+    ArgumentParser.format_description = lambda self, formatter: self.description
+    ArgumentParser.format_epilog = lambda self, formatter: self.epilog
+    parser = ArgumentParser(usage='', description=prehelp%VERSION, epilog=posthelp%AUTH_LIST)
+    parser.add_argument("-i", "--input", dest="input", default='-', help="input: filename or stdin (-), default is stdin")
+    parser.add_argument("-o", "--output", dest="output", default='-', help="input: filename or stdout (-), default is stdout")
+    parser.add_argument("--row_start", dest="row_start", type=int, default=None, help="row position to start table with, default is first")
+    parser.add_argument("--row_end", dest="row_end", type=int, default=None, help="row position to end table with, default is last")
+    parser.add_argument("--col_start", dest="col_start", type=int, default=None, help="column position to start table with, default is first")
+    parser.add_argument("--col_end", dest="col_end", type=int, default=None, help="column position to end table with, default is last")
+    parser.add_argument("--stats", dest="stats", action="store_true", default=False, help="include significance stats in output, default is off")
     
     # get inputs
-    (opts, args) = parser.parse_args()
+    opts = parser.parse_args()
     if (opts.input != '-') and (not os.path.isfile(opts.input)):
         sys.stderr.write("ERROR: input data missing\n")
         return 1
@@ -81,9 +81,9 @@ def main(args):
     # output data
     try:
         sub_rows = rows[row_start:row_end]
-        out_hdl.write( "\t%s\n" %"\t".join(cols[col_start:col_end]) )
+        out_hdl.write("\t%s\n" %"\t".join(cols[col_start:col_end]))
         for i, d in enumerate(data[row_start:row_end]):
-            out_hdl.write( "%s\t%s\n" %(sub_rows[i], "\t".join(map(str, d[col_start:col_end]))) )
+            out_hdl.write("%s\t%s\n" %(sub_rows[i], "\t".join(map(str, d[col_start:col_end]))))
         out_hdl.close()
     except:
         sys.stderr.write("ERROR: unable to sub-select BIOM, inputted positions are out of bounds\n")
@@ -92,4 +92,4 @@ def main(args):
 
 
 if __name__ == "__main__":
-    sys.exit( main(sys.argv) )
+    sys.exit(main(sys.argv))
