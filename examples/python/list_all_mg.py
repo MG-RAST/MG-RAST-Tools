@@ -18,6 +18,7 @@ def printlist(js):
                           public, item["created_on"],
                           item["name"]]) + "\n").encode("utf-8"))
 
+CALL = "/metagenome"
 CALL = "/search"
 
 key = get_auth_token()
