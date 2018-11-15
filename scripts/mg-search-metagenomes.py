@@ -11,6 +11,8 @@ NAME
 VERSION
     %s
 
+    %s 
+
 SYNOPSIS
     mg-search-metagenomes [ --help, --user <user>, --passwd <password>, --token <oAuth token>, --order <field name> --direction <cv: 'asc', 'desc'> --match <cv: 'all, 'any'> --public ]
 
