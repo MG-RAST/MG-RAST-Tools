@@ -3,7 +3,7 @@
 import os
 import sys
 import json
-from optparse import OptionParser
+from argparse import ArgumentParser
 import numpy as np
 from scipy import stats
 from mglib import safe_print, VERSION, AUTH_LIST, biom_to_matrix, metadata_from_biom, tab_to_matrix
@@ -55,20 +55,20 @@ def calculate_fdr(p_values):
     return q[inverse_order]
 
 def main(args):
-    OptionParser.format_description = lambda self, formatter: self.description
-    OptionParser.format_epilog = lambda self, formatter: self.epilog
-    parser = OptionParser(usage='', description=prehelp%VERSION, epilog=posthelp%AUTH_LIST)
-    parser.add_option("", "--input", dest="input", default='-', help="input: filename or stdin (-), default is stdin")
-    parser.add_option("", "--format", dest="format", default='biom', help="input format: 'text' for tabbed table, 'biom' for BIOM format, default is biom")
-    parser.add_option("", "--output", dest="output", default='biom', help="output format: 'full' for tabbed abundances and stats, 'minimum' for tabbed stats only, 'biom' for BIOM format, default is biom")
-    parser.add_option("", "--metadata", dest="metadata", default=None, help="metadata field to correlate, only for 'biom' input")
-    parser.add_option("", "--groups", dest="groups", default=None, help="list of groups in JSON or tabbed format - either as input string or filename")
-    parser.add_option("", "--group_pos", dest="group_pos", type="int", default=1, help="position of group to use, default is 1 (first)")
-    parser.add_option("", "--cutoff", dest="cutoff", default=None, help="only show p-value less than this, default show all")
-    parser.add_option("", "--fdr", dest="fdr", action="store_true", default=False, help="output FDR for computed p-values, default is off")
+    ArgumentParser.format_description = lambda self, formatter: self.description
+    ArgumentParser.format_epilog = lambda self, formatter: self.epilog
+    parser = ArgumentParser(usage='', description=prehelp%VERSION, epilog=posthelp%AUTH_LIST)
+    parser.add_argument("--input", dest="input", default='-', help="input: filename or stdin (-), default is stdin")
+    parser.add_argument("--format", dest="format", default='biom', help="input format: 'text' for tabbed table, 'biom' for BIOM format, default is biom")
+    parser.add_argument("--output", dest="output", default='biom', help="output format: 'full' for tabbed abundances and stats, 'minimum' for tabbed stats only, 'biom' for BIOM format, default is biom")
+    parser.add_argument("--metadata", dest="metadata", default=None, help="metadata field to correlate, only for 'biom' input")
+    parser.add_argument("--groups", dest="groups", default=None, help="list of groups in JSON or tabbed format - either as input string or filename")
+    parser.add_argument("--group_pos", dest="group_pos", type=int, default=1, help="position of group to use, default is 1 (first)")
+    parser.add_argument("--cutoff", dest="cutoff", default=None, help="only show p-value less than this, default show all")
+    parser.add_argument("--fdr", dest="fdr", action="store_true", default=False, help="output FDR for computed p-values, default is off")
     
     # get inputs
-    (opts, args) = parser.parse_args()
+    opts = parser.parse_args()
     if (opts.input != '-') and (not os.path.isfile(opts.input)):
         sys.stderr.write("ERROR: input data missing\n")
         return 1
@@ -209,5 +209,5 @@ def main(args):
     return 0
     
 if __name__ == "__main__":
-    sys.exit( main(sys.argv) )
+    sys.exit(main(sys.argv))
     

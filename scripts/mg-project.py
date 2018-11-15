@@ -2,7 +2,7 @@
 
 import sys
 import json
-from optparse import OptionParser
+from argparse import ArgumentParser
 from mglib import get_auth_token, post_file, obj_from_url, VERSION, AUTH_LIST, API_URL
 
 prehelp = """
@@ -48,19 +48,23 @@ valid_actions = ["get-info", "get-metadata", "update-metadata", "make-public", "
 
 
 def main(args):
-    OptionParser.format_description = lambda self, formatter: self.description
-    OptionParser.format_epilog = lambda self, formatter: self.epilog
-    parser = OptionParser(usage='', description=prehelp%VERSION, epilog=posthelp%AUTH_LIST)
+    global API_URL
+    ArgumentParser.format_description = lambda self, formatter: self.description
+    ArgumentParser.format_epilog = lambda self, formatter: self.epilog
+    parser = ArgumentParser(usage='', description=prehelp%VERSION, epilog=posthelp%AUTH_LIST)
     # access options
-    parser.add_option("-u", "--url", dest="url", default=API_URL, help="MG-RAST API url")
-    parser.add_option("-t", "--token", dest="token", default=None, help="MG-RAST token")
+    parser.add_argument("-u", "--url", dest="url", default=API_URL, help="MG-RAST API url")
+    parser.add_argument("-t", "--token", dest="token", default=None, help="MG-RAST token")
     # other options
-    parser.add_option("-f", "--file", dest="mdfile", default=None, help="metadata .xlsx file")
-    parser.add_option("", "--taxa", dest="taxa", default=None, help="metagenome_taxonomy for project: http://www.ebi.ac.uk/ena/data/view/Taxon:408169")
-    parser.add_option("", "--debug", dest="debug", action="store_true", default=False, help="Run in debug mode")
+    parser.add_argument("-f", "--file", dest="mdfile", default=None, help="metadata .xlsx file")
+    parser.add_argument("--taxa", dest="taxa", default=None, help="metagenome_taxonomy for project: http://www.ebi.ac.uk/ena/data/view/Taxon:408169")
+    parser.add_argument("--debug", dest="debug", action="store_true", default=False, help="Run in debug mode")
+    parser.add_argument("args",type=str, nargs="+", help="Action (" + ",".join(valid_actions)+")" )
     
     # get inputs
-    (opts, args) = parser.parse_args()
+    opts = parser.parse_args()
+    args = opts.args
+    API_URL = opts.url
     
     # validate inputs
     if len(args) < 1:
@@ -110,5 +114,5 @@ def main(args):
     return 0
 
 if __name__ == "__main__":
-    sys.exit( main(sys.argv) )
+    sys.exit(main(sys.argv))
 

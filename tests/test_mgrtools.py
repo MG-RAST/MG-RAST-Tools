@@ -21,7 +21,7 @@ def runme(command, workingdir=".", fail_ok=False):
     os.chdir(workingdir)  
 
     try: 
-        p=subprocess.Popen(command.split(" "), stdout=PIPE, stderr=PIPE)
+        p=subprocess.Popen(command, stdout=PIPE, stderr=PIPE, shell=True)
     except SystemExit as err:
         p = err.code
     out, err = p.communicate()
@@ -101,9 +101,9 @@ def test_binscripts_help():
           assert b'DESCRIPTION' in out
 
 def test_jsonviewer():
-    s = '''echo '{"a": {"b": {"c": [1, 2, 3, 4, 5]}}, "x": ["y", "z"], "foo": "bar"}' | jsonviewer'''
+    s = '''echo '{"a": {"b": {"c": [1, 2, 3, 4, 5]}}, "x": ["y", "z"], "foo": "bar"}' | jsonviewer.py'''
     stat, out, err = runme(s) 
-    s2 = '''echo '{"a": {"b": {"c": [1, 2, 3, 4, 5]}}, "x": ["y", "z"], "foo": "bar"}' | jsonviewer --value 'a.b.c' --json'''
+    s2 = '''echo '{"a": {"b": {"c": [1, 2, 3, 4, 5]}}, "x": ["y", "z"], "foo": "bar"}' | jsonviewer.py --value 'a.b.c' --json'''
     stat, out, err = runme(s2) 
 
 def test_mg_abundant_functions():
@@ -116,7 +116,7 @@ def test_mg_abundant_taxa():
 
 @pytest.mark.huge
 def test_mg_compare_taxa():
-    s = '''mg-compare-taxa.py --ids mgm4441679.3,mgm4441680.3,mgm4441681.3,mgm4441682.3 --level class --source RefSeq --format text | mg-changing-annotation --input - --format text --groups {"group1":["mgm4441679.3","mgm4441680.3"],"group2":["mgm4441681.3","mgm4441682.3"]} --top 5 --stat_test Kruskal-Wallis'''
+    s = '''mg-compare-taxa.py --ids mgm4441679.3,mgm4441680.3,mgm4441681.3,mgm4441682.3 --level class --source RefSeq --format text | mg-changing-annotation.py --input - --format text --groups '{"group1":["mgm4441679.3","mgm4441680.3"],"group2":["mgm4441681.3","mgm4441682.3"]}' --top 5 --stat_test Kruskal-Wallis'''
     stat, out, err = runme(s) 
 
 @pytest.mark.huge
@@ -155,12 +155,24 @@ def test_mg_get_annotation_set():
     assert stat == 0
 
 def test_mg_get_sequences_for_function():
-    s='''mg-get-sequences-for-function.py --id mgm4441680.3 --name Central\ carbohydrate\ metabolism --level level2 --source Subsystems --evalue 10'''
+    s='''mg-get-sequences-for-function.py --id mgm4441680.3 --name "Central carbohydrate metabolism" --level level2 --source Subsystems --evalue 10'''
     stat, out, err = runme(s) 
     assert stat == 0
 
 def test_mg_get_sequences_for_taxon():
     s='''mg-get-sequences-for-taxon.py --id mgm4441680.3 --name Lachnospiraceae --level family --source RefSeq --evalue 8'''
+    stat, out, err = runme(s) 
+    assert stat == 0
+
+def test_mg_query_matrix():
+    s='''mg-query.py  'http://api.mg-rast.org/matrix/function?id=mgm4447943.3' '''
+    stat, out, err = runme(s) 
+    assert stat == 0
+    assert b'acter' in out
+
+@pytest.mark.known_failing
+def test_mg_query_darkmatter():
+    s='''mg-query.py  'http://api.mg-rast.org/darkmatter/mgm4447943.3' '''
     stat, out, err = runme(s) 
     assert stat == 0
 
@@ -182,15 +194,34 @@ def test_mg_retrieve_uniprot():
     s='''mg-retrieve-uniprot.py --md5 ffc62262a18b38671c3e337150ef535f --source SwissProt'''
     stat, out, err = runme(s) 
     assert stat == 0
-def test_mg_search_metagenomes(): 
+
+def test_mg_project():
+    s='''mg-project.py get-info mgp128'''
+    stat, out, err = runme(s) 
+    assert stat == 0
+
+def test_mg_search_metagenomes__help(): 
     s='''mg-search-metagenomes.py --help'''
     stat, out, err = runme(s) 
     assert stat == 0
+
+def test_mg_display_metadata(): 
+    s='''mg-display-metadata.py --id "mgm4441680.3" --verbosity full'''
+    stat, out, err = runme(s) 
+    assert stat == 0
+    assert b"medium-quality grass-legume hay" in out
+
 @pytest.mark.requires_auth
 def test_mg_submit():
     s='''mg-submit.py list'''
     stat, out, err = runme(s) 
     assert stat == 0
+
+def test_mg_m5nrtoolspl():
+    s='''m5nr-tools.pl --api http://api.mg-rast.org/ --option annotation --source RefSeq --md5 0b95101ffea9396db4126e4656460ce5,068792e95e38032059ba7d9c26c1be78,0b96c9'''
+    stat, out, err = runme(s) 
+    assert stat == 0
+    assert b"alcohol dehydrogenase" in out
 
 @pytest.mark.known_failing
 def test_known_failing():

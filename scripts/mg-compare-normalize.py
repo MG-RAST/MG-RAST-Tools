@@ -3,7 +3,7 @@
 import os
 import sys
 import json
-from optparse import OptionParser
+from argparse import ArgumentParser
 from mglib import AUTH_LIST, VERSION, API_URL, random_str, biom_to_tab, biom_to_matrix, execute_r, tab_to_matrix, obj_from_url
 
 
@@ -41,18 +41,18 @@ AUTHORS
 """
 
 def main(args):
-    OptionParser.format_description = lambda self, formatter: self.description
-    OptionParser.format_epilog = lambda self, formatter: self.epilog
-    parser = OptionParser(usage='', description=prehelp%VERSION, epilog=posthelp%AUTH_LIST)
-    parser.add_option("", "--url", dest="url", default=API_URL, help="communities API url")
-    parser.add_option("", "--rlib", dest="rlib", default=None, help="R lib path")
-    parser.add_option("", "--input", dest="input", default='-', help="input: filename or stdin (-), default is stdin")
-    parser.add_option("", "--output", dest="output", default='-', help="output: filename or stdout (-), default is stdout")
-    parser.add_option("", "--outdir", dest="outdir", default=None, help="ouput is placed in dir as filenmae.obj, fielname.type, only for 'biom' input")
-    parser.add_option("", "--format", dest="format", default='biom', help="input / output format: 'text' for tabbed table, 'biom' for BIOM format, default is biom")
+    ArgumentParser.format_description = lambda self, formatter: self.description
+    ArgumentParser.format_epilog = lambda self, formatter: self.epilog
+    parser = ArgumentParser(usage='', description=prehelp%VERSION, epilog=posthelp%AUTH_LIST)
+    parser.add_argument("--url", dest="url", default=API_URL, help="communities API url")
+    parser.add_argument("--rlib", dest="rlib", default=None, help="R lib path")
+    parser.add_argument("--input", dest="input", default='-', help="input: filename or stdin (-), default is stdin")
+    parser.add_argument("--output", dest="output", default='-', help="output: filename or stdout (-), default is stdout")
+    parser.add_argument("--outdir", dest="outdir", default=None, help="ouput is placed in dir as filenmae.obj, fielname.type, only for 'biom' input")
+    parser.add_argument("--format", dest="format", default='biom', help="input / output format: 'text' for tabbed table, 'biom' for BIOM format, default is biom")
     
     # get inputs
-    (opts, args) = parser.parse_args()
+    opts = parser.parse_args()
     if (opts.input != '-') and (not os.path.isfile(opts.input)):
         sys.stderr.write("ERROR: input data missing\n")
         return 1
@@ -95,7 +95,7 @@ def main(args):
     
     # check values to see if already normalized, otherwise R fails badly
     if len(data) > 0:
-        maxval = max( map(max, data) )
+        maxval = max(map(max, data))
     if maxval <= 1:
         os.remove(tmp_in)
         sys.stderr.write("ERROR: data is already normalized.\n")
@@ -155,9 +155,9 @@ suppressMessages( MGRAST_preprocessing(
         else:
             out_hdl.write(json.dumps(biom)+"\n")
     else:
-        out_hdl.write( "\t%s\n" %"\t".join(norm['columns']) )
+        out_hdl.write("\t%s\n" %"\t".join(norm['columns']))
         for i, d in enumerate(norm['data']):
-            out_hdl.write( "%s\t%s\n" %(norm['rows'][i], "\t".join(map(str, d))) )
+            out_hdl.write("%s\t%s\n" %(norm['rows'][i], "\t".join(map(str, d))))
     
     out_hdl.close()
     if os.stat(opts.output).st_size == 0:
@@ -166,4 +166,4 @@ suppressMessages( MGRAST_preprocessing(
     
 
 if __name__ == "__main__":
-    sys.exit( main(sys.argv) )
+    sys.exit(main(sys.argv))

@@ -3,7 +3,7 @@
 import os
 import sys
 import json
-from optparse import OptionParser
+from argparse import ArgumentParser
 from mglib import VERSION, AUTH_LIST, get_auth_token, random_str, biom_to_tab, execute_r
 
 prehelp = """
@@ -40,27 +40,27 @@ AUTHORS
 """
 
 def main(args):
-    OptionParser.format_description = lambda self, formatter: self.description
-    OptionParser.format_epilog = lambda self, formatter: self.epilog
-    parser = OptionParser(usage='', description=prehelp%VERSION, epilog=posthelp%AUTH_LIST)
-    parser.add_option("", "--user", dest="user", default=None, help="OAuth username")
-    parser.add_option("", "--passwd", dest="passwd", default=None, help="OAuth password")
-    parser.add_option("", "--token", dest="token", default=None, help="OAuth token")
-    parser.add_option("", "--input", dest="input", default='-', help="input: filename or stdin (-), default is stdin")
-    parser.add_option("", "--format", dest="format", default='biom', help="input format: 'text' for tabbed table, 'biom' for BIOM format, default is biom")
-    parser.add_option("", "--plot", dest="plot", default=None, help="filename for output plot")
-    parser.add_option("", "--cluster", dest="cluster", default='ward', help="cluster function, one of: ward, single, complete, mcquitty, median, centroid, default is ward")
-    parser.add_option("", "--distance", dest="distance", default='bray-curtis', help="distance function, one of: bray-curtis, euclidean, maximum, manhattan, canberra, minkowski, difference, default is bray-curtis")
-    parser.add_option("", "--rlib", dest="rlib", default=None, help="R lib path")
-    parser.add_option("", "--height", dest="height", type="float", default=10, help="image height in inches, default is 5")
-    parser.add_option("", "--width", dest="width", type="float", default=10, help="image width in inches, default is 4")
-    parser.add_option("", "--dpi", dest="dpi", type="int", default=300, help="image DPI, default is 300")
-    parser.add_option("", "--order", dest="order", type="int", default=0, help="order columns, default is off: 1=true, 0=false")
-    parser.add_option("", "--name", dest="name", type="int", default=0, help="label columns by name, default is by id: 1=true, 0=false")
-    parser.add_option("", "--label", dest="label", type="int", default=0, help="label image rows, default is off: 1=true, 0=false")
+    ArgumentParser.format_description = lambda self, formatter: self.description
+    ArgumentParser.format_epilog = lambda self, formatter: self.epilog
+    parser = ArgumentParser(usage='', description=prehelp%VERSION, epilog=posthelp%AUTH_LIST)
+    parser.add_argument("--user", dest="user", default=None, help="OAuth username")
+    parser.add_argument("--passwd", dest="passwd", default=None, help="OAuth password")
+    parser.add_argument("--token", dest="token", default=None, help="OAuth token")
+    parser.add_argument("--input", dest="input", default='-', help="input: filename or stdin (-), default is stdin")
+    parser.add_argument("--format", dest="format", default='biom', help="input format: 'text' for tabbed table, 'biom' for BIOM format, default is biom")
+    parser.add_argument("--plot", dest="plot", default=None, help="filename for output plot")
+    parser.add_argument("--cluster", dest="cluster", default='ward', help="cluster function, one of: ward, single, complete, mcquitty, median, centroid, default is ward")
+    parser.add_argument("--distance", dest="distance", default='bray-curtis', help="distance function, one of: bray-curtis, euclidean, maximum, manhattan, canberra, minkowski, difference, default is bray-curtis")
+    parser.add_argument("--rlib", dest="rlib", default=None, help="R lib path")
+    parser.add_argument("--height", dest="height", type=float, default=10, help="image height in inches, default is 5")
+    parser.add_argument("--width", dest="width", type=float, default=10, help="image width in inches, default is 4")
+    parser.add_argument("--dpi", dest="dpi", type=int, default=300, help="image DPI, default is 300")
+    parser.add_argument("--order", dest="order", type=int, default=0, help="order columns, default is off: 1=true, 0=false")
+    parser.add_argument("--name", dest="name", type=int, default=0, help="label columns by name, default is by id: 1=true, 0=false")
+    parser.add_argument("--label", dest="label", type=int, default=0, help="label image rows, default is off: 1=true, 0=false")
     
     # get inputs
-    (opts, args) = parser.parse_args()
+    opts = parser.parse_args()
     if (opts.input != '-') and (not os.path.isfile(opts.input)):
         sys.stderr.write("ERROR: input data missing\n")
         return 1
@@ -125,4 +125,4 @@ suppressMessages( plot_mg_heatdend(
     
 
 if __name__ == "__main__":
-    sys.exit( main(sys.argv) )
+    sys.exit(main(sys.argv))

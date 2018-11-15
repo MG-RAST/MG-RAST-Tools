@@ -4,7 +4,7 @@ import os
 import sys
 import json
 import copy
-from optparse import OptionParser
+from argparse import ArgumentParser
 from mglib import get_auth_token, AUTH_LIST, VERSION, API_URL, urlencode, async_rest_api, merge_biom, obj_from_url, biom_to_tab
 
 prehelp = """
@@ -37,32 +37,32 @@ AUTHORS
 """
 
 def main(args):
-    OptionParser.format_description = lambda self, formatter: self.description
-    OptionParser.format_epilog = lambda self, formatter: self.epilog
-    parser = OptionParser(usage='', description=prehelp%VERSION, epilog=posthelp%AUTH_LIST)
-    parser.add_option("", "--ids", dest="ids", default=None, help="comma seperated list or file of KBase Metagenome IDs")
-    parser.add_option("", "--url", dest="url", default=API_URL, help="communities API url")
-    parser.add_option("", "--user", dest="user", default=None, help="OAuth username")
-    parser.add_option("", "--passwd", dest="passwd", default=None, help="OAuth password")
-    parser.add_option("", "--token", dest="token", default=None, help="OAuth token")
-    parser.add_option("", "--level", dest="level", default='genus', help="taxon level to retrieve abundances for, default is genus")
-    parser.add_option("", "--source", dest="source", default='SEED', help="taxon datasource to filter results by, default is SEED")
-    parser.add_option("", "--hit_type", dest="hit_type", default='lca', help="Set of organisms to search results by, one of: all, single, lca")
-    parser.add_option("", "--filter_level", dest="filter_level", default=None, help="taxon level to filter by")
-    parser.add_option("", "--filter_name", dest="filter_name", default=None, help="taxon name to filter by, file or comma seperated list")
-    parser.add_option("", "--intersect_source", dest="intersect_source", default='Subsystems', help="function datasource for insersection, default is Subsystems")
-    parser.add_option("", "--intersect_level", dest="intersect_level", default=None, help="function level for insersection")
-    parser.add_option("", "--intersect_name", dest="intersect_name", default=None, help="function name(s) for insersection, file or comma seperated list")
-    parser.add_option("", "--output", dest="output", default='-', help="output: filename or stdout (-), default is stdout")
-    parser.add_option("", "--format", dest="format", default='biom', help="output format: 'text' for tabbed table, 'biom' for BIOM format, default is biom")
-    parser.add_option("", "--evalue", type="int", dest="evalue", default=15, help="negative exponent value for maximum e-value cutoff, default is 15")
-    parser.add_option("", "--identity", type="int", dest="identity", default=60, help="percent value for minimum % identity cutoff, default is 60")
-    parser.add_option("", "--length", type="int", dest="length", default=15, help="value for minimum alignment length cutoff, default is 15")
-    parser.add_option("", "--version", type="int", dest="version", default=1, help="M5NR annotation version to use, default is 1")
-    parser.add_option("", "--temp", dest="temp", default=None, help="filename to temporarly save biom output at each iteration")
+    ArgumentParser.format_description = lambda self, formatter: self.description
+    ArgumentParser.format_epilog = lambda self, formatter: self.epilog
+    parser = ArgumentParser(usage='', description=prehelp%VERSION, epilog=posthelp%AUTH_LIST)
+    parser.add_argument("--ids", dest="ids", default=None, help="comma seperated list or file of KBase Metagenome IDs")
+    parser.add_argument("--url", dest="url", default=API_URL, help="communities API url")
+    parser.add_argument("--user", dest="user", default=None, help="OAuth username")
+    parser.add_argument("--passwd", dest="passwd", default=None, help="OAuth password")
+    parser.add_argument("--token", dest="token", default=None, help="OAuth token")
+    parser.add_argument("--level", dest="level", default='genus', help="taxon level to retrieve abundances for, default is genus")
+    parser.add_argument("--source", dest="source", default='SEED', help="taxon datasource to filter results by, default is SEED")
+    parser.add_argument("--hit_type", dest="hit_type", default='lca', help="Set of organisms to search results by, one of: all, single, lca")
+    parser.add_argument("--filter_level", dest="filter_level", default=None, help="taxon level to filter by")
+    parser.add_argument("--filter_name", dest="filter_name", default=None, help="taxon name to filter by, file or comma seperated list")
+    parser.add_argument("--intersect_source", dest="intersect_source", default='Subsystems', help="function datasource for insersection, default is Subsystems")
+    parser.add_argument("--intersect_level", dest="intersect_level", default=None, help="function level for insersection")
+    parser.add_argument("--intersect_name", dest="intersect_name", default=None, help="function name(s) for insersection, file or comma seperated list")
+    parser.add_argument("--output", dest="output", default='-', help="output: filename or stdout (-), default is stdout")
+    parser.add_argument("--format", dest="format", default='biom', help="output format: 'text' for tabbed table, 'biom' for BIOM format, default is biom")
+    parser.add_argument("--evalue", type=int, dest="evalue", default=15, help="negative exponent value for maximum e-value cutoff, default is 15")
+    parser.add_argument("--identity", type=int, dest="identity", default=60, help="percent value for minimum % identity cutoff, default is 60")
+    parser.add_argument("--length", type=int, dest="length", default=15, help="value for minimum alignment length cutoff, default is 15")
+    parser.add_argument("--version", type=int, dest="version", default=1, help="M5NR annotation version to use, default is 1")
+    parser.add_argument("--temp", dest="temp", default=None, help="filename to temporarly save biom output at each iteration")
     
     # get inputs
-    (opts, args) = parser.parse_args()
+    opts = parser.parse_args()
     if not opts.ids:
         sys.stderr.write("ERROR: one or more ids required\n")
         return 1
@@ -172,4 +172,4 @@ def main(args):
     
 
 if __name__ == "__main__":
-    sys.exit( main(sys.argv) )
+    sys.exit(main(sys.argv))

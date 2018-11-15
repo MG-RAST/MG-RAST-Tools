@@ -3,7 +3,7 @@
 import sys
 import os
 import json
-from optparse import OptionParser
+from argparse import ArgumentParser
 from mglib import API_URL, obj_from_url, VERSION, AUTH_LIST, biom_to_matrix, safe_print
 
 prehelp = """
@@ -39,7 +39,7 @@ AUTHORS
 # get subsystems->roles and md5s per ko id
 def ko2roles(opts, sshier, koid):
     ko_anno = obj_from_url(opts.url+'/m5nr/accession/'+koid+'?version=1&source=KO&limit=1000')
-    ko_md5s = set( map(lambda x: x['md5'], ko_anno['data']) )
+    ko_md5s = set(map(lambda x: x['md5'], ko_anno['data']))
     if len(ko_md5s) == 0:
         return [], []
     ko_post = {'version': 1, 'source': 'Subsystems', 'data': list(ko_md5s), 'limit': 10000}
@@ -47,27 +47,27 @@ def ko2roles(opts, sshier, koid):
     roles   = set()
     for ss in ss_anno['data']:
         if ss['accession'] in sshier:
-            roles.add( sshier[ss['accession']]['level4'] )
+            roles.add(sshier[ss['accession']]['level4'])
     return list(roles), list(ko_md5s)
 
 # get fig ids per subsystem and roles
 def role2figs(opts, role, md5s):
     post = {'version': 1, 'source': 'SEED', 'data': [role], 'md5s': md5s, 'exact': 1, 'limit': 10000}
     anno = obj_from_url(opts.url+'/m5nr/function', data=json.dumps(post, separators=(',',':')))
-    fids = set( map(lambda x: x['accession'], anno['data']) )
+    fids = set(map(lambda x: x['accession'], anno['data']))
     return list(fids)
 
 def main(args):
-    OptionParser.format_description = lambda self, formatter: self.description
-    OptionParser.format_epilog = lambda self, formatter: self.epilog
-    parser = OptionParser(usage='', description=prehelp%VERSION, epilog=posthelp%AUTH_LIST)
-    parser.add_option("", "--id", dest="id", default=None, help="KBase Metagenome ID, required")
-    parser.add_option("", "--url", dest="url", default=API_URL, help="communities API url")
-    parser.add_option("", "--input", dest="input", default='-', help="input: filename or stdin (-), default is stdin")
-    parser.add_option("", "--output", dest="output", default='text', help="output format: 'text' for tabbed table, 'biom' for BIOM format, default is text")
+    ArgumentParser.format_description = lambda self, formatter: self.description
+    ArgumentParser.format_epilog = lambda self, formatter: self.epilog
+    parser = ArgumentParser(usage='', description=prehelp%VERSION, epilog=posthelp%AUTH_LIST)
+    parser.add_argument("--id", dest="id", default=None, help="KBase Metagenome ID, required")
+    parser.add_argument("--url", dest="url", default=API_URL, help="communities API url")
+    parser.add_argument("--input", dest="input", default='-', help="input: filename or stdin (-), default is stdin")
+    parser.add_argument("--output", dest="output", default='text', help="output format: 'text' for tabbed table, 'biom' for BIOM format, default is text")
     
     # get inputs
-    (opts, args) = parser.parse_args()
+    opts = parser.parse_args()
     if (opts.input != '-') and (not os.path.isfile(opts.input)):
         sys.stderr.write("ERROR: input data missing\n")
         return 1
@@ -115,4 +115,4 @@ def main(args):
     
 
 if __name__ == "__main__":
-    sys.exit( main(sys.argv) )
+    sys.exit(main(sys.argv))

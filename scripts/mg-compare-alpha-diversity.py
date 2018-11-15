@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
 import sys
-from optparse import OptionParser
+from argparse import ArgumentParser
 from mglib import urlencode, API_URL, VERSION, AUTH_LIST, get_auth_token, obj_from_url, safe_print
 
 prehelp = """
@@ -33,19 +33,19 @@ AUTHORS
 """
 
 def main(args):
-    OptionParser.format_description = lambda self, formatter: self.description
-    OptionParser.format_epilog = lambda self, formatter: self.epilog
-    parser = OptionParser(usage='', description=prehelp%VERSION, epilog=posthelp%AUTH_LIST)
-    parser.add_option("", "--ids", dest="ids", default=None, help="comma seperated list of KBase Metagenome IDs")
-    parser.add_option("", "--url", dest="url", default=API_URL, help="communities API url")
-    parser.add_option("", "--user", dest="user", default=None, help="OAuth username")
-    parser.add_option("", "--passwd", dest="passwd", default=None, help="OAuth password")
-    parser.add_option("", "--token", dest="token", default=None, help="OAuth token")
-    parser.add_option("", "--level", dest="level", default='species', help="taxon level to retrieve abundances for, default is species")
-    parser.add_option("", "--source", dest="source", default='SEED', help="datasource to filter results by, default is SEED")
+    ArgumentParser.format_description = lambda self, formatter: self.description
+    ArgumentParser.format_epilog = lambda self, formatter: self.epilog
+    parser = ArgumentParser(usage='', description=prehelp%VERSION, epilog=posthelp%AUTH_LIST)
+    parser.add_argument("--ids", dest="ids", default=None, help="comma seperated list of KBase Metagenome IDs")
+    parser.add_argument("--url", dest="url", default=API_URL, help="communities API url")
+    parser.add_argument("--user", dest="user", default=None, help="OAuth username")
+    parser.add_argument("--passwd", dest="passwd", default=None, help="OAuth password")
+    parser.add_argument("--token", dest="token", default=None, help="OAuth token")
+    parser.add_argument("--level", dest="level", default='species', help="taxon level to retrieve abundances for, default is species")
+    parser.add_argument("--source", dest="source", default='SEED', help="datasource to filter results by, default is SEED")
     
     # get inputs
-    (opts, args) = parser.parse_args()
+    opts = parser.parse_args()
     if not opts.ids:
         sys.stderr.write("ERROR: one or more ids required\n")
         return 1
@@ -65,4 +65,4 @@ def main(args):
     
 
 if __name__ == "__main__":
-    sys.exit( main(sys.argv) )
+    sys.exit(main(sys.argv))

@@ -6,7 +6,7 @@ import json
 import time
 import pprint
 from operator import itemgetter
-from optparse import OptionParser
+from argparse import ArgumentParser
 from prettytable import PrettyTable
 from mglib import obj_from_url, get_auth_token, get_auth, API_URL, SHOCK_URL, post_file, file_from_url, VERSION, AUTH_LIST, login
 
@@ -124,7 +124,7 @@ def status(sid):
             pstatus = p['status']
             if ('error' in p) and p['error']:
                 pstatus += "\n"+p['error']
-            pt_status.add_row( [i, p['stage'], pstatus, "\n".join(p['inputs'])] )
+            pt_status.add_row([i, p['stage'], pstatus, "\n".join(p['inputs'])])
         pt_status.align = "l"
         print(pt_status)
     
@@ -142,7 +142,7 @@ def status(sid):
             remain = 0
             if m['task'] and (len(m['task']) > 0):
                 remain = len(m['task'])
-            pt_mg.add_row( [m['userattr']['id'], m['userattr']['name'], state, remain, m['submittime'], m['completedtime'], m['id']] )
+            pt_mg.add_row([m['userattr']['id'], m['userattr']['name'], state, remain, m['submittime'], m['completedtime'], m['id']])
         pt_mg.align = "l"
         print(pt_mg)
 
@@ -205,7 +205,7 @@ def wait_on_complete(sid, json_out):
     else:
         pt_mg = PrettyTable(["metagenome ID", "metagenome name", "total status", "submit time"])
         for mg in data['status']['metagenomes']:
-            pt_mg.add_row( [mg['id'], mg['name'], mg['status'], mg['timestamp']] )
+            pt_mg.add_row([mg['id'], mg['name'], mg['status'], mg['timestamp']])
         pt_mg.align = "l"
         print(pt_mg)
 
@@ -423,59 +423,62 @@ def archive_upload(afile, verbose):
 
 def main(args):
     global mgrast_auth, API_URL, SHOCK_URL
-    OptionParser.format_description = lambda self, formatter: self.description
-    OptionParser.format_epilog = lambda self, formatter: self.epilog
-    parser = OptionParser(usage='', description=prehelp%VERSION, epilog=posthelp%AUTH_LIST)
+    ArgumentParser.format_description = lambda self, formatter: self.description
+    ArgumentParser.format_epilog = lambda self, formatter: self.epilog
+    parser = ArgumentParser(usage='', description=prehelp%VERSION, epilog=posthelp%AUTH_LIST)
     # access options
-    parser.add_option("-u", "--mgrast_url", dest="mgrast_url", default=API_URL, help="MG-RAST API url")
-    parser.add_option("-s", "--shock_url", dest="shock_url", default=SHOCK_URL, help="Shock API url")
-    parser.add_option("-t", "--token", dest="token", default=None, help="MG-RAST token")
+    parser.add_argument("-u", "--mgrast_url", dest="mgrast_url", default=API_URL, help="MG-RAST API url")
+    parser.add_argument("-s", "--shock_url", dest="shock_url", default=SHOCK_URL, help="Shock API url")
+    parser.add_argument("-t", "--token", dest="token", default=None, help="MG-RAST token")
     # required options
-    parser.add_option("-m", "--metadata", dest="metadata", default=None, help="metadata .xlsx file")
-    parser.add_option("", "--project_id", dest="project_id", default=None, help="project ID")
-    parser.add_option("", "--project_name", dest="project_name", default=None, help="project name")
+    parser.add_argument("-m", "--metadata", dest="metadata", default=None, help="metadata .xlsx file")
+    parser.add_argument("--project_id", dest="project_id", default=None, help="project ID")
+    parser.add_argument("--project_name", dest="project_name", default=None, help="project name")
     # pairjoin / demultiplex options
-    parser.add_option("", "--mg_name", dest="mgname", default=None, help="name of pair-merge metagenome if not in metadata, default is UUID")
-    parser.add_option("", "--barcode", dest="barcode", default=None, help="barcode file: metagenome_name \\t barcode_sequence")
-    parser.add_option("", "--retain", dest="retain", action="store_true", default=False, help="retain non-overlapping sequences in pair-merge")
-    parser.add_option("", "--rc_index", dest="rc_index", action="store_true", default=False, help="barcodes in index file are reverse compliment of mapping file")
+    parser.add_argument("--mg_name", dest="mgname", default=None, help="name of pair-merge metagenome if not in metadata, default is UUID")
+    parser.add_argument("--barcode", dest="barcode", default=None, help="barcode file: metagenome_name \\t barcode_sequence")
+    parser.add_argument("--retain", dest="retain", action="store_true", default=False, help="retain non-overlapping sequences in pair-merge")
+    parser.add_argument("--rc_index", dest="rc_index", action="store_true", default=False, help="barcodes in index file are reverse compliment of mapping file")
     # pipeline flags
-    parser.add_option("", "--assembled", dest="assembled", action="store_true", default=False, help="if true sequences are assembeled, default is false")
-    parser.add_option("", "--no_filter_ln", dest="no_filter_ln", action="store_true", default=False, help="if true skip sequence length filtering, default is on")
-    parser.add_option("", "--no_filter_ambig", dest="no_filter_ambig", action="store_true", default=False, help="if true skip sequence ambiguous bp filtering, default is on")
-    parser.add_option("", "--no_dynamic_trim", dest="no_dynamic_trim", action="store_true", default=False, help="if true skip qual score dynamic trimmer, default is on")
-    parser.add_option("", "--no_dereplicate", dest="no_dereplicate", action="store_true", default=False, help="if true skip dereplication, default is on")
-    parser.add_option("", "--no_bowtie", dest="no_bowtie", action="store_true", default=False, help="if true skip bowtie screening, default is on")
+    parser.add_argument("--assembled", dest="assembled", action="store_true", default=False, help="if true sequences are assembeled, default is false")
+    parser.add_argument("--no_filter_ln", dest="no_filter_ln", action="store_true", default=False, help="if true skip sequence length filtering, default is on")
+    parser.add_argument("--no_filter_ambig", dest="no_filter_ambig", action="store_true", default=False, help="if true skip sequence ambiguous bp filtering, default is on")
+    parser.add_argument("--no_dynamic_trim", dest="no_dynamic_trim", action="store_true", default=False, help="if true skip qual score dynamic trimmer, default is on")
+    parser.add_argument("--no_dereplicate", dest="no_dereplicate", action="store_true", default=False, help="if true skip dereplication, default is on")
+    parser.add_argument("--no_bowtie", dest="no_bowtie", action="store_true", default=False, help="if true skip bowtie screening, default is on")
     # pipeline options
-    parser.add_option("", "--filter_ln_mult", dest="filter_ln_mult", type="int", default=5, help="maximum ambiguous bps to allow through per sequence, default is 5")
-    parser.add_option("", "--max_ambig", dest="max_ambig", type="int", default=5, help="maximum number of low-quality bases per read, default is 5")
-    parser.add_option("", "--max_lqb", dest="max_lqb", type="int", default=15, help="quality threshold for low-quality bases, default is 15")
-    parser.add_option("", "--min_qual", dest="min_qual", type="float", default=2.0, help="sequence length filtering multiplier, default is 2.0")
-    parser.add_option("", "--screen_indexes", dest="screen_indexes", default=None, help="host organism to filter sequences by")
-    parser.add_option("", "--priority", dest="priority", default=None, help="indicate when making data public, influences analysis run time")
+    parser.add_argument("--filter_ln_mult", dest="filter_ln_mult", type=int, default=5, help="maximum ambiguous bps to allow through per sequence, default is 5")
+    parser.add_argument("--max_ambig", dest="max_ambig", type=int, default=5, help="maximum number of low-quality bases per read, default is 5")
+    parser.add_argument("--max_lqb", dest="max_lqb", type=int, default=15, help="quality threshold for low-quality bases, default is 15")
+    parser.add_argument("--min_qual", dest="min_qual", type=float, default=2.0, help="sequence length filtering multiplier, default is 2.0")
+    parser.add_argument("--screen_indexes", dest="screen_indexes", default=None, help="host organism to filter sequences by")
+    parser.add_argument("--priority", dest="priority", default=None, help="indicate when making data public, influences analysis run time")
     # extra modes
-    parser.add_option("", "--synch", dest="synch", action="store_true", default=False, help="Run submit action in synchronious mode")
-    parser.add_option("", "--json_out", dest="json_out", default=None, help="Output final metagenome product as json object to this file, synch mode only")
-    parser.add_option("", "--json_in", dest="json_in", default=None, help="Input sequence file(s) encoded as shock handle in json file, simple or pairjoin types only")
-    parser.add_option("", "--tmp_dir", dest="tmp_dir", default="", help="Temp dir to download too if using json_in option, default is current working dir")
-    parser.add_option("-v", "--verbose", dest="verbose", action="store_true", default=False, help="Verbose STDOUT")
-    parser.add_option("", "--debug", dest="debug", action="store_true", default=False, help="Submit in debug mode")
+    parser.add_argument("--synch", dest="synch", action="store_true", default=False, help="Run submit action in synchronious mode")
+    parser.add_argument("--json_out", dest="json_out", default=None, help="Output final metagenome product as json object to this file, synch mode only")
+    parser.add_argument("--json_in", dest="json_in", default=None, help="Input sequence file(s) encoded as shock handle in json file, simple or pairjoin types only")
+    parser.add_argument("--tmp_dir", dest="tmp_dir", default="", help="Temp dir to download too if using json_in option, default is current working dir")
+    parser.add_argument("-v", "--verbose", dest="verbose", action="store_true", default=False, help="Verbose STDOUT")
+    parser.add_argument("--debug", dest="debug", action="store_true", default=False, help="Submit in debug mode")
+    parser.add_argument("action",  type=str, default=False, help="Action")
+#    parser.add_argument("subaction", type=str, default=False, help="Action word 2", default=None)
     
     # get inputs
-    (opts, args) = parser.parse_args()
+    opts = parser.parse_args()
     
     # special case
     json_submit = True if opts.json_in and os.path.isfile(opts.json_in) else False
     if json_submit:
         action = "submit"
     else:
-        if len(args) < 1:
+        if len(opts.action) < 1:
             sys.stderr.write("ERROR: missing action\n")
             return 1
-        action = args[0]
+        action = opts.action
+    args = opts.action
     API_URL = opts.mgrast_url
     SHOCK_URL = opts.shock_url
-    
+     
     if opts.verbose and opts.debug:
         print("##### Running in Debug Mode #####")
     
@@ -493,11 +496,11 @@ def main(args):
         if (len(args) < 2) or (args[1] not in submit_types):
             sys.stderr.write("ERROR: invalid submit option. use one of: %s\n"%", ".join(submit_types))
             return 1
-        if ( ((args[1] == "simple") and (len(args) < 3)) or
+        if ((args[1] == "simple") and (len(args) < 3) or
              ((args[1] == "batch") and (len(args) != 3)) or
              ((args[1] == "demultiplex") and (len(args) < 3)) or
              ((args[1] == "pairjoin") and (len(args) != 4)) or
-             ((args[1] == "pairjoin_demultiplex") and (len(args) != 5)) ):
+             ((args[1] == "pairjoin_demultiplex") and (len(args) != 5))):
             sys.stderr.write("ERROR: submit %s missing file(s)\n"%args[1])
             return 1
         if ((args[1] == "demultiplex") or (args[1] == "pairjoin_demultiplex")) and (not (opts.metadata or opts.barcode)):
@@ -547,5 +550,5 @@ def main(args):
     return 0
 
 if __name__ == "__main__":
-    sys.exit( main(sys.argv) )
+    sys.exit(main(sys.argv))
 

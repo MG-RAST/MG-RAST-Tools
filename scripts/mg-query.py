@@ -4,7 +4,7 @@ and asyncrhonous requests for the user.'''
 
 from __future__ import print_function
 import sys
-from optparse import OptionParser
+from argparse import ArgumentParser
 import json
 from mglib import async_rest_api, get_auth_token
 
@@ -12,16 +12,17 @@ DEBUG = 0
 
 if __name__ == '__main__':
     usage = "usage: %prog [options]  URI"
-    parser = OptionParser(usage)
-#    parser.add_option("-v", "--verbose", dest="verbose", action="store_true")
-    parser.add_option("-k", "--token", dest="token", type="str",
+    parser = ArgumentParser(usage)
+#    parser.add_argument("-v", "--verbose", dest="verbose", action="store_true")
+    parser.add_argument("-k", "--token", dest="token", type=str,
                       help="Auth token")
+    parser.add_argument("URI", type=str, help="URI to query")
 
-    (opts, args) = parser.parse_args()
+    opts = parser.parse_args()
     key = get_auth_token(opts)
 
 # assign parameters
-    URI = args[0]
+    URI = opts.URI
 
 # construct API call
     print(URI, file=sys.stderr)

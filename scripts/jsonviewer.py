@@ -2,7 +2,7 @@
 
 import sys
 import json
-from optparse import OptionParser
+from argparse import ArgumentParser
 
 prehelp = """
 NAME
@@ -95,17 +95,17 @@ def to_string(x, dump=False, keys=False, expand=False, summary=False):
         return str(x)
 
 def main(args):
-    OptionParser.format_description = lambda self, formatter: self.description
-    OptionParser.format_epilog = lambda self, formatter: self.epilog
-    parser = OptionParser(usage='', description=prehelp, epilog=posthelp)
-    parser.add_option("", "--info", dest="info", action="store_true", default=False, help="give format and depth of JSON structure")
-    parser.add_option("", "--json", dest="json", action="store_true", default=False, help="pretty print of JSON structure")
-    parser.add_option("", "--keys", dest="keys", action="store_true", default=False, help="list of keys if hash, number of elements if array")
-    parser.add_option("", "--value", dest="value", default=None, help="value for a given key name or array index, use dot (.) to indicate multiple levels")
-    parser.add_option("", "--find", dest="find", default=None, help="value(s) for a given key name at any depth")
+    ArgumentParser.format_description = lambda self, formatter: self.description
+    ArgumentParser.format_epilog = lambda self, formatter: self.epilog
+    parser = ArgumentParser(usage='', description=prehelp, epilog=posthelp)
+    parser.add_argument("--info", dest="info", action="store_true", default=False, help="give format and depth of JSON structure")
+    parser.add_argument("--json", dest="json", action="store_true", default=False, help="pretty print of JSON structure")
+    parser.add_argument("--keys", dest="keys", action="store_true", default=False, help="list of keys if hash, number of elements if array")
+    parser.add_argument("--value", dest="value", default=None, help="value for a given key name or array index, use dot (.) to indicate multiple levels")
+    parser.add_argument("--find", dest="find", default=None, help="value(s) for a given key name at any depth")
 
     # get inputs
-    (opts, args) = parser.parse_args()
+    opts = parser.parse_args()
     try:
         jdata = json.load(sys.stdin)
     except:
@@ -150,4 +150,4 @@ def main(args):
     return 0
 
 if __name__ == "__main__":
-    sys.exit( main(sys.argv) )
+    sys.exit(main(sys.argv))

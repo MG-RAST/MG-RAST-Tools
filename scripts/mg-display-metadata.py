@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
 import sys
-from optparse import OptionParser
+from argparse import ArgumentParser
 from mglib import AUTH_LIST, VERSION, API_URL, get_auth_token, obj_from_url, safe_print
 
 prehelp = """
@@ -33,18 +33,18 @@ AUTHORS
 """
 
 def main(args):
-    OptionParser.format_description = lambda self, formatter: self.description
-    OptionParser.format_epilog = lambda self, formatter: self.epilog
-    parser = OptionParser(usage='', description=prehelp%VERSION, epilog=posthelp%AUTH_LIST)
-    parser.add_option("", "--id", dest="id", default=None, help="KBase Metagenome ID")
-    parser.add_option("", "--url", dest="url", default=API_URL, help="communities API url")
-    parser.add_option("", "--user", dest="user", default=None, help="OAuth username")
-    parser.add_option("", "--passwd", dest="passwd", default=None, help="OAuth password")
-    parser.add_option("", "--token", dest="token", default=None, help="OAuth token")
-    parser.add_option("", "--verbosity", dest="verbosity", default='mixs', help="amount of metadata to display. use keyword 'mixs' for GSC MIxS metadata, use keyword 'full' for all GSC metadata, default is mixs")
+    ArgumentParser.format_description = lambda self, formatter: self.description
+    ArgumentParser.format_epilog = lambda self, formatter: self.epilog
+    parser = ArgumentParser(usage='', description=prehelp%VERSION, epilog=posthelp%AUTH_LIST)
+    parser.add_argument("--id", dest="id", default=None, help="KBase Metagenome ID")
+    parser.add_argument("--url", dest="url", default=API_URL, help="communities API url")
+    parser.add_argument("--user", dest="user", default=None, help="OAuth username")
+    parser.add_argument("--passwd", dest="passwd", default=None, help="OAuth password")
+    parser.add_argument("--token", dest="token", default=None, help="OAuth token")
+    parser.add_argument("--verbosity", dest="verbosity", default='mixs', help="amount of metadata to display. use keyword 'mixs' for GSC MIxS metadata, use keyword 'full' for all GSC metadata, default is mixs")
     
     # get inputs
-    (opts, args) = parser.parse_args()
+    opts = parser.parse_args()
     if not opts.id:
         sys.stderr.write("ERROR: id required\n")
         return 1
@@ -85,4 +85,4 @@ def main(args):
     
 
 if __name__ == "__main__":
-    sys.exit( main(sys.argv) )
+    sys.exit(main(sys.argv))

@@ -45,20 +45,15 @@ if __name__ == '__main__':
     jsonstructure = async_rest_api(URI, auth=key)
     jsondata = jsonstructure["data"]
 # unpack and display the data table
-    cols = jsondata["columns"]
 #    rows = [x["id"] for x in jsondata["rows"]]
 
-    data = jsondata["data"]
+    data = jsondata # ["data"]
 
     if DEBUG:
         print(jsonstructure)
-        print("COLS", cols)
         print("DATA", data)
     h = data
 
-    for j in range(0, len(cols)):
-        sys.stdout.write(cols[j] +"\t")
-    sys.stdout.write("\n")
     for i in range(0, len(data)):
         sys.stdout.write("\t".join([str(s) for s in h[i]]))
         sys.stdout.write("\n")

@@ -2,7 +2,7 @@
 
 import sys
 import os
-from optparse import OptionParser
+from argparse import ArgumentParser
 from prettytable import PrettyTable
 from mglib import VERSION, get_auth_token, AUTH_LIST, API_URL, obj_from_url, file_from_url
 
@@ -45,21 +45,21 @@ def file_download(auth, info, dirpath="."):
     sys.stdout.write("Done\n")
 
 def main(args):
-    OptionParser.format_description = lambda self, formatter: self.description
-    OptionParser.format_epilog = lambda self, formatter: self.epilog
-    parser = OptionParser(usage='', description=prehelp%VERSION, epilog=posthelp%AUTH_LIST)
-    parser.add_option("", "--url", dest="url", default=API_URL, help="communities API url")
-    parser.add_option("", "--user", dest="user", default=None, help="OAuth username")
-    parser.add_option("", "--passwd", dest="passwd", default=None, help="OAuth password")
-    parser.add_option("", "--token", dest="token", default=None, help="OAuth token")
-    parser.add_option("", "--project", dest="project", default=None, help="project ID")
-    parser.add_option("", "--metagenome", dest="metagenome", default=None, help="metagenome ID")
-    parser.add_option("", "--file", dest="file", default=None, help="file ID for given project or metagenome")
-    parser.add_option("", "--dir", dest="dir", default=".", help="directory to do downloads")
-    parser.add_option("", "--list", dest="list", action="store_true", default=False, help="list files and their info for given ID")
+    ArgumentParser.format_description = lambda self, formatter: self.description
+    ArgumentParser.format_epilog = lambda self, formatter: self.epilog
+    parser = ArgumentParser(usage='', description=prehelp%VERSION, epilog=posthelp%AUTH_LIST)
+    parser.add_argument("--url", dest="url", default=API_URL, help="communities API url")
+    parser.add_argument("--user", dest="user", default=None, help="OAuth username")
+    parser.add_argument("--passwd", dest="passwd", default=None, help="OAuth password")
+    parser.add_argument("--token", dest="token", default=None, help="OAuth token")
+    parser.add_argument("--project", dest="project", default=None, help="project ID")
+    parser.add_argument("--metagenome", dest="metagenome", default=None, help="metagenome ID")
+    parser.add_argument("--file", dest="file", default=None, help="file ID for given project or metagenome")
+    parser.add_argument("--dir", dest="dir", default=".", help="directory to do downloads")
+    parser.add_argument("--list", dest="list", action="store_true", default=False, help="list files and their info for given ID")
     
     # get inputs
-    (opts, args) = parser.parse_args()
+    opts = parser.parse_args()
     if not (opts.project or opts.metagenome):
         sys.stderr.write("ERROR: a project or metagenome id is required\n")
         return 1
@@ -122,4 +122,4 @@ def main(args):
 
 
 if __name__ == "__main__":
-    sys.exit( main(sys.argv) )
+    sys.exit(main(sys.argv))
