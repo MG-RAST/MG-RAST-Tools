@@ -8,6 +8,7 @@ import base64
 import json
 import string
 import random
+import hashlib
 import subprocess
 try:
     from StringIO import StringIO
@@ -100,20 +101,24 @@ def obj_from_url(url, auth=None, data=None, debug=False, method=None):
     return obj
 
 # print to file results of MG-RAST or Shock API
-def file_from_url(url, handle, auth=None, data=None, debug=False):
+def file_from_url(url, handle, auth=None, data=None, debug=False, sha1=False):
     result = body_from_url(url, 'text/plain', auth=auth, data=data, debug=debug)
+    sha1hash = hashlib.sha1()
     while True:
         chunk = result.read(8192)
         if not chunk:
             break
+        if sha1:
+            sha1hash.update(chunk)
         handle.write(chunk.decode('utf8'))
+    return sha1hash.hexdigest()
 
 # print to stdout results of MG-RAST API
 def stdout_from_url(url, auth=None, data=None, debug=False):
     file_from_url(url, sys.stdout, auth=auth, data=data, debug=debug)
 
 # return python struct from JSON output of asynchronous MG-RAST API
-def async_rest_api(url, auth=None, data=None, debug=False, delay=15):
+def async_rest_api(url, auth=None, data=None, debug=False, delay=60):
     try:
         parameters = parse_qs(url.split("?")[1])
         assert "asynchronous" in parameters, "Must specify asynchronous=1 for asynchronous call!"
@@ -123,10 +128,9 @@ def async_rest_api(url, auth=None, data=None, debug=False, delay=15):
 # If "status" is nor present, or if "status" is somehow not "submitted" 
 # assume this is not an asynchronous call and it's done.
     if ('status' in submit) and (submit['status'] == 'done') and ('url' in submit):
-        return obj_from_url(submit["url"], debug=debug)
+        return submit['data']
     if not (('status' in submit) and (submit['status'] == 'submitted') and ('url' in submit)):
-        return(submit)
-#        sys.stderr.write("ERROR: return data invalid format\n:%s"%json.dumps(submit))
+        return submit
     result = obj_from_url(submit['url'], debug=debug)
     try:
         while result['status'] != 'done':
@@ -250,15 +254,36 @@ def metadata_from_biom(biom, term):
         vals.append(value)
     return vals
 
+# turn profile format BIOM into matrix format, use only abundances
+def profile_to_matrix(p):
+    if p['columns'][0]['id'] != 'abundance':
+        # not a profile
+        return p
+    trim = True if len(p['columns']) > 1 else False
+    p['columns'][0]['id'] = p['id']
+    p['matrix_element_type'] = 'int'
+    p['matrix_element_value'] = 'abundance'
+    p['date'] = time.strftime("%Y-%m-%d %H:%M:%S")
+    if p['matrix_type'] == 'sparse':
+        p['data'] = sparse_to_dense(p['data'], p['shape'][0], p['shape'][1])
+    if trim:
+        p['columns'] = p['columns'][:1]
+        for i in range(len(p['rows'])):
+            p['data'][i] = p['data'][i][:1]
+    return p
+
 # merge two BIOM objects
 def merge_biom(b1, b2):
     """input: 2 biom objects of same 'type', 'matrix_element_type', and 'matrix_element_value'
     return: merged biom object, duplicate columns skipped, duplicate rows added"""
-    # hack for using in loop when one oif 2 is empty
+    # hack for using in loop when one of 2 is empty
     if b1 and (not b2):
         return b1
     if b2 and (not b1):
         return b2
+    # transform profile BIOM from UI export into matrix BIOM
+    b1 = profile_to_matrix(b1)
+    b2 = profile_to_matrix(b2)
     # validate
     if not (b1 and b2 and (b1['type'] == b2['type']) and (b1['matrix_element_type'] == b2['matrix_element_type']) and (b1['matrix_element_value'] == b2['matrix_element_value'])):
         sys.stderr.write("The inputed biom objects are not compatable for merging\n")

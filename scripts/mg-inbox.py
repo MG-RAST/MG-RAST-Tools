@@ -177,7 +177,6 @@ def upload(files):
             fformat = "upload"
         # POST to shock
         data = {
-            "file_name": os.path.basename(f),
             "attributes_str": attr
         }
         result = post_file(SHOCK_URL+"/node", fformat, f, data=data, auth=mgrast_auth['token'])

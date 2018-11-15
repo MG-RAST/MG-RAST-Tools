@@ -12,7 +12,7 @@ VERSION
     %s
 
 SYNOPSIS
-    mg-search-metagenomes [ --help, --user <user>, --passwd <password>, --token <oAuth token>, --order <field name> --direction <cv: 'asc', 'desc'> --match <cv: 'all, 'any'> --status <cv: 'both', 'public', 'private'> --verbosity <cv: 'minimal', 'full'> %s ]
+    mg-search-metagenomes [ --help, --user <user>, --passwd <password>, --token <oAuth token>, --order <field name> --direction <cv: 'asc', 'desc'> --match <cv: 'all, 'any'> --public ]
 
 DESCRIPTION
     Retrieve list of metagenomes based on search criteria.
@@ -38,6 +38,9 @@ def display_search(data, fields):
     for d in data:
         row = []
         for f in fields:
+            if f not in d:
+                row.append("-")
+                continue
             try:
                 row.append(str(d[f]))
             except:
@@ -67,39 +70,38 @@ def main(args):
     token = get_auth_token(opts)
     
     # build call url
-    params = [ ('limit', '100'),
-               ('match', opts.match),
-               ('status', opts.status),
-               ('verbosity', opts.verbosity if opts.verbosity == 'minimal' else 'mixs') ]
+    total = 0
+    maxLimit = 50
+    params = [ ('limit', opts.limit if opts.limit < maxLimit else maxLimit),
+               ('public', 'yes' if opts.public or (not token) else 'no') ]
+    if opts.index:
+        params.append( ('index', opts.index) )
     for sfield in SEARCH_FIELDS:
         if hasattr(opts, sfield) and getattr(opts, sfield):
             params.append((sfield, getattr(opts, sfield)))
     if opts.order:
         params.append(('order', opts.order))
         params.append(('direction', opts.direction))
-    url = opts.url+'/metagenome?'+urlencode(params, True)
+    url = opts.url+'/search?'+urlencode(params, True)
     
     # retrieve data
-    fields = ['id']
+    fields = ['metagenome_id', 'public'] + SEARCH_FIELDS
     result = obj_from_url(url, auth=token)
-    if len(result['data']) == 0:
+    found = len(result['data'])
+    if found == 0:
         sys.stdout.write("No results found for the given search parameters\n")
         return 0
-    for sfield in SEARCH_FIELDS:
-        if sfield in result['data'][0]:
-            fields.append(sfield)
-    fields.append('status')
-    ids = [d['id'] for d in result['data']]
+    total += found
     
     # output header
     safe_print("\t".join(fields)+"\n")
     # output rows
     display_search(result['data'], fields)
     
-    while result['next']:
+    while ('next' in result) and result['next'] and (total < opts.limit):
         url = result['next']
         result = obj_from_url(url, auth=token)
-        ids.extend([d['id'] for d in result['data']])
+        total += len(result['data'])
         display_search(result['data'], fields)
     
     return 0
