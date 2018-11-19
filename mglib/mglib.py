@@ -1,5 +1,4 @@
 from __future__ import print_function
-import io
 import os
 import sys
 import time
@@ -10,12 +9,6 @@ import string
 import random
 import hashlib
 import subprocess
-try:
-    from StringIO import StringIO
-except ImportError:
-    from io import StringIO
-from poster.encode import multipart_encode
-from poster.streaminghttp import register_openers
 import requests
 from requests_toolbelt import MultipartEncoder
 
@@ -153,7 +146,6 @@ def async_rest_api(url, auth=None, data=None, debug=False, delay=60):
 def post_file(url, keyname, filename, data={}, auth=None, debug=False):
     if debug:
         print("post_file", url)
-    register_openers()
     data[keyname] = (filename, open(filename, 'rb'))
     datagen = MultipartEncoder(data)
     header = {"Content-Type": datagen.content_type}
@@ -184,11 +176,6 @@ def post_file(url, keyname, filename, data={}, auth=None, debug=False):
         print(json.dumps(obj))
     if obj is None:
         sys.stderr.write("ERROR: return structure not valid json format\n")
-    while True:
-        chunk = res.raw.read(8192)
-        if not chunk:
-            break
-        handle.write(chunk.decode('utf8'))
     return(obj)
 
 # safe handling of stdout for piping
