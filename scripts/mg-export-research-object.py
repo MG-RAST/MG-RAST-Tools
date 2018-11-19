@@ -10,15 +10,15 @@ from argparse import ArgumentParser
 from prettytable import PrettyTable
 from mglib import VERSION, get_auth_token, AUTH_LIST, API_URL, obj_from_url, file_from_url, random_str
 
-VERSION = 'alpha'
+RO_VERSION = 'alpha'
 
 prehelp = """
 NAME
     mg-export-research-object
 
 VERSION
-    %s
-
+    MGRAST-Tools %s
+    mg-export-research-object %s
 SYNOPSIS
     mg-export-research-object [ --help, --user <user>, --passwd <password>, --token <oAuth token>, --metagenome <metagenome id>, --dir <directory name> --list <list manifest>]
 
@@ -75,7 +75,7 @@ def edit_input(text, mg):
 def main(args):
     ArgumentParser.format_description = lambda self, formatter: self.description
     ArgumentParser.format_epilog = lambda self, formatter: self.epilog
-    parser = ArgumentParser(usage='', description=prehelp%VERSION, epilog=posthelp%AUTH_LIST)
+    parser = ArgumentParser(usage='', description=prehelp.format(VERSION, RO_VERSION), epilog=posthelp%AUTH_LIST)
     parser.add_argument("--url", dest="url", default=API_URL, help="MG-RAST API url")
     parser.add_argument("--user", dest="user", default=None, help="OAuth username")
     parser.add_argument("--passwd", dest="passwd", default=None, help="OAuth password")
