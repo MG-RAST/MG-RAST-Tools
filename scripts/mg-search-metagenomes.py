@@ -11,6 +11,8 @@ NAME
 VERSION
     %s
 
+    %s 
+
 SYNOPSIS
     mg-search-metagenomes [ --help, --user <user>, --passwd <password>, --token <oAuth token>, --order <field name> --direction <cv: 'asc', 'desc'> --match <cv: 'all, 'any'> --public ]
 
@@ -55,8 +57,10 @@ def main(args):
     parser.add_argument("--user", dest="user", default=None, help="OAuth username")
     parser.add_argument("--passwd", dest="passwd", default=None, help="OAuth password")
     parser.add_argument("--token", dest="token", default=None, help="OAuth token")
+    parser.add_argument("--limit", dest="limit", type=int, default=15, help="Number of results to show, if > 50 will use paginated queries to get all, default 15")
     parser.add_argument("--order", dest="order", default=None, help="field metagenomes are ordered by, default is no ordering")
     parser.add_argument("--direction", dest="direction", default="asc", help="direction of order. 'asc' for ascending order, 'desc' for descending order, default is asc")
+    parser.add_argument("--public", dest="public", action="store_true", default=False, help="return both private and pubulic data if using authenticated search, default is private only.  Non-authenticated search only returns public.")
     parser.add_argument("--match", dest="match", default="all", help="search logic. 'all' for metagenomes that match all search parameters, 'any' for metagenomes that match any search parameters, default is all")
     parser.add_argument("--status", dest="status", default="public", help="types of metagenomes to return. 'both' for all data (public and private), 'public' for public data, 'private' for users private data, default is public")
     parser.add_argument("--verbosity", dest="verbosity", default='minimal', help="amount of information to display. use keyword 'minimal' for id and name, use keyword 'full' for MIxS GSC metadata, default is minimal")
@@ -74,8 +78,6 @@ def main(args):
     maxLimit = 50
     params = [ ('limit', opts.limit if opts.limit < maxLimit else maxLimit),
                ('public', 'yes' if opts.public or (not token) else 'no') ]
-    if opts.index:
-        params.append( ('index', opts.index) )
     for sfield in SEARCH_FIELDS:
         if hasattr(opts, sfield) and getattr(opts, sfield):
             params.append((sfield, getattr(opts, sfield)))

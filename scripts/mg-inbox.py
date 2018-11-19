@@ -179,7 +179,7 @@ def upload(files):
         data = {
             "attributes_str": attr
         }
-        result = post_file(SHOCK_URL+"/node", fformat, f, data=data, auth=mgrast_auth['token'])
+        result = post_file(SHOCK_URL+"/node", fformat, f, data=data, auth=mgrast_auth['token'], debug=DEBUG)
         # compute file info
         info = obj_from_url(API_URL+"/inbox/info/"+result['data']['id'], auth=mgrast_auth['token'], debug=DEBUG)
         print(info['status'])
@@ -212,7 +212,7 @@ def upload_archive(afile):
         "file_name": os.path.basename(afile),
         "attributes_str": attr
     }
-    result = post_file(SHOCK_URL+"/node", "upload", afile, data=data, auth=mgrast_auth['token'])
+    result = post_file(SHOCK_URL+"/node", "upload", afile, data=data, auth=mgrast_auth['token'], debug=DEBUG)
     data = {
         "unpack_node": result['data']['id'],
         "archive_format": aformat,
@@ -286,7 +286,7 @@ def compute(action, files, retain, joinfile, rc_index):
             "rc_index": 1 if rc_index else 0
         }
     else:
-        sys.stderr.write("ERROR: invalid compute ion. use one of: %s\n"%", ".join(compute_options))
+        sys.stderr.write("ERROR: invalid compute action. use one of: %s\n"%", ".join(compute_actions))
     info = obj_from_url(API_URL+"/inbox/"+action, data=json.dumps(data), auth=mgrast_auth['token'], debug=DEBUG)
     print(info['status'])
 
@@ -408,8 +408,8 @@ def main(args):
             sys.stderr.write("ERROR: validate missing file\n")
             return 1
     elif action == "compute":
-        if (len(args) < 2) or (args[1] not in compute_options):
-            sys.stderr.write("ERROR: invalid compute ion. use one of: %s\n"%", ".join(compute_options))
+        if (len(args) < 2) or (args[1] not in compute_actions):
+            sys.stderr.write("ERROR: invalid compute action. use one of: %s\n"%", ".join(compute_actions))
             return 1
         if (((args[1] == "sff2fastq") and (len(args) != 3)) or
              ((args[1] == "demultiplex") and (len(args) < 4)) or

@@ -6,19 +6,19 @@ import json
 import yaml
 import shutil
 import hashlib
-from optparse import OptionParser
+from argparse import ArgumentParser
 from prettytable import PrettyTable
 from mglib import VERSION, get_auth_token, AUTH_LIST, API_URL, obj_from_url, file_from_url, random_str
 
-VERSION = 'alpha'
+RO_VERSION = 'alpha'
 
 prehelp = """
 NAME
     mg-export-research-object
 
 VERSION
-    %s
-
+    MGRAST-Tools %s
+    mg-export-research-object %s
 SYNOPSIS
     mg-export-research-object [ --help, --user <user>, --passwd <password>, --token <oAuth token>, --metagenome <metagenome id>, --dir <directory name> --list <list manifest>]
 
@@ -73,19 +73,19 @@ def edit_input(text, mg):
     return yaml.dump(info, allow_unicode=True, default_flow_style=False)
 
 def main(args):
-    OptionParser.format_description = lambda self, formatter: self.description
-    OptionParser.format_epilog = lambda self, formatter: self.epilog
-    parser = OptionParser(usage='', description=prehelp%VERSION, epilog=posthelp%AUTH_LIST)
-    parser.add_option("", "--url", dest="url", default=API_URL, help="MG-RAST API url")
-    parser.add_option("", "--user", dest="user", default=None, help="OAuth username")
-    parser.add_option("", "--passwd", dest="passwd", default=None, help="OAuth password")
-    parser.add_option("", "--token", dest="token", default=None, help="OAuth token")
-    parser.add_option("", "--metagenome", dest="metagenome", default=None, help="metagenome ID")
-    parser.add_option("", "--dir", dest="dir", default=".", help="directory to export to")
-    parser.add_option("", "--list", dest="list", action="store_true", default=False, help="list files in manifest")
+    ArgumentParser.format_description = lambda self, formatter: self.description
+    ArgumentParser.format_epilog = lambda self, formatter: self.epilog
+    parser = ArgumentParser(usage='', description=prehelp.format(VERSION, RO_VERSION), epilog=posthelp%AUTH_LIST)
+    parser.add_argument("--url", dest="url", default=API_URL, help="MG-RAST API url")
+    parser.add_argument("--user", dest="user", default=None, help="OAuth username")
+    parser.add_argument("--passwd", dest="passwd", default=None, help="OAuth password")
+    parser.add_argument("--token", dest="token", default=None, help="OAuth token")
+    parser.add_argument("--metagenome", dest="metagenome", default=None, help="metagenome ID")
+    parser.add_argument("--dir", dest="dir", default=".", help="directory to export to")
+    parser.add_argument("--list", dest="list", action="store_true", default=False, help="list files in manifest")
     
     # get inputs
-    (opts, args) = parser.parse_args()
+    opts = parser.parse_args()
     if not opts.metagenome:
         sys.stderr.write("ERROR: a metagenome id is required\n")
         return 1
