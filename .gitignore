@@ -7,6 +7,12 @@
 /dist/*
 /mglib.egg-info/*
 
+# testing files
+/.cache/*
+/.pytest_cache/*
+/htmlcov/*
+.coverage 
+
 # ignore files with # and ~
 *\#*
 *\~*
