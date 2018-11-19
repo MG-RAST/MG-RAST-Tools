@@ -151,19 +151,20 @@ def async_rest_api(url, auth=None, data=None, debug=False, delay=60):
 
 # POST file to MG-RAST or Shock
 def post_file(url, keyname, filename, data={}, auth=None, debug=False):
-    register_openers()
     if debug:
-        print("data:\t"+json.dumps(data))
-    data[keyname] = open(filename)
-    datagen, header = multipart_encode(data)
+        print("post_file", url)
+    register_openers()
+    data[keyname] = (filename, open(filename, 'rb'))
+    datagen = MultipartEncoder(data)
+    header = {"Content-Type": datagen.content_type}
     if auth:
         header['Authorization'] = 'mgrast '+auth
     if debug:
-        print("header:\t"+json.dumps(header))
+        print("data:\t"+repr(data))
+        print("header:\t"+repr(header))
         print("url:\t"+url)
     try:
-        req = Request(url, datagen, header)
-        res = urlopen(req)
+        res = requests.post(url, data=datagen, headers=header, stream=True)
     except HTTPError as error:
         try:
             eobj = json.loads(error.read())
@@ -178,11 +179,13 @@ def post_file(url, keyname, filename, data={}, auth=None, debug=False):
     if not res:
         sys.stderr.write("ERROR: no results returned\n")
         sys.exit(1)
-    obj = json.loads(res.read().decode("utf8"))
+    obj = json.loads(res.content.decode("utf8"))
+    if debug:
+        print(json.dumps(obj))
     if obj is None:
         sys.stderr.write("ERROR: return structure not valid json format\n")
     while True:
-        chunk = res.read(8192)
+        chunk = res.raw.read(8192)
         if not chunk:
             break
         handle.write(chunk.decode('utf8'))
