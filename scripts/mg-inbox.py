@@ -179,7 +179,7 @@ def upload(files):
         data = {
             "attributes_str": attr
         }
-        result = post_file(SHOCK_URL+"/node", fformat, f, data=data, auth=mgrast_auth['token'])
+        result = post_file(SHOCK_URL+"/node", fformat, f, data=data, auth=mgrast_auth['token'], debug=DEBUG)
         # compute file info
         info = obj_from_url(API_URL+"/inbox/info/"+result['data']['id'], auth=mgrast_auth['token'], debug=DEBUG)
         print(info['status'])
@@ -212,7 +212,7 @@ def upload_archive(afile):
         "file_name": os.path.basename(afile),
         "attributes_str": attr
     }
-    result = post_file(SHOCK_URL+"/node", "upload", afile, data=data, auth=mgrast_auth['token'])
+    result = post_file(SHOCK_URL+"/node", "upload", afile, data=data, auth=mgrast_auth['token'], debug=DEBUG)
     data = {
         "unpack_node": result['data']['id'],
         "archive_format": aformat,
