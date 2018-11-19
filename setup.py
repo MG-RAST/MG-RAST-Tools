@@ -13,8 +13,7 @@ setup(name='mglib',
     packages=['mglib'],
     scripts=glob.glob('scripts/[a-z]*') + glob.glob('examples/python/*.py'),
     install_requires=  ['prettytable >= 0.7', 
-                          'requests_toolbelt >= 0.8', 'setuptools > 28.0',
-                         'poster >= 0.8.1' ]
+                          'requests_toolbelt >= 0.8', 'setuptools > 28.0' ]
      )
 
 
