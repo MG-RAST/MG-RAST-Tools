@@ -40,7 +40,7 @@ def get_project_keys(meta):
     keys = set()
     for key in meta["data"].keys():
         keys.add(key)
-    keys.remove("project_name")
+    if "project_name" in keys:  keys.remove("project_name")
     return(["project_name"] + list(keys))
 
 def get_sample_keys(meta):
@@ -48,7 +48,7 @@ def get_sample_keys(meta):
     for sample in meta["samples"]:
         for key in sample["data"].keys():
             keys.add(key)
-    keys.remove("sample_name")
+    if "sample_name" in keys:  keys.remove("sample_name")
     return(["sample_name"] + list(keys))
 
 def get_library_keys(meta):
@@ -113,7 +113,7 @@ def main(args):
 
     outfile = PROJECT + "-export.xlsx"
 #
-    k = obj_from_url("http://api.mg-rast.org/metadata/export/{project}?verbosity=full".format(project=PROJECT))
+    k = obj_from_url("http://api.mg-rast.org/metadata/export/{project}?verbosity=full".format(project=PROJECT), auth=TOKEN)
     metadata = k # json.loads(open(infile).read())
 
     workbook = xlsxwriter.Workbook(outfile)
@@ -154,8 +154,11 @@ def main(args):
             col += 1
         col = 0
         row += 1
+    try:
+        librarytype = metadata["samples"][0]["libraries"][0]["data"]["investigation_type"]["value"]
+    except IndexError:
+        sys.exit("This metadata bundle does not have any libraries")
 
-    librarytype = metadata["samples"][0]["libraries"][0]["data"]["investigation_type"]["value"]
     worksheet["library"] = workbook.add_worksheet("library "+librarytype)
 
     libkeys = get_library_keys(metadata)
