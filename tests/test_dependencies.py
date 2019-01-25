@@ -6,10 +6,6 @@ def test_dependencies():
         print("numpy not found.  ")
 
     try:
-        import poster
-    except ImportError:
-        print("poster not found. ")
-    try:
         import requests
     except ImportError:
         print("requests not found. ")

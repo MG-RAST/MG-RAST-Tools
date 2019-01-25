@@ -223,6 +223,16 @@ def test_mg_m5nrtoolspl():
     assert stat == 0
     assert b"alcohol dehydrogenase" in out
 
+def test_query_matrix():
+    s='''mg-query.py 'http://api.mg-rast.org/matrix/organism?group_level=phylum&source=SEED&hit_type=single&result_type=abundance&evalue=1&identity=60&length=15&taxid=0&id=mgm4510219.3' > matrix.biom'''
+    stat, out, err = runme(s) 
+    assert stat == 0
+def test_mg_biom_view():
+    s='''mg-biom-view.py < mgm4514486.3.refseq.biom.json''' 
+    stat, out, err = runme(s) 
+    assert stat == 0   
+    assert b'Bacteria;Proteobacteria;Gammaproteobacteria;Vibrionales;Vibrionaceae;Vibrio;Vibrio cholerae;Vibrio cholerae BX 330286	8' in out
+ 
 @pytest.mark.known_failing
 def test_known_failing():
     assert False  # This should not normally run
