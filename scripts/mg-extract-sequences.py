@@ -45,7 +45,7 @@ def main(args):
     parser.add_argument("--level", dest="level", default='function', help="function level to filter by")
     parser.add_argument("--source", dest="source", default='Subsystems', help="datasource to filter results by, default is Subsystems")
     parser.add_argument("--evalue", dest="evalue", default=5, help="negative exponent value for maximum e-value cutoff, default is 5")
-    parser.add_argument("--identity", dest="identity", default=60, help="percent value for minimum % identity cutoff, default is 60")
+    parser.add_argument("--identity", dest="identity", default=60, help="percent value for minimum %% identity cutoff, default is 60")
     parser.add_argument("--length", dest="length", default=15, help="value for minimum alignment length cutoff, default is 15")
     parser.add_argument("--status", dest="status", default="public", help="types of metagenomes to return. 'both' for all data (public and private), 'public' for public data, 'private' for users private data, default is public")
     for sfield in SEARCH_FIELDS:

@@ -56,7 +56,7 @@ def main(args):
     parser.add_argument("--output", dest="output", default='-', help="output: filename or stdout (-), default is stdout")
     parser.add_argument("--format", dest="format", default='biom', help="output format: 'text' for tabbed table, 'biom' for BIOM format, default is biom")
     parser.add_argument("--evalue", type=int, dest="evalue", default=15, help="negative exponent value for maximum e-value cutoff, default is 15")
-    parser.add_argument("--identity", type=int, dest="identity", default=60, help="percent value for minimum % identity cutoff, default is 60")
+    parser.add_argument("--identity", type=int, dest="identity", default=60, help="percent value for minimum %% identity cutoff, default is 60")
     parser.add_argument("--length", type=int, dest="length", default=15, help="value for minimum alignment length cutoff, default is 15")
     parser.add_argument("--version", type=int, dest="version", default=1, help="M5NR annotation version to use, default is 1")
     parser.add_argument("--temp", dest="temp", default=None, help="filename to temporarly save biom output at each iteration")

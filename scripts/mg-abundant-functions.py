@@ -48,7 +48,7 @@ def main(args):
     parser.add_argument("--filter_level", dest="filter_level", default=None, help="function level to filter by")
     parser.add_argument("--top", dest="top", type=int, default=10, help="display only the top N taxa, default is 10")
     parser.add_argument("--evalue", dest="evalue", type=int, default=5, help="negative exponent value for maximum e-value cutoff, default is 5")
-    parser.add_argument("--identity", dest="identity", type=int, default=60, help="percent value for minimum % identity cutoff, default is 60")
+    parser.add_argument("--identity", dest="identity", type=int, default=60, help="percent value for minimum %% identity cutoff, default is 60")
     parser.add_argument("--length", dest="length", type=int, default=15, help="value for minimum alignment length cutoff, default is 15")
     parser.add_argument("--version", type=int, dest="version", default=1, help="M5NR annotation version to use, default is 1")
     

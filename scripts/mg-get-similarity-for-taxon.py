@@ -45,7 +45,7 @@ def main(args):
     parser.add_argument("--level", dest="level", default=None, help="taxon level to filter by")
     parser.add_argument("--source", dest="source", default='SEED', help="datasource to filter results by, default is SEED")
     parser.add_argument("--evalue", dest="evalue", default=5, help="negative exponent value for maximum e-value cutoff, default is 5")
-    parser.add_argument("--identity", dest="identity", default=60, help="percent value for minimum % identity cutoff, default is 60")
+    parser.add_argument("--identity", dest="identity", default=60, help="percent value for minimum %% identity cutoff, default is 60")
     parser.add_argument("--length", dest="length", default=15, help="value for minimum alignment length cutoff, default is 15")
     
     # get inputs
