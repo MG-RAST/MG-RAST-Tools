@@ -83,7 +83,11 @@ def write_worksheet_value(worksheet, r, c, v, f):
     if f == "text" or f == "ontology" or f == "select" or f == "timezone" or v == "":
         worksheet.write_string(r, c, v)
     elif f == "float" or f == "coordinate" or f == "int":
-        worksheet.write_number(r, c, float(v))
+        try:
+            worksheet.write_number(r, c, float(v))
+        except ValueError:
+            worksheet.write_number(r, c, float(v.split(";")[0]))
+
     elif f == "date":
         worksheet.write_string(r, c, v)
     elif f == "time":
