@@ -12,7 +12,7 @@ def printlist(js):
         if "public" in item.keys():
             public = item["public"]
         else:
-            public = False
+            public = "False"
         try:
             mg_name= item["name"]
             project_id = item["project_id"]

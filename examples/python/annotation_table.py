@@ -9,9 +9,8 @@ from mglib import async_rest_api, get_auth_token, API_URL
 
 DEBUG = 0
 
-
 if __name__ == '__main__':
-    usage = "usage: %prog -i <input sequence file> -o <output file>"
+    usage = "usage: %prog [options]\nFunction: retrieves and presents table of sequence IDs and annotation table results"
     parser = OptionParser(usage)
     parser.add_option("-s", "--source", dest="source", default="RefSeq", help="Annotation source: RefSeq, GenBank, IMG, SEED, TrEMBL, SwissProt, PATRIC, KEG, RDP, Greengenes, LSU, SSU")
     parser.add_option("-g", "--grouplevel", dest="grouplevel", default="domain", help="Grouping level: strain, species, genus, family, order, class, phylum, domain / function, level1, level2, level3")
