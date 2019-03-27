@@ -40,7 +40,7 @@ if __name__ == '__main__':
     base_url = API_URL + "/matrix/organism"
     if opts.call == "function" or opts.source == "SubSystems":
         base_url = API_URL + "/matrix/function"
-    base_url = base_url + "?asynchronous=1&group_level=%s&result_type=%s&auth=%s&source=%s&evalue=%s&length=%s&identity=%s&hittype=%s&" % (group_level, result_type, key, source, evalue, length, identity, hittype)
+    base_url = base_url + "?asynchronous=1&group_level=%s&result_type=%s&source=%s&evalue=%s&length=%s&identity=%s&hittype=%s&" % (group_level, result_type, source, evalue, length, identity, hittype)
     URI = base_url + "&".join(["id=%s" % m for m in metagenomes.split(",")])
     print(URI, file=sys.stderr)
     print("#"+ URI, file=sys.stdout)

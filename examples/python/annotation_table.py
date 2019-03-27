@@ -36,7 +36,7 @@ if __name__ == '__main__':
 
 # construct API call
     base_url = API_URL + "/profile/{}".format(metagenomes)
-    base_url = base_url + "?asynchronous=1&group_level=%s&result_type=%s&auth=%s&source=%s&evalue=%s&" % (group_level, result_type, key, source, evalue)
+    base_url = base_url + "?asynchronous=1&group_level=%s&result_type=%s&source=%s&evalue=%s&" % (group_level, result_type, source, evalue)
     URI = base_url + "&".join(["id=%s" % m for m in metagenomes.split(",")])
     URI = base_url 
     print(URI, file=sys.stderr)
