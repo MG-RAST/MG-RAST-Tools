@@ -6,6 +6,9 @@ import pytest
 from subprocess import Popen, PIPE
 import subprocess
 import sys, os 
+from os.path import dirname, abspath
+
+DATADIR = dirname(abspath(__file__)) + "/data/"
 
 try:
     from StringIO import StringIO
@@ -53,7 +56,7 @@ def test_mg_biom2metadata_help():
 @pytest.mark.known_failing
 def test_mg_biom2taxa_help():
     stat, out, err = runme('mg-biom2taxa -h')
-    assert b'DESCRIPTION' in out
+    assert b'Usage' in out
 
 
 # def test_mg_upload2shock_help():
@@ -79,7 +82,6 @@ binscripts = ['mg-abundant-functions.py',
 'mg-display-statistics.py',
 'mg-download.py',
 'mg-extract-sequences.py',
-'mg-get-annotation-set.py',
 'mg-get-sequences-for-function.py',
 'mg-get-sequences-for-taxon.py',
 'mg-get-similarity-for-function.py',
@@ -148,11 +150,6 @@ def test_mg_download():
 #def test_mg_extract_sequences():
 #    s='''mg-extract-sequences.py --function protease --biome marine'''
 #    stat, out, err = runme(s) 
-@pytest.mark.known_failing
-def test_mg_get_annotation_set():
-    s='''mg-get-annotation-set.py --id mgm4750361.3 --top 5 --level genus --source RefSeq'''
-    stat, out, err = runme(s) 
-    assert stat == 0
 
 def test_mg_get_sequences_for_function():
     s='''mg-get-sequences-for-function.py --id mgm4441680.3 --name "Central carbohydrate metabolism" --level level2 --source Subsystems --evalue 10'''
@@ -228,11 +225,7 @@ def test_query_matrix():
     stat, out, err = runme(s) 
     assert stat == 0
 def test_mg_biom_view():
-    s='''mg-biom-view.py < mgm4514486.3.refseq.biom.json''' 
+    s='''mg-biom-view.py < {}/mgm4514486.3.refseq.biom.json'''.format(DATADIR)
     stat, out, err = runme(s) 
     assert stat == 0   
     assert b'Bacteria;Proteobacteria;Gammaproteobacteria;Vibrionales;Vibrionaceae;Vibrio;Vibrio cholerae;Vibrio cholerae BX 330286	8' in out
- 
-@pytest.mark.known_failing
-def test_known_failing():
-    assert False  # This should not normally run
