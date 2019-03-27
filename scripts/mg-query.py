@@ -31,4 +31,7 @@ if __name__ == '__main__':
     jsonstructure = async_rest_api(URI, auth=key)
 
 # unpack and display the data table
-    print(json.dumps(jsonstructure))
+    if type(jsonstructure) == str:    # If we have data, not json structure
+        sys.stdout.write(jsonstructure)
+    else:
+        print(json.dumps(jsonstructure), file=sys.stdout)

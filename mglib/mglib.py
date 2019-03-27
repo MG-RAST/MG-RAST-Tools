@@ -73,7 +73,10 @@ def body_from_url(url, accept, auth=None, data=None, debug=False, method=None):
 # return python struct from JSON output of MG-RAST or Shock API
 def obj_from_url(url, auth=None, data=None, debug=False, method=None):
     result = body_from_url(url, 'application/json', auth=auth, data=data, debug=debug, method=method)
-    obj = json.loads(result.read().decode("utf8"))
+    if result.headers["content-type"] == "application/x-download":
+        return(result.read()) 
+    else:
+        obj = json.loads(result.read().decode("utf8"))
     if obj is None:
         sys.stderr.write("ERROR: return structure not valid json format\n")
         sys.exit(1)
@@ -120,10 +123,10 @@ def async_rest_api(url, auth=None, data=None, debug=False, delay=60):
     submit = obj_from_url(url, auth=auth, data=data, debug=debug)
 # If "status" is nor present, or if "status" is somehow not "submitted" 
 # assume this is not an asynchronous call and it's done.
-    if ('status' in submit) and (submit['status'] == 'done') and ('url' in submit):
+    if ('status' in submit) and (submit['status'] == 'done') and ('data' in submit):
         return submit['data']
-    if not (('status' in submit) and (submit['status'] == 'submitted') and ('url' in submit)):
-        return submit
+#    if not (('status' in submit) and (submit['status'] == 'submitted') and ('url' in submit)):
+#        return submit  # No status, no url and no submitted
     result = obj_from_url(submit['url'], debug=debug)
     try:
         while result['status'] != 'done':
@@ -136,6 +139,8 @@ def async_rest_api(url, auth=None, data=None, debug=False, delay=60):
         print("Does not contain 'status' field, likely API syntax error", file=sys.stderr)
         print(json.dumps(result), file=sys.stderr)
         sys.exit(1)
+    except TypeError:  # result isn't json, return it anyway
+        return(result.decode("utf8"))
     if 'ERROR' in result['data']:
         sys.stderr.write("ERROR: %s\n" %result['data']['ERROR'])
         print(json.dumps(result), file=sys.stderr)
