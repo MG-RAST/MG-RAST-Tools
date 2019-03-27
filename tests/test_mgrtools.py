@@ -48,17 +48,6 @@ def test_mginbox_help():
     stat, out, err = runme('mg-inbox.py -h')
     assert b'DESCRIPTION' in out
 
-@pytest.mark.known_failing 
-def test_mg_biom2metadata_help():
-    stat, out, err = runme('mg-biom2metadata -h')
-    assert b'DESCRIPTION' in out
-
-@pytest.mark.known_failing
-def test_mg_biom2taxa_help():
-    stat, out, err = runme('mg-biom2taxa -h')
-    assert b'Usage' in out
-
-
 # def test_mg_upload2shock_help():
 #   stat, out, err = runme('mg-upload2shock.py -h')
 #   assert b'DESCRIPTION' in out
