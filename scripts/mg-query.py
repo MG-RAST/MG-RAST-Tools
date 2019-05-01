@@ -13,14 +13,15 @@ DEBUG = 0
 if __name__ == '__main__':
     usage = "usage: %prog [options]  URI"
     parser = ArgumentParser(usage)
-#    parser.add_argument("-v", "--verbose", dest="verbose", action="store_true")
+    parser.add_argument("-v", "--verbose", dest="verbose", action="store_true")
     parser.add_argument("-k", "--token", dest="token", type=str,
                       help="Auth token")
     parser.add_argument("URI", type=str, help="URI to query")
 
     opts = parser.parse_args()
     key = get_auth_token(opts)
-
+    if opts.verbose:
+        print("KEY = {}".format(key), file=sys.stderr)   
 # assign parameters
     URI = opts.URI
 
