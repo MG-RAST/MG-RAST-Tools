@@ -123,13 +123,13 @@ def async_rest_api(url, auth=None, data=None, debug=False, delay=60):
     submit = obj_from_url(url, auth=auth, data=data, debug=debug)
 # If "status" is nor present, or if "status" is somehow not "submitted" 
 # assume this is not an asynchronous call and it's done.
-    if ('status' in submit) and (submit['status'] != 'submitted') and ('data' in submit):
+    if ('status' in submit) and (submit['status'] != 'submitted') and (submit['status'] != "processing") and ('data' in submit):
         return submit['data']
 #    if not (('status' in submit) and (submit['status'] == 'submitted') and ('url' in submit)):
 #        return submit  # No status, no url and no submitted
     result = obj_from_url(submit['url'], auth=auth, debug=debug)
     try:
-        while result['status'] == 'submitted':
+        while result['status'] == 'submitted' or result['status'] == "processing":
             if debug:
                 print("waiting %d seconds ..."%delay)
             time.sleep(delay)
