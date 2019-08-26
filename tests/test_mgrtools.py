@@ -186,7 +186,7 @@ def test_mg_project():
     stat, out, err = runme(s)
     assert stat == 0
 
-def test_mg_search_metagenomes__help():
+def test_mg_search_metagenomes_help():
     s = '''mg-search-metagenomes.py --help'''
     stat, out, err = runme(s)
     assert stat == 0

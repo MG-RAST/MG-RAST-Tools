@@ -3,6 +3,7 @@
 from __future__ import print_function
 from __future__ import unicode_literals
 import sys
+import time
 
 from mglib import get_auth_token, obj_from_url, API_URL, urlencode
 
@@ -32,7 +33,7 @@ key = get_auth_token()
 limit = 1000 # initial call
 
 # construct API call
-
+# public = 0 means "don't show public metagenomes"
 parameters = {"limit": limit, "order":"created_on", "direction": "asc", "public": "1"}
 API_URL= "https://api.mg-rast.org/"
 
@@ -49,6 +50,7 @@ for i in range(0, int(total_count / limit) +1):
     sys.stderr.write("Page {:d}\t".format(i))
     jsonstructure = obj_from_url(base_url, auth=key)
     printlist(jsonstructure)
+    time.sleep(3)
     try:
         next_url = jsonstructure["next"]
         base_url = next_url
