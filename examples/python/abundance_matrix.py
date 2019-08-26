@@ -55,15 +55,15 @@ if __name__ == '__main__':
     else:
         print("#"+ URI, file=sys.stdout)
 
-# unpack and display the data table
-    cols = [x["id"] for x in jsonstructure["columns"]]
-    rows = [x["id"] for x in jsonstructure["rows"]]
-    matrixtype = jsonstructure["type"]
-
+    matrixtype = jsonstructure["data"]["matrix_type"]
     if matrixtype == "sparse":
         data = sparse_to_dense(jsonstructure["data"], len(rows), len(cols))
     else:
         data = jsonstructure["data"]
+# unpack and display the data table
+    cols = [x["id"] for x in data["columns"]]
+    rows = [x["id"] for x in data["rows"]]
+
 
     if DEBUG:
         print(jsonstructure)
@@ -71,7 +71,7 @@ if __name__ == '__main__':
         print("ROWS", rows)
         print("TYPE", matrixtype)
         print("DATA", data)
-    h = data
+    h = data["data"]
 
     sys.stdout.write("Taxon\t")
     for j in range(0, len(cols)):
