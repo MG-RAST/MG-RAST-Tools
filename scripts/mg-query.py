@@ -32,7 +32,7 @@ if __name__ == '__main__':
     jsonstructure = async_rest_api(URI, auth=key)
 
 # unpack and display the data table
-    if type(jsonstructure) == str:    # If we have data, not json structure
-        sys.stdout.write(jsonstructure)
-    else:
+    if type(jsonstructure) == dict:    # If we have data, not json structure
         print(json.dumps(jsonstructure), file=sys.stdout)
+    else:
+        sys.stdout.write(jsonstructure.decode("utf-8"))
