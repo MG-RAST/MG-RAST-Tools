@@ -19,7 +19,7 @@ def printlist(js):
             project_id = item["project_id"]
             project_name = item["project_name"]
         except KeyError:
-            sys.stderr.write(repr(item))
+            sys.stderr.write(repr(item) + "\n")
         sys.stdout.write(("\t".join([item["metagenome_id"],
 #                        str(len(item.keys())),
                          repr(public), item["created_on"],
@@ -46,13 +46,17 @@ jsonstructure = obj_from_url(base_url, auth=key)
 total_count = int(jsonstructure["total_count"])
 sys.stderr.write("Total number of records: {:d}\n".format(total_count))
 
-for i in range(0, int(total_count / limit) +1):
-    sys.stderr.write("Page {:d}\t".format(i))
+for i in range(0, int(total_count / limit) +2):
+#    sys.stderr.write("Page {:d}\t".format(i))
+    sys.stdout.write("Page {:d}\t{}\n".format(i, base_url))
     jsonstructure = obj_from_url(base_url, auth=key)
     printlist(jsonstructure)
-    time.sleep(3)
-    try:
+    time.sleep(1)
+    if "next" in jsonstructure.keys():
         next_url = jsonstructure["next"]
         base_url = next_url
-    except KeyError:
+        continue
+    else:
+        sys.stderr.write("No next, page {} url {} \n".format(i, base_url))
+        sys.stderr.write(repr(jsonstructure)) 
         break
