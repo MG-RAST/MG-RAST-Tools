@@ -80,6 +80,11 @@ def obj_from_url(url, auth=None, data=None, debug=False, method=None):
         read = result.read()
     if result.headers["content-type"] == "application/x-download":
         return(read)   # Watch out!
+    if result.headers["content-type"][0:9] == "text/html":  # json decoder won't work
+        return(read)   # Watch out!
+    if result.headers["content-type"] == "application/json":  # If header is set, this should work 
+        data = read.decode("utf8")
+        obj = json.loads(data)
     else:
         data = read.decode("utf8")
         obj = json.loads(data)
@@ -129,6 +134,11 @@ def async_rest_api(url, auth=None, data=None, debug=False, delay=60):
     submit = obj_from_url(url, auth=auth, data=data, debug=debug)
 # If "status" is nor present, or if "status" is somehow not "submitted"
 # assume this is not an asynchronous call and it's done.
+    if type(submit) == bytes:   # can't decode
+        try: 
+            return decode("utf-8", submit)
+        except:
+            return submit
     if ('status' in submit) and (submit['status'] != 'submitted') and (submit['status'] != "processing") and ('data' in submit):
         return submit
     if not ('url' in submit.keys()):
