@@ -38,10 +38,13 @@ AUTHORS
 
 # download a file
 def file_download(auth, info, dirpath="."):
-    fhandle = open(os.path.join(dirpath, info['file_name']), 'w')
     sys.stdout.write("Downloading %s for %s ... "%(info['file_name'], info['id']))
-    file_from_url(info['url'], fhandle, auth=auth)
-    fhandle.close()
+    if "url" in info.keys():  # all is well
+        fhandle = open(os.path.join(dirpath, info['file_name']), 'w')
+        file_from_url(info['url'], fhandle, auth=auth)
+        fhandle.close()
+    else:   # don't open empty file is no download
+        sys.stderr.write("WARNING Download info does not contain url.  Possibly datasets suppressed")
     sys.stdout.write("Done\n")
 
 def main(args):
@@ -111,12 +114,17 @@ def main(args):
             os.mkdir(mgdir)
         for f in files:
             if opts.file:
+                filecount = 0
                 if f['file_id'] == opts.file:
+                    filecount +=1
                     file_download(token, f, dirpath=mgdir)
                 elif f['file_name'] == opts.file:
+                    filecount +=1
                     file_download(token, f, dirpath=mgdir)
             else:
                 file_download(token, f, dirpath=mgdir)
+            if filecount == 0:
+                sys.exit("Can't find file number "+opts.file)
     
     return 0
 
