@@ -78,7 +78,7 @@ def obj_from_url(url, auth=None, data=None, debug=False, method=None):
     except:  # try one more time  ConnectionResetError is incompatible with python2
         result = body_from_url(url, 'application/json', auth=auth, data=data, debug=debug, method=method)
         read = result.read()
-    if result.headers["content-type"] == "application/x-download":
+    if result.headers["content-type"] == "application/x-download" or result.headers["content-type"] == "application/octet-stream":
         return(read)   # Watch out!
     if result.headers["content-type"][0:9] == "text/html":  # json decoder won't work
         return(read)   # Watch out!
