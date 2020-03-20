@@ -460,7 +460,7 @@ def main(args):
     parser.add_argument("--tmp_dir", dest="tmp_dir", default="", help="Temp dir to download too if using json_in option, default is current working dir")
     parser.add_argument("-v", "--verbose", dest="verbose", action="store_true", default=False, help="Verbose STDOUT")
     parser.add_argument("--debug", dest="debug", action="store_true", default=False, help="Submit in debug mode")
-    parser.add_argument("action",  type=str, default=False, help="Action")
+    parser.add_argument("action",  type=str, default=False, help="Action.  One of "+ ",".join(valid_actions))
 #    parser.add_argument("subaction", type=str, default=False, help="Action word 2", default=None)
     
     # get inputs

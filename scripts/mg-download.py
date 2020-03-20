@@ -57,7 +57,7 @@ def main(args):
     parser.add_argument("--token", dest="token", default=None, help="OAuth token")
     parser.add_argument("--project", dest="project", default=None, help="project ID")
     parser.add_argument("--metagenome", dest="metagenome", default=None, help="metagenome ID")
-    parser.add_argument("--file", dest="file", default=None, help="file ID for given project or metagenome")
+    parser.add_argument("--file", dest="file", default="299.1", help="file ID for given project or metagenome")
     parser.add_argument("--dir", dest="dir", default=".", help="directory to do downloads")
     parser.add_argument("--list", dest="list", action="store_true", default=False, help="list files and their info for given ID")
 
@@ -117,9 +117,9 @@ def main(args):
         mgdir = os.path.join(DOWNDIR, mg)
         if not os.path.isdir(mgdir):
             os.mkdir(mgdir)
+        filecount = 0
         for f in files:
             if FILE:
-                filecount = 0
                 if f['file_id'] == FILE:
                     filecount += 1
                     file_download(token, f, dirpath=mgdir)
@@ -128,8 +128,9 @@ def main(args):
                     file_download(token, f, dirpath=mgdir)
             else:
                 file_download(token, f, dirpath=mgdir)
-            if filecount == 0:
-                sys.exit("Didn't find file number " + FILE)
+                filecount += 1
+        if filecount == 0:
+            sys.exit("Didn't find file number " + FILE)
     return 0
 
 if __name__ == "__main__":

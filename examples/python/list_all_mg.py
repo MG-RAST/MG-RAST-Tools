@@ -48,7 +48,7 @@ sys.stderr.write("Total number of records: {:d}\n".format(total_count))
 
 for i in range(0, int(total_count / limit) +2):
 #    sys.stderr.write("Page {:d}\t".format(i))
-    sys.stdout.write("Page {:d}\t{}\n".format(i, base_url))
+    sys.stderr.write("Page {:d}\t{}\n".format(i, base_url))
     jsonstructure = obj_from_url(base_url, auth=key)
     printlist(jsonstructure)
     time.sleep(1)
