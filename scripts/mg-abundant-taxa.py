@@ -92,6 +92,8 @@ def main(args):
         url = opts.url+'/m5nr/taxonomy?'+urlencode(params, True)
         data = obj_from_url(url)
         sub_ann = set(map(lambda x: x[opts.level], data['data']))
+    biomorig = biom
+    biom = biomorig["data"]
     if biom['matrix_type'] == "dense":
         data = biom['data']
     else:

@@ -47,6 +47,7 @@ if __name__ == '__main__':
 #    rows = [x["id"] for x in jsondata["rows"]]
 
     data = jsondata # ["data"]
+    data = jsondata["data"]
 
     if DEBUG:
         print(jsonstructure)

@@ -94,8 +94,10 @@ def main(args):
         data = obj_from_url(url)
         level = 'level4' if opts.level == 'function' else opts.level
         sub_ann = set(map(lambda x: x[level], data['data']))
-    
+    biomorig = biom
+    biom = biomorig["data"] 
     # sort data
+    assert "matrix_type" in biom.keys(), repr(biom)
     if biom["matrix_type"] == "sparse":
         for d in sorted(biom['data'], key=itemgetter(2), reverse=True):
             name = biom['rows'][d[0]]['id']  # if opts.source != 'Subsystems' else biom['rows'][d[0]]['metadata']['ontology'][-1]

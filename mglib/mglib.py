@@ -72,13 +72,24 @@ def body_from_url(url, accept, auth=None, data=None, debug=False, method=None):
 
 # return python struct from JSON output of MG-RAST or Shock API
 def obj_from_url(url, auth=None, data=None, debug=False, method=None):
-    result = body_from_url(url, 'application/json', auth=auth, data=data, debug=debug, method=method)
-    if result.headers["content-type"] == "application/x-download":
-        return(result.read()) 
+    try:
+        result = body_from_url(url, 'application/json', auth=auth, data=data, debug=debug, method=method)
+        read = result.read()
+    except:  # try one more time  ConnectionResetError is incompatible with python2
+        result = body_from_url(url, 'application/json', auth=auth, data=data, debug=debug, method=method)
+        read = result.read()
+    if result.headers["content-type"] == "application/x-download" or result.headers["content-type"] == "application/octet-stream":
+        return(read)   # Watch out!
+    if result.headers["content-type"][0:9] == "text/html":  # json decoder won't work
+        return(read)   # Watch out!
+    if result.headers["content-type"] == "application/json":  # If header is set, this should work 
+        data = read.decode("utf8")
+        obj = json.loads(data)
     else:
-        obj = json.loads(result.read().decode("utf8"))
+        data = read.decode("utf8")
+        obj = json.loads(data)
     if obj is None:
-        sys.stderr.write("ERROR: return structure not valid json format\n")
+        sys.stderr.write("ERROR: return structure not valid json format\n" + repr(data))
         sys.exit(1)
     if len(list(obj.keys())) == 0:
         if debug:
@@ -121,33 +132,44 @@ def async_rest_api(url, auth=None, data=None, debug=False, delay=60):
     except:
         parameters = {"asynchronous": 1}
     submit = obj_from_url(url, auth=auth, data=data, debug=debug)
-# If "status" is nor present, or if "status" is somehow not "submitted" 
+# If "status" is nor present, or if "status" is somehow not "submitted"
 # assume this is not an asynchronous call and it's done.
-    if ('status' in submit) and (submit['status'] != 'submitted') and ('data' in submit):
-        return submit['data']
+    if type(submit) == bytes:   # can't decode
+        try: 
+            return decode("utf-8", submit)
+        except:
+            return submit
+    if ('status' in submit) and (submit['status'] != 'submitted') and (submit['status'] != "processing") and ('data' in submit):
+        return submit
+    if not ('url' in submit.keys()):
+        return submit
 #    if not (('status' in submit) and (submit['status'] == 'submitted') and ('url' in submit)):
 #        return submit  # No status, no url and no submitted
     result = obj_from_url(submit['url'], auth=auth, debug=debug)
-    try:
-        while result['status'] == 'submitted':
+    if type(result) is bytes:
+        return(result)
+    if 'status' in result.keys():
+        while result['status'] == 'submitted' or result['status'] == "processing":
             if debug:
                 print("waiting %d seconds ..."%delay)
             time.sleep(delay)
             result = obj_from_url(submit['url'], auth=auth, debug=debug)
-    except KeyError:
+    if 'url' in result.keys() or 'next' in result.keys(): # does not need to wait
+        return(result)
+    try:
         print("Error in response to "+url, file=sys.stderr)
-        print("Does not contain 'status' field, likely API syntax error", file=sys.stderr)
+        print("Does not contain 'status' or 'next' field, likely API syntax error", file=sys.stderr)
         print(json.dumps(result), file=sys.stderr)
         sys.exit(1)
     except TypeError:  # result isn't json, return it anyway
         return(result.decode("utf8"))
-    try: 
+    try:
         if 'ERROR' in result['data']:
             sys.stderr.write("ERROR: %s\n" %result['data']['ERROR'])
             print(json.dumps(result), file=sys.stderr)
             sys.exit(1)
     except KeyError:  # result doesn't have "data"
-        return result    
+        return result
     return result['data']
 
 # POST file to MG-RAST or Shock
@@ -214,14 +236,15 @@ def sparse_to_dense(sMatrix, rmax, cmax):
 # transform BIOM format to tabbed table
 # returns max value of matrix
 def biom_to_tab(biom, hdl, rows=None, use_id=True, col_name=False):
+    assert 'matrix_type' in biom.keys(), repr(biom)
     if biom['matrix_type'] == 'sparse':
         matrix = sparse_to_dense(biom['data'], biom['shape'][0], biom['shape'][1])
     else:
         matrix = biom['data']
     if col_name:
-        hdl.write( "\t%s\n" %"\t".join([c['name'] for c in biom['columns']]) )
+        hdl.write("\t%s\n" %"\t".join([c['name'] for c in biom['columns']]))
     else:
-        hdl.write( "\t%s\n" %"\t".join([c['id'] for c in biom['columns']]) )
+        hdl.write("\t%s\n" %"\t".join([c['id'] for c in biom['columns']]))
     rowmax = []
     for i, row in enumerate(matrix):
         name = biom['rows'][i]['id']
@@ -231,7 +254,7 @@ def biom_to_tab(biom, hdl, rows=None, use_id=True, col_name=False):
             continue
         try:
             rowmax.append(max(row))
-            hdl.write( "%s\t%s\n" %(name, "\t".join(map(str, row))) )
+            hdl.write("%s\t%s\n" %(name, "\t".join(map(str, row))))
         except:
             try:
                 hdl.close()
@@ -262,6 +285,7 @@ def profile_to_matrix(p):
     p['matrix_element_type'] = 'int'
     p['matrix_element_value'] = 'abundance'
     p['date'] = time.strftime("%Y-%m-%d %H:%M:%S")
+    assert 'matrix_type' in p.keys(), repr(p)
     if p['matrix_type'] == 'sparse':
         p['data'] = sparse_to_dense(p['data'], p['shape'][0], p['shape'][1])
     if trim:
@@ -301,6 +325,7 @@ def merge_biom(b1, b2):
                "id": b1['id']+'_'+b2['id'],
                "type": b1['type'] }
     # make sure we are dense
+    assert 'matrix_type' in b2.keys(), repr(b2)
     if b2['matrix_type'] == 'sparse':
         b2['data'] = sparse_to_dense(b2['data'], b2['shape'][0], b2['shape'][1])
     # get lists of ids
@@ -352,14 +377,15 @@ def biom_to_matrix(biom, col_name=False, sig_stats=False):
     except KeyError:
         rows = [r['id'] for r in biom['rows']]
 #        rows = [";".join(r['metadata']['hierarchy']) for r in biom['rows']]
+    assert "matrix_type" in biom.keys(), repr(biom)
     if biom['matrix_type'] == 'sparse':
         data = sparse_to_dense(biom['data'], len(rows), len(cols))
     else:
         data = biom['data']
     if sig_stats and ('significance' in biom['rows'][0]['metadata']) and (len(biom['rows'][0]['metadata']['significance']) > 0):
-        cols.extend( [s[0] for s in biom['rows'][0]['metadata']['significance']] )
+        cols.extend([s[0] for s in biom['rows'][0]['metadata']['significance']] )
         for i, r in enumerate(biom['rows']):
-            data[i].extend( [s[1] for s in r['metadata']['significance']] )
+            data[i].extend([s[1] for s in r['metadata']['significance']] )
     return rows, cols, data
 
 # transform tabbed table to matrix in json format
@@ -382,7 +408,7 @@ def sub_matrix(matrix, ncols):
         return matrix
     sub = list()
     for row in matrix:
-        sub.append( row[:ncols] )
+        sub.append(row[:ncols] )
     return sub
 
 # return KBase id for MG-RAST id

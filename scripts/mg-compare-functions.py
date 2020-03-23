@@ -166,7 +166,7 @@ def main(args):
     if opts.format == 'biom':
         out_hdl.write(json.dumps(biom)+"\n")
     else:
-        biom_to_tab(biom, out_hdl, rows=sub_ann)
+        biom_to_tab(biom["data"], out_hdl, rows=sub_ann)
     
     out_hdl.close()
     return 0
