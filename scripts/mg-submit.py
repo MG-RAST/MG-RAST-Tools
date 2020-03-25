@@ -460,7 +460,7 @@ def main(args):
     parser.add_argument("--tmp_dir", dest="tmp_dir", default="", help="Temp dir to download too if using json_in option, default is current working dir")
     parser.add_argument("-v", "--verbose", dest="verbose", action="store_true", default=False, help="Verbose STDOUT")
     parser.add_argument("--debug", dest="debug", action="store_true", default=False, help="Submit in debug mode")
-    parser.add_argument("action",  type=str, default=False, help="Action.  One of "+ ",".join(valid_actions))
+    parser.add_argument("action",  type=str, default=False, help="Action.  One of "+ ",".join(valid_actions), nargs='+')
 #    parser.add_argument("subaction", type=str, default=False, help="Action word 2", default=None)
     
     # get inputs
@@ -474,7 +474,7 @@ def main(args):
         if len(opts.action) < 1:
             sys.stderr.write("ERROR: missing action\n")
             return 1
-        action = opts.action
+        action = opts.action[0]
     args = opts.action
     API_URL = opts.mgrast_url
     SHOCK_URL = opts.shock_url
@@ -494,9 +494,9 @@ def main(args):
             sys.stderr.write("ERROR: invalid submit, must have one of project_id, project_name, or metadata\n")
             return 1
         if (len(args) < 2) or (args[1] not in submit_types):
-            sys.stderr.write("ERROR: invalid submit option. use one of: %s\n"%", ".join(submit_types))
+            sys.stderr.write("ERROR: invalid submit option '%s'. use one of: %s\n"%( args[1], ", ".join(submit_types)))
             return 1
-        if ((args[1] == "simple") and (len(args) < 3) or
+        if ( ((args[1] == "simple") and (len(args) < 3)) or
              ((args[1] == "batch") and (len(args) != 3)) or
              ((args[1] == "demultiplex") and (len(args) < 3)) or
              ((args[1] == "pairjoin") and (len(args) != 4)) or
