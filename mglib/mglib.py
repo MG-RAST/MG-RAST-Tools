@@ -72,6 +72,8 @@ def body_from_url(url, accept, auth=None, data=None, debug=False, method=None):
 
 # return python struct from JSON output of MG-RAST or Shock API
 def obj_from_url(url, auth=None, data=None, debug=False, method=None):
+    if type(data) is str:
+        data=data.encode("utf8")
     try:
         result = body_from_url(url, 'application/json', auth=auth, data=data, debug=debug, method=method)
         read = result.read()
@@ -100,7 +102,7 @@ def obj_from_url(url, auth=None, data=None, debug=False, method=None):
         sys.stderr.write("ERROR: %s\n" %obj['ERROR'])
         sys.exit(1)
     if ('error' in obj) and obj['error']:
-        if isinstance(obj['error'], basestring):
+        if isinstance(obj['error'], str):
             sys.stderr.write("ERROR:\n%s\n" %obj['error'])
         else:
             sys.stderr.write("ERROR: %s\n" %obj['error'][0])
