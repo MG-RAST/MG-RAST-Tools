@@ -9,9 +9,8 @@ from mglib import async_rest_api, get_auth_token, API_URL
 
 DEBUG = 0
 
-
 if __name__ == '__main__':
-    usage = "usage: %prog -i <input sequence file> -o <output file>"
+    usage = "usage: %prog [options]\nFunction: retrieves and presents table of sequence IDs and annotation table results"
     parser = OptionParser(usage)
     parser.add_option("-s", "--source", dest="source", default="RefSeq", help="Annotation source: RefSeq, GenBank, IMG, SEED, TrEMBL, SwissProt, PATRIC, KEG, RDP, Greengenes, LSU, SSU")
     parser.add_option("-g", "--grouplevel", dest="grouplevel", default="domain", help="Grouping level: strain, species, genus, family, order, class, phylum, domain / function, level1, level2, level3")
@@ -36,7 +35,7 @@ if __name__ == '__main__':
 
 # construct API call
     base_url = API_URL + "/profile/{}".format(metagenomes)
-    base_url = base_url + "?asynchronous=1&group_level=%s&result_type=%s&auth=%s&source=%s&evalue=%s&" % (group_level, result_type, key, source, evalue)
+    base_url = base_url + "?asynchronous=1&group_level=%s&result_type=%s&source=%s&evalue=%s&" % (group_level, result_type, source, evalue)
     URI = base_url + "&".join(["id=%s" % m for m in metagenomes.split(",")])
     URI = base_url 
     print(URI, file=sys.stderr)
@@ -48,6 +47,7 @@ if __name__ == '__main__':
 #    rows = [x["id"] for x in jsondata["rows"]]
 
     data = jsondata # ["data"]
+    data = jsondata["data"]
 
     if DEBUG:
         print(jsonstructure)

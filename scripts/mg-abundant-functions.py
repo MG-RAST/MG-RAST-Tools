@@ -48,7 +48,7 @@ def main(args):
     parser.add_argument("--filter_level", dest="filter_level", default=None, help="function level to filter by")
     parser.add_argument("--top", dest="top", type=int, default=10, help="display only the top N taxa, default is 10")
     parser.add_argument("--evalue", dest="evalue", type=int, default=5, help="negative exponent value for maximum e-value cutoff, default is 5")
-    parser.add_argument("--identity", dest="identity", type=int, default=60, help="percent value for minimum % identity cutoff, default is 60")
+    parser.add_argument("--identity", dest="identity", type=int, default=60, help="percent value for minimum %% identity cutoff, default is 60")
     parser.add_argument("--length", dest="length", type=int, default=15, help="value for minimum alignment length cutoff, default is 15")
     parser.add_argument("--version", type=int, dest="version", default=1, help="M5NR annotation version to use, default is 1")
     
@@ -94,8 +94,10 @@ def main(args):
         data = obj_from_url(url)
         level = 'level4' if opts.level == 'function' else opts.level
         sub_ann = set(map(lambda x: x[level], data['data']))
-    
+    biomorig = biom
+    biom = biomorig["data"] 
     # sort data
+    assert "matrix_type" in biom.keys(), repr(biom)
     if biom["matrix_type"] == "sparse":
         for d in sorted(biom['data'], key=itemgetter(2), reverse=True):
             name = biom['rows'][d[0]]['id']  # if opts.source != 'Subsystems' else biom['rows'][d[0]]['metadata']['ontology'][-1]
