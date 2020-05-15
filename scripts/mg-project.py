@@ -49,7 +49,7 @@ AUTHORS
 """
 
 synch_pause = 900
-valid_actions = ["get-info", "get-metadata", "update-metadata", "make-public", "submit-ebi", "status-ebi"]
+valid_actions = ["get-info", "get-metadata", "update-metadata", "make-public", "submit-ebi", "status-ebi" , "move-metagenomes"]
 
 
 def main(args):
@@ -116,6 +116,10 @@ def main(args):
     elif action == "status-ebi":
         data = obj_from_url(opts.url+'/submission/'+pid, auth=token)
         print(json.dumps(data, sort_keys=True, indent=4))
+    elif action == "move-metagenoes":
+        next ;
+        data = obj_from_url(opts.url+'/submission/'+pid, auth=token)
+        print(json.dumps(data, sort_keys=True, indent=4))    
     
     return 0
 
