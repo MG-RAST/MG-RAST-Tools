@@ -200,6 +200,9 @@ def post_file(url, keyname, filename, data={}, auth=None, debug=False):
             sys.stderr.write("ERROR (%s): %s\n" %(error.code, error.read()))
         finally:
             sys.exit(1)
+    except OSError as error: 
+        sys.stderr.write("ERROR with post_file\n")
+        sys.stderr.write("ERROR (%s): %s\n" %(error.code, error.read()))
     if not res:
         sys.stderr.write("ERROR: no results returned\n")
         sys.exit(1)
