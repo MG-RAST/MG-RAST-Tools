@@ -6,6 +6,7 @@ import copy
 import base64
 import json
 import string
+import time
 import random
 import hashlib
 import subprocess
@@ -176,6 +177,7 @@ def async_rest_api(url, auth=None, data=None, debug=False, delay=60):
 
 # POST file to MG-RAST or Shock
 def post_file(url, keyname, filename, data={}, auth=None, debug=False):
+
     if debug:
         print("post_file", url)
     data[keyname] = (filename, open(filename, 'rb'))
@@ -187,27 +189,44 @@ def post_file(url, keyname, filename, data={}, auth=None, debug=False):
         print("data:\t"+repr(data))
         print("header:\t"+repr(header))
         print("url:\t"+url)
-    try:
-        res = requests.post(url, data=datagen, headers=header, stream=True)
-    except HTTPError as error:
+
+    success = False
+    sleep   = 60
+    maxt    = 3
+    counter = 0
+    obj     = None
+
+    # try maxt times
+    while not success and counter < maxt :
         try:
-            eobj = json.loads(error.read())
-            if 'ERROR' in eobj:
-                sys.stderr.write("ERROR (%s): %s\n" %(error.code, eobj['ERROR']))
-            elif 'error' in eobj:
-                sys.stderr.write("ERROR (%s): %s\n" %(error.code, eobj['error'][0]))
-        except:
-            sys.stderr.write("ERROR (%s): %s\n" %(error.code, error.read()))
-        finally:
-            sys.exit(1)
-    if not res:
-        sys.stderr.write("ERROR: no results returned\n")
-        sys.exit(1)
-    obj = json.loads(res.content.decode("utf8"))
-    if debug:
-        print(json.dumps(obj))
-    if obj is None:
-        sys.stderr.write("ERROR: return structure not valid json format\n")
+            res = requests.post(url, data=datagen, headers=header, stream=True)
+        except HTTPError as error:
+            try:
+                eobj = json.loads(error.read())
+                if 'ERROR' in eobj:
+                    sys.stderr.write("ERROR (%s): %s\n" %(error.code, eobj['ERROR']))
+                elif 'error' in eobj:
+                    sys.stderr.write("ERROR (%s): %s\n" %(error.code, eobj['error'][0]))
+            except:
+                sys.stderr.write("ERROR (%s): %s\n" %(error.code, error.read()))
+            finally:
+                # sys.exit(1)
+                return None
+        if not res:
+            sys.stderr.write("ERROR: no results returned for %s\n"% (filename))
+            # sys.exit(1)
+        else: 
+            obj = json.loads(res.content.decode("utf8"))
+            if debug:
+                print(json.dumps(obj))
+            if obj is None:
+                sys.stderr.write("ERROR: return structure not valid json format\n")
+            else:
+                success = True
+        # increase counter
+        if not success :
+            counter += 1
+            time.sleep(counter * sleep)
     return(obj)
 
 # safe handling of stdout for piping
