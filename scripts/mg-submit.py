@@ -343,41 +343,79 @@ def upload(files, verbose):
         "user": mgrast_auth['login'],
         "email": mgrast_auth['email']
     })
-    for i, f in enumerate(files):
-        # get format
-        if f.endswith(".gz"):
-            fformat = "gzip"
-            fname = os.path.basename(f[:-3])
-        elif f.endswith(".bz2"):
-            fformat = "bzip2"
-            fname = os.path.basename(f[:-4])
-        else:
-            fformat = "upload"
-            fname = os.path.basename(f)
-        # POST to shock
-        data = {
-            "file_name": fname,
-            "attributes_str": attr
-        }
-        if verbose:
-            if len(files) > 1:
-                print("Uploading file %d of %d (%s) to MG-RAST Shock"%(i+1, len(files), f))
+
+    results = {
+        'submitted' : [] ,
+        'failed'    : [] ,
+        'files'     : files
+    }
+
+    # Settings for nr tries
+    max     = 3
+    current = 0
+    sleep   = 60
+
+    while len(results['files']) and current < max :
+        
+        # increase counter
+        current += 1
+
+        for i, f in enumerate(results['files']):
+            # get format
+            print(i,f)
+            if f.endswith(".gz"):
+                fformat = "gzip"
+                fname = os.path.basename(f[:-3])
+            elif f.endswith(".bz2"):
+                fformat = "bzip2"
+                fname = os.path.basename(f[:-4])
             else:
-                print("Uploading file %s to MG-RAST Shock"%(f))
-        result = post_file(SHOCK_URL+"/node", fformat, f, data=data, auth=mgrast_auth['token'], debug=verbose)
-        if verbose:
-            print(json.dumps(result['data']))
-            if len(files) > 1:
-                print("Setting info for file %d of %d (%s) in MG-RAST inbox"%(i+1, len(files), f))
-            else:
-                print("Setting info for file %s in MG-RAST inbox"%(f))
-        # compute file info
-        info = obj_from_url(API_URL+"/inbox/info/"+result['data']['id'], auth=mgrast_auth['token'], debug=verbose)
-        if verbose:
-            print(json.dumps(info))
-        else:
-            print(info['status'])
-        fids.append(result['data']['id'])
+                fformat = "upload"
+                fname = os.path.basename(f)
+            # POST to shock
+            data = {
+                "file_name": fname,
+                "attributes_str": attr
+            }
+            if verbose:
+                if len(files) > 1:
+                    print("Uploading file %d of %d (%s) to MG-RAST Shock"%(i+1, len(files), f))
+                else:
+                    print("Uploading file %s to MG-RAST Shock"%(f) )
+            if True : # change to debug
+                print("Submitting %s to %s " % (f,SHOCK_URL))
+            result = post_file(SHOCK_URL+"/node", fformat, f, data=data, auth=mgrast_auth['token'], debug=verbose)
+    
+            if result : 
+                if verbose:
+                    print(json.dumps(result['data']))
+                    if len(files) > 1:
+                        print("Setting info for file %d of %d (%s) in MG-RAST inbox"%(i+1, len(files), f))
+                    else:
+                        print("Setting info for file %s in MG-RAST inbox"%(f))
+                # compute file info
+                info = obj_from_url(API_URL+"/inbox/info/"+result['data']['id'], auth=mgrast_auth['token'], debug=verbose)
+                if verbose:
+                    print(json.dumps(info))
+                else:
+                    print(info['status'])
+                fids.append(result['data']['id'])
+                results['submitted'].append(f)
+            else :
+                print(f)
+                sys.stderr.write("ERROR: can not submit %s\n" % (f) )
+                results['failed'].append(f)
+
+        if verbose :
+            print( results ) 
+            print( "Processed %d\tFailed %d" % (len(results['files']), len(results['failed']) ) )
+        # switch list, process failed again
+        results['files']    = results['failed']
+        results['failed']   = []
+
+        # wait 
+        time.sleep( current * sleep )
+      
     return fids
 
 def archive_upload(afile, verbose):
