@@ -81,21 +81,21 @@ def test_matrix_04():
     o.write(str(obj))
 
 def test_large_01():
-    URI = API_URL + '/matrix/organism?group_level=phylum&source=RDP&hit_type=single&result_type=abundance&evalue=1&identity=60&length=15&taxid=0&id=mgm4510219.3'
+    URI = API_URL + '/matrix/organism?group_level=phylum&source=RDP&hit_type=single&result_type=abundance&evalue=1&identity=60&length=15&taxid=0&id=mgm4440026.3'
     obj = obj_from_url(URI)
     o = open("5.txt", "w")
     o.write(str(obj))
     os.remove("5.txt")
 
 def test_large_02():
-    URI = API_URL + '/matrix/organism?group_level=phylum&source=RefSeq&hit_type=single&result_type=abundance&evalue=1&identity=60&length=15&taxid=0&id=mgm4510219.3'
+    URI = API_URL + '/matrix/organism?group_level=phylum&source=RefSeq&hit_type=single&result_type=abundance&evalue=1&identity=60&length=15&taxid=0&id=mgm4440026.3'
     obj = obj_from_url(URI)
     o = open("6.txt", "w")
     o.write(str(obj))
     os.remove("6.txt")
 
 def test_large_03():
-    URI = API_URL + '/matrix/organism?group_level=phylum&source=SEED&hit_type=single&result_type=abundance&evalue=1&identity=60&length=15&taxid=0&id=mgm4510219.3'
+    URI = API_URL + '/matrix/organism?group_level=phylum&source=SEED&hit_type=single&result_type=abundance&evalue=1&identity=60&length=15&taxid=0&id=mgm4440026.3'
     obj = obj_from_url(URI)
     o = open("7.txt", "w")
     o.write(str(obj))
