@@ -29,14 +29,14 @@ SYNOPSIS
         submit demultiplex <seq file> [<index file>, --barcode <barcode file>, --rc_index]
         submit pairjoin <pair1 seq file> <pair2 seq file> [--retain, --mg_name <name>]
         submit pairjoin_demultiplex <pair1 seq file> <pair2 seq file> <index file> [--barcode <barcode file>, --retain, --rc_index]
-    
+
     Note:
         each 'submit' action must include one of: --project_id, --project_name, --metadata
         pairjoin or pairjoin_demultiplex must contain one of: --barcode, --metadata
 
 DESCRIPTION
     MG-RAST submission client
-    
+
     supported file types  |     extensions
     ----------------------|--------------------------
         sequence          |  .fasta, .fastq
@@ -46,7 +46,7 @@ DESCRIPTION
         bzip2 compressed  |  .bz2
         zip archive       |  .zip
         tar archive       |  .tar, .tar.gz, .tar.bz2
-    
+
     pipeline options      |    description
     ----------------------|---------------------------
        --assembled        |  sequences are assembeled
@@ -82,26 +82,26 @@ AUTHORS
 synch_pause = 900
 mgrast_auth = {}
 valid_actions = ["login", "list", "status", "delete", "submit"]
-submit_types  = ["simple", "batch", "demultiplex", "pairjoin", "pairjoin_demultiplex"]
+submit_types = ["simple", "batch", "demultiplex", "pairjoin", "pairjoin_demultiplex"]
 
 def listall():
     data = obj_from_url(API_URL+"/submission/list", auth=mgrast_auth['token'])
     submissions = sorted(data['submissions'], key=itemgetter('timestamp'))
     pt = PrettyTable(["ID", "type", "status", "time"])
     for s in submissions:
-        row = [ s['id'], s['type'], s['status'], s['timestamp'] ]
+        row = [s['id'], s['type'], s['status'], s['timestamp']]
         pt.add_row(row)
     pt.align = "l"
     print(pt)
 
 def status(sid):
     data = obj_from_url(API_URL+"/submission/"+sid+'?full=1', auth=mgrast_auth['token'])
-    
+
     # check for errors
     if ('error' in data) and data['error']:
         sys.stderr.write("ERROR: %s\n"%data['error'])
         sys.exit(1)
-    
+
     try:
         fids   = map(lambda x: x['id'], data['inputs'])
         fnames = map(lambda x: x['filename'], data['inputs'])
@@ -110,13 +110,13 @@ def status(sid):
         fids   = map(lambda x: x['id'], data['inputs'].values())
         fnames = map(lambda x: x['filename'], data['inputs'].values())
         fsizes = map(lambda x: str(x['filesize']), data['inputs'].values())
-    
+
     # submission summary
     pt_summary = PrettyTable(["submission ID", "type", "project", "submit time", "input file ID", "input file name", "input file size", "status"])
     pt_summary.add_row([data['id'], data['type'], data['project'], data['info']['submittime'], "\n".join(fids), "\n".join(fnames), "\n".join(fsizes), data['state']])
     pt_summary.align = "l"
     print(pt_summary)
-    
+
     # submission status
     if ('preprocessing' in data) and data['preprocessing']:
         pt_status = PrettyTable(["submission step", "step name", "step status", "step inputs"])
@@ -127,7 +127,7 @@ def status(sid):
             pt_status.add_row([i, p['stage'], pstatus, "\n".join(p['inputs'])])
         pt_status.align = "l"
         print(pt_status)
-    
+
     # metagenome info
     if ('metagenomes' in data) and data['metagenomes']:
         pt_mg = PrettyTable(["metagenome ID", "metagenome name", "status", "current steps", "submit time", "complete time", "pipeline ID"])
@@ -250,13 +250,17 @@ def seqs_from_json(json_in, tmp_dir):
     return stype, files
 
 def submit(stype, files, opts):
+    ''' submit(stype, files, opts)  
+    Call MG-RAST API to upload and submit one or more files
+    stype one of "simple" "demultiplex" "pairjoin" "pairjoin_demultiplex" '''
+
     fids = []
     # post files to shock
     if stype == 'batch':
         fids = archive_upload(files[0], opts.verbose)
     else:
         fids = upload(files, opts.verbose)
-    
+
     # set POST data
     data = {}
     if opts.debug:
@@ -291,7 +295,7 @@ def submit(stype, files, opts):
         data['index_file'] = fids[2]
         data['retain'] = 1 if opts.retain else 0
         data['rc_index'] = 1 if opts.rc_index else 0
-    
+
     # set pipeline flags - assembeled is special case
     if opts.assembled:
         data['assembled'] = 1
@@ -316,7 +320,7 @@ def submit(stype, files, opts):
         data['screen_indexes'] = opts.screen_indexes
     if opts.priority:
         data['priority'] = opts.priority
-    
+
     # submit it
     if opts.verbose:
         print("Submitting to MG-RAST with the following parameters:")
@@ -336,6 +340,7 @@ def submit(stype, files, opts):
         status(result['id'])
 
 def upload(files, verbose):
+    ''' upload(files, verbose) -- call MG-RAST api to upload one or more files to inbox '''
     fids = []
     attr = json.dumps({
         "type": "inbox",
@@ -345,18 +350,18 @@ def upload(files, verbose):
     })
 
     results = {
-        'submitted' : [] ,
-        'failed'    : [] ,
-        'files'     : files
+        'submitted': [],
+        'failed': [],
+        'files': files
     }
 
     # Settings for nr tries
-    max     = 3
+    maxtries = 3
     current = 0
     sleep   = 60
 
-    while len(results['files']) and current < max :
-        
+    while len(results['files']) and current < maxtries:
+
         # increase counter
         current += 1
 
@@ -381,12 +386,12 @@ def upload(files, verbose):
                 if len(files) > 1:
                     print("Uploading file %d of %d (%s) to MG-RAST Shock"%(i+1, len(files), f))
                 else:
-                    print("Uploading file %s to MG-RAST Shock"%(f) )
-            if True : # change to debug
+                    print("Uploading file %s to MG-RAST Shock"%(f))
+            if True: # change to debug
                 print("Submitting %s to %s " % (f,SHOCK_URL))
             result = post_file(SHOCK_URL+"/node", fformat, f, data=data, auth=mgrast_auth['token'], debug=verbose)
-    
-            if result : 
+
+            if result:
                 if verbose:
                     print(json.dumps(result['data']))
                     if len(files) > 1:
@@ -401,21 +406,21 @@ def upload(files, verbose):
                     print(info['status'])
                 fids.append(result['data']['id'])
                 results['submitted'].append(f)
-            else :
+            else:
                 print(f)
-                sys.stderr.write("ERROR: can not submit %s\n" % (f) )
+                sys.stderr.write("ERROR: can not submit %s\n" % (f))
                 results['failed'].append(f)
 
-        if verbose :
-            print( results ) 
-            print( "Processed %d\tFailed %d" % (len(results['files']), len(results['failed']) ) )
+        if verbose:
+            print(results)
+            print("Processed %d\tFailed %d" % (len(results['files']), len(results['failed'])))
         # switch list, process failed again
         results['files']    = results['failed']
         results['failed']   = []
 
-        # wait 
-        time.sleep( current * sleep )
-      
+        # wait
+        time.sleep(current * sleep)
+
     return fids
 
 def archive_upload(afile, verbose):
@@ -498,12 +503,12 @@ def main(args):
     parser.add_argument("--tmp_dir", dest="tmp_dir", default="", help="Temp dir to download too if using json_in option, default is current working dir")
     parser.add_argument("-v", "--verbose", dest="verbose", action="store_true", default=False, help="Verbose STDOUT")
     parser.add_argument("--debug", dest="debug", action="store_true", default=False, help="Submit in debug mode")
-    parser.add_argument("action",  type=str, default=False, help="Action.  One of "+ ",".join(valid_actions), nargs='+')
+    parser.add_argument("action", type=str, default=False, help="Action.  One of "+ ",".join(valid_actions), nargs='+')
 #    parser.add_argument("subaction", type=str, default=False, help="Action word 2", default=None)
-    
+
     # get inputs
     opts = parser.parse_args()
-    
+
     # special case
     json_submit = True if opts.json_in and os.path.isfile(opts.json_in) else False
     if json_submit:
@@ -516,23 +521,23 @@ def main(args):
     args = opts.action
     API_URL = opts.mgrast_url
     SHOCK_URL = opts.shock_url
-     
+
     if opts.verbose and opts.debug:
         print("##### Running in Debug Mode #####")
-    
+
     # validate inputs
     if action not in valid_actions:
         sys.stderr.write("ERROR: invalid action. use one of: %s\n"%", ".join(valid_actions))
         return 1
-    elif (action in ["status", "delete"]) and (len(args) < 2):
+    if (action in ["status", "delete"]) and (len(args) < 2):
         sys.stderr.write("ERROR: %s missing submission ID\n"%action)
         return 1
-    elif (action == "submit") and (not json_submit):
+    if (action == "submit") and (not json_submit):
         if not (opts.project_id or opts.project_name or opts.metadata):
             sys.stderr.write("ERROR: invalid submit, must have one of project_id, project_name, or metadata\n")
             return 1
         if (len(args) < 2) or (args[1] not in submit_types):
-            sys.stderr.write("ERROR: invalid submit option '%s'. use one of: %s\n"%( args[1], ", ".join(submit_types)))
+            sys.stderr.write("ERROR: invalid submit option '%s'. use one of: %s\n"%(args[1], ", ".join(submit_types)))
             return 1
         if ( ((args[1] == "simple") and (len(args) < 3)) or
              ((args[1] == "batch") and (len(args) != 3)) or
@@ -544,7 +549,7 @@ def main(args):
         if ((args[1] == "demultiplex") or (args[1] == "pairjoin_demultiplex")) and (not (opts.metadata or opts.barcode)):
             sys.stderr.write("ERROR: submit %s requires either metadata or barcode file\n"%args[1])
             return 1
-    
+
     # explict login
     token = get_auth_token(opts)
     if action == "login":
@@ -552,12 +557,12 @@ def main(args):
             token = input('Enter your MG-RAST auth token: ')
         login(token)
         return 0
-    
+
     # get auth object, get from token if no login
     mgrast_auth = get_auth(token)
     if not mgrast_auth:
         return 1
-    
+
     # actions
     if action == "list":
         if opts.verbose:
@@ -589,4 +594,3 @@ def main(args):
 
 if __name__ == "__main__":
     sys.exit(main(sys.argv))
-
