@@ -83,7 +83,7 @@ def main(args):
     token = get_auth_token(opts)
     
     # build call url
-    url = opts.url+'/metagenome/'+opts.id+'?verbosity=stats'
+    url = opts.url+'/metagenome/'+opts.id+'?verbosity=stats&public=1'
 
     # retrieve / output data
     result = obj_from_url(url, auth=token)
