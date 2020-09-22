@@ -94,6 +94,7 @@ def main(args):
         tmp_hdl.close()
     
     # check values to see if already normalized, otherwise R fails badly
+    data = list(data)
     if len(data) > 0:
         maxval = max(map(max, data))
     if maxval <= 1:
