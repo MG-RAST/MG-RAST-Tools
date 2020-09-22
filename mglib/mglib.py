@@ -392,6 +392,8 @@ def merge_biom(b1, b2):
 
 # transform BIOM format to matrix in json format
 def biom_to_matrix(biom, col_name=False, sig_stats=False):
+    if "columns" not in biom.keys():
+       biom = biom["data"]
     if col_name:
         cols = [c['name'] for c in biom['columns']]
     else:
