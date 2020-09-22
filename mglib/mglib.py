@@ -180,7 +180,7 @@ def post_file(url, keyname, filename, data={}, auth=None, debug=False):
 
     if debug:
         print("post_file", url)
-    data[keyname] = (filename, open(filename, 'rb'))
+    data[keyname] = (os.path.basename(filename), open(filename, 'rb'))
     datagen = MultipartEncoder(data)
     header = {"Content-Type": datagen.content_type}
     if auth:
