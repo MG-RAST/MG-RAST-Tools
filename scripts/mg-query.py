@@ -35,4 +35,7 @@ if __name__ == '__main__':
     if type(jsonstructure) == dict:    # If we have data, not json structure
         print(json.dumps(jsonstructure), file=sys.stdout)
     else:
-        sys.stdout.write(jsonstructure.decode("utf-8"))
+        try:
+            sys.stdout.write(jsonstructure.decode("utf-8"))
+        except UnicodeDecodeError:
+            sys.stdout.buffer.write(jsonstructure)
