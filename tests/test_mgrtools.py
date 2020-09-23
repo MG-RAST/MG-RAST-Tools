@@ -210,7 +210,7 @@ def test_mg_m5nrtoolspl():
     assert b"alcohol dehydrogenase" in out
 
 def test_query_matrix():
-    s = '''mg-query.py 'https://api.mg-rast.org/matrix/organism?group_level=phylum&source=SEED&hit_type=single&result_type=abundance&evalue=1&identity=60&length=15&taxid=0&id=mgm4510219.3' > matrix.biom'''
+    s = '''mg-query.py 'http://api.mg-rast.org/matrix/organism?group_level=phylum&source=SEED&hit_type=single&result_type=abundance&evalue=1&identity=60&length=15&taxid=0&id=mgm4510219.3' > mgm4510219.3SEED.biom'''
     stat, out, err = runme(s)
     assert stat == 0
 def test_mg_biom_view():
