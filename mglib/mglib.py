@@ -14,11 +14,11 @@ import requests
 from requests_toolbelt import MultipartEncoder
 
 try:  # python3
-    from urllib.parse import urlparse, urlencode, parse_qs
+    from urllib.parse import urlparse, urlencode, parse_qs, quote
     from urllib.request import urlopen, Request
     from urllib.error import HTTPError
 except ImportError:  # python2
-    from urlparse import urlparse, parse_qs
+    from urlparse import urlparse, parse_qs, quote
     from urllib import urlencode
     from urllib2 import urlopen, Request, HTTPError
 
@@ -73,6 +73,7 @@ def body_from_url(url, accept, auth=None, data=None, debug=False, method=None):
 
 # return python struct from JSON output of MG-RAST or Shock API
 def obj_from_url(url, auth=None, data=None, debug=False, method=None):
+    url = quote(url, safe='/:=?&', encoding="utf-8", errors="strict")
     if type(data) is str:
         data=data.encode("utf8")
     try:
