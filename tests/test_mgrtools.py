@@ -204,7 +204,7 @@ def test_mg_submit():
     assert stat == 0
 
 def test_mg_m5nrtoolspl():
-    s = '''m5nr-tools.pl --api https://api.mg-rast.org/ --option annotation --source RefSeq --md5 0b95101ffea9396db4126e4656460ce5,068792e95e38032059ba7d9c26c1be78,0b96c9'''
+    s = '''PERL_LWP_SSL_VERIFY_HOSTNAME=0 && m5nr-tools.pl --api https://api.mg-rast.org/ --option annotation --source RefSeq --md5 0b95101ffea9396db4126e4656460ce5,068792e95e38032059ba7d9c26c1be78,0b96c9'''
     stat, out, err = runme(s)
     assert stat == 0
     assert b"alcohol dehydrogenase" in out
