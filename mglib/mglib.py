@@ -6,7 +6,6 @@ import copy
 import base64
 import json
 import string
-import time
 import random
 import hashlib
 import subprocess
@@ -76,12 +75,16 @@ def obj_from_url(url, auth=None, data=None, debug=False, method=None):
     url = quote(url, safe='/:=?&', encoding="utf-8", errors="strict")
     if type(data) is str:
         data=data.encode("utf8")
+    if debug:
+        print("Data", repr(data))
     try:
         result = body_from_url(url, 'application/json', auth=auth, data=data, debug=debug, method=method)
         read = result.read()
     except:  # try one more time  ConnectionResetError is incompatible with python2
         result = body_from_url(url, 'application/json', auth=auth, data=data, debug=debug, method=method)
         read = result.read()
+    if debug:
+        print("Result", repr(read))
     if result.headers["content-type"] == "application/x-download" or result.headers["content-type"] == "application/octet-stream":
         return(read)   # Watch out!
     if result.headers["content-type"][0:9] == "text/html":  # json decoder won't work
@@ -203,6 +206,7 @@ def post_file(url, keyname, filename, data={}, auth=None, debug=False):
             res = requests.post(url, data=datagen, headers=header, stream=True)
         except HTTPError as error:
             try:
+                sys.stderr.write("Retrying POST "+url, repr(datagen), repr(headers))
                 eobj = json.loads(error.read())
                 if 'ERROR' in eobj:
                     sys.stderr.write("ERROR (%s): %s\n" %(error.code, eobj['ERROR']))
