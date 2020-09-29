@@ -23,7 +23,7 @@ except ImportError:  # python2
 
 from .__init__ import API_URL
 
-if not sys.version_info[0:2][0] == 3 and not sys.version_info[0:2] == (2, 7) :
+if not sys.version_info[0:2][0] == 3 and not sys.version_info[0:2] == (2, 7):
     sys.stderr.write('ERROR: MG-RAST Tools requires at least Python 2.7.')
     exit(1)
 
@@ -74,7 +74,7 @@ def body_from_url(url, accept, auth=None, data=None, debug=False, method=None):
 def obj_from_url(url, auth=None, data=None, debug=False, method=None):
     url = quote(url, safe='/:=?&', encoding="utf-8", errors="strict")
     if type(data) is str:
-        data=data.encode("utf8")
+        data = data.encode("utf8")
     if debug:
         print("Data", repr(data))
     try:
@@ -89,7 +89,7 @@ def obj_from_url(url, auth=None, data=None, debug=False, method=None):
         return(read)   # Watch out!
     if result.headers["content-type"][0:9] == "text/html":  # json decoder won't work
         return(read)   # Watch out!
-    if result.headers["content-type"] == "application/json":  # If header is set, this should work 
+    if result.headers["content-type"] == "application/json":  # If header is set, this should work
         data = read.decode("utf8")
         obj = json.loads(data)
     else:
@@ -142,8 +142,8 @@ def async_rest_api(url, auth=None, data=None, debug=False, delay=60):
 # If "status" is nor present, or if "status" is somehow not "submitted"
 # assume this is not an asynchronous call and it's done.
     if type(submit) == bytes:   # can't decode
-        try: 
-            return decode("utf-8", submit)
+        try:
+            return submit.decode("utf-8")
         except:
             return submit
     if ('status' in submit) and (submit['status'] != 'submitted') and (submit['status'] != "processing") and ('data' in submit):
@@ -201,12 +201,12 @@ def post_file(url, keyname, filename, data={}, auth=None, debug=False):
     obj     = None
 
     # try maxt times
-    while not success and counter < maxt :
+    while not success and counter < maxt:
         try:
             res = requests.post(url, data=datagen, headers=header, stream=True)
         except HTTPError as error:
             try:
-                sys.stderr.write("Retrying POST "+url, repr(datagen), repr(headers))
+                sys.stderr.write("Retrying POST "+url, repr(datagen), repr(header))
                 eobj = json.loads(error.read())
                 if 'ERROR' in eobj:
                     sys.stderr.write("ERROR (%s): %s\n" %(error.code, eobj['ERROR']))
@@ -217,13 +217,13 @@ def post_file(url, keyname, filename, data={}, auth=None, debug=False):
             finally:
                 # sys.exit(1)
                 return None
-        except OSError as error: 
+        except OSError as error:
             sys.stderr.write("ERROR with post_file\n")
             sys.stderr.write("ERROR (%s): %s\n" %(error.code, error.read()))
         if not res:
             sys.stderr.write("ERROR: no results returned for %s\n"% (filename))
             # sys.exit(1)
-        else: 
+        else:
             obj = json.loads(res.content.decode("utf8"))
             if debug:
                 print(json.dumps(obj))
@@ -232,7 +232,7 @@ def post_file(url, keyname, filename, data={}, auth=None, debug=False):
             else:
                 success = True
         # increase counter
-        if not success :
+        if not success:
             counter += 1
             time.sleep(counter * sleep)
     return(obj)
@@ -392,7 +392,7 @@ def merge_biom(b1, b2):
                 add_row.append(b2['data'][i][j])
         mBiom['rows'].append(r)
         mBiom['data'].append(add_row)
-    mBiom['shape'] = [ len(mBiom['rows']), len(mBiom['columns']) ]
+    mBiom['shape'] = [len(mBiom['rows']), len(mBiom['columns'])]
     return mBiom
 
 # transform BIOM format to matrix in json format
@@ -414,9 +414,9 @@ def biom_to_matrix(biom, col_name=False, sig_stats=False):
     else:
         data = biom['data']
     if sig_stats and ('significance' in biom['rows'][0]['metadata']) and (len(biom['rows'][0]['metadata']['significance']) > 0):
-        cols.extend([s[0] for s in biom['rows'][0]['metadata']['significance']] )
+        cols.extend([s[0] for s in biom['rows'][0]['metadata']['significance']])
         for i, r in enumerate(biom['rows']):
-            data[i].extend([s[1] for s in r['metadata']['significance']] )
+            data[i].extend([s[1] for s in r['metadata']['significance']])
     return rows, cols, data
 
 # transform tabbed table to matrix in json format
@@ -439,7 +439,7 @@ def sub_matrix(matrix, ncols):
         return matrix
     sub = list()
     for row in matrix:
-        sub.append(row[:ncols] )
+        sub.append(row[:ncols])
     return sub
 
 # return KBase id for MG-RAST id
@@ -471,7 +471,7 @@ def kbids_to_mgids(kbids):
 #  or reverse
 def kbid_lookup(ids, reverse=False):
     request = 'mg2kb' if reverse else 'kb2mg'
-    post = json.dumps({'ids': ids}, separators=(',',':'))
+    post = json.dumps({'ids': ids}, separators=(',', ':'))
     data = obj_from_url(API_URL+'/job/'+request, auth=auth, data=post)
     return data['data']
 
@@ -482,7 +482,7 @@ def get_auth_token(opts=None):
         return os.environ['MGRKEY']
     if hasattr(opts, "token") and opts.token is not None:
         return opts.token
-    elif hasattr(opts, 'user') and hasattr(opts, 'passwd') and (opts.user or opts.passwd):
+    if hasattr(opts, 'user') and hasattr(opts, 'passwd') and (opts.user or opts.passwd):
         if opts.user and opts.passwd:
             return token_from_login(opts.user, opts.passwd)
         else:
@@ -498,7 +498,7 @@ def get_auth(token):
     if not os.path.isfile(auth_file):
         sys.stderr.write("ERROR: missing authentication file, please login\n")
         return None
-    auth_obj = json.load(open(auth_file,'r'))
+    auth_obj = json.load(open(auth_file, 'r'))
     if ("token" not in auth_obj) or ("id" not in auth_obj) or ("expiration" not in auth_obj):
         sys.stderr.write("ERROR: invalid authentication file, please login\n")
         return None
@@ -514,7 +514,7 @@ def token_from_login(user, passwd):
 
 def login(token):
     auth_obj = obj_from_url(API_URL+"/user/authenticate", auth=token)
-    json.dump(auth_obj, open(auth_file,'w'))
+    json.dump(auth_obj, open(auth_file, 'w'))
 
 def login_from_token(token):
     parts = {}
