@@ -65,7 +65,7 @@ def body_from_url(url, accept, auth=None, data=None, debug=False, method=None):
         except:
             sys.stderr.write("ERROR (%s): %s\n" %(error.code, error.read().decode("utf8")))
         finally:
-            raise(HTTPerror)
+            raise HTTPError(error.url, error.code, "HTTP error", error.hdrs, error.fp)
     if not res:
         sys.stderr.write("ERROR: no results returned\n")
         sys.exit(1)
