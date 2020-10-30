@@ -14,11 +14,11 @@ import requests
 from requests_toolbelt import MultipartEncoder
 
 try:  # python3
-    from urllib.parse import urlparse, urlencode, parse_qs
+    from urllib.parse import urlparse, urlencode, parse_qs, quote
     from urllib.request import urlopen, Request
     from urllib.error import HTTPError
 except ImportError:  # python2
-    from urlparse import urlparse, parse_qs
+    from urlparse import urlparse, parse_qs, quote
     from urllib import urlencode
     from urllib2 import urlopen, Request, HTTPError
 
@@ -65,7 +65,7 @@ def body_from_url(url, accept, auth=None, data=None, debug=False, method=None):
         except:
             sys.stderr.write("ERROR (%s): %s\n" %(error.code, error.read().decode("utf8")))
         finally:
-            sys.exit(1)
+            raise(HTTPerror)
     if not res:
         sys.stderr.write("ERROR: no results returned\n")
         sys.exit(1)
@@ -73,6 +73,7 @@ def body_from_url(url, accept, auth=None, data=None, debug=False, method=None):
 
 # return python struct from JSON output of MG-RAST or Shock API
 def obj_from_url(url, auth=None, data=None, debug=False, method=None):
+    url = quote(url, safe='/:=?&', encoding="utf-8", errors="strict")
     if type(data) is str:
         data=data.encode("utf8")
     try:
@@ -180,7 +181,7 @@ def post_file(url, keyname, filename, data={}, auth=None, debug=False):
 
     if debug:
         print("post_file", url)
-    data[keyname] = (filename, open(filename, 'rb'))
+    data[keyname] = (os.path.basename(filename), open(filename, 'rb'))
     datagen = MultipartEncoder(data)
     header = {"Content-Type": datagen.content_type}
     if auth:
@@ -392,6 +393,8 @@ def merge_biom(b1, b2):
 
 # transform BIOM format to matrix in json format
 def biom_to_matrix(biom, col_name=False, sig_stats=False):
+    if "columns" not in biom.keys():
+       biom = biom["data"]
     if col_name:
         cols = [c['name'] for c in biom['columns']]
     else:

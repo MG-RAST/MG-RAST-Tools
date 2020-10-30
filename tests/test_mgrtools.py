@@ -151,14 +151,14 @@ def test_mg_get_sequences_for_taxon():
     assert stat == 0
 
 def test_mg_query_matrix():
-    s = '''mg-query.py  'http://api.mg-rast.org/matrix/function?id=mgm4447943.3' '''
+    s = '''mg-query.py  'https://api.mg-rast.org/matrix/function?id=mgm4447943.3' '''
     stat, out, err = runme(s)
     assert stat == 0
     assert b'acter' in out
 
 @pytest.mark.known_failing
 def test_mg_query_darkmatter():
-    s = '''mg-query.py  'http://api.mg-rast.org/darkmatter/mgm4447943.3' '''
+    s = '''mg-query.py  'https://api.mg-rast.org/darkmatter/mgm4447943.3' '''
     stat, out, err = runme(s)
     assert stat == 0
 
@@ -204,13 +204,13 @@ def test_mg_submit():
     assert stat == 0
 
 def test_mg_m5nrtoolspl():
-    s = '''m5nr-tools.pl --api http://api.mg-rast.org/ --option annotation --source RefSeq --md5 0b95101ffea9396db4126e4656460ce5,068792e95e38032059ba7d9c26c1be78,0b96c9'''
+    s = '''PERL_LWP_SSL_VERIFY_HOSTNAME=0 && m5nr-tools.pl --api https://api.mg-rast.org/ --option annotation --source RefSeq --md5 0b95101ffea9396db4126e4656460ce5,068792e95e38032059ba7d9c26c1be78,0b96c9'''
     stat, out, err = runme(s)
     assert stat == 0
     assert b"alcohol dehydrogenase" in out
 
 def test_query_matrix():
-    s = '''mg-query.py 'http://api.mg-rast.org/matrix/organism?group_level=phylum&source=SEED&hit_type=single&result_type=abundance&evalue=1&identity=60&length=15&taxid=0&id=mgm4510219.3' > matrix.biom'''
+    s = '''mg-query.py 'http://api.mg-rast.org/matrix/organism?group_level=phylum&source=SEED&hit_type=single&result_type=abundance&evalue=1&identity=60&length=15&taxid=0&id=mgm4510219.3' > mgm4510219.3SEED.biom'''
     stat, out, err = runme(s)
     assert stat == 0
 def test_mg_biom_view():
