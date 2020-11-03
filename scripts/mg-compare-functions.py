@@ -57,9 +57,10 @@ def main(args):
     parser.add_argument("--evalue", type=int, dest="evalue", default=15, help="negative exponent value for maximum e-value cutoff, default is 15")
     parser.add_argument("--identity", type=int, dest="identity", default=60, help="percent value for minimum %% identity cutoff, default is 60")
     parser.add_argument("--length", type=int, dest="length", default=15, help="value for minimum alignment length cutoff, default is 15")
+    parser.add_argument("--hierarchy", action="store_true", dest="hierarchy", help="Don't use id, show hierarchy")
     parser.add_argument("--version", type=int, dest="version", default=1, help="M5NR annotation version to use, default is 1")
     parser.add_argument("--temp", dest="temp", default=None, help="filename to temporarly save biom output at each iteration")
-    
+
     # get inputs
     opts = parser.parse_args()
     if not opts.ids:
@@ -74,16 +75,16 @@ def main(args):
     if opts.format not in ['text', 'biom']:
         sys.stderr.write("ERROR: invalid input format\n")
         return 1
-    
+
     # get auth
     token = get_auth_token(opts)
-    
+
     # build url
     id_list = []
     if os.path.isfile(opts.ids):
-        id_str = open(opts.ids,'r').read()
+        id_str = open(opts.ids, 'r').read()
         try:
-            id_obj  = json.loads(id_str)
+            id_obj = json.loads(id_str)
             if 'elements' in id_obj:
                 id_list = id_obj['elements'].keys()
             elif 'members' in id_obj:
@@ -92,14 +93,14 @@ def main(args):
             id_list = id_str.strip().split('\n')
     else:
         id_list = opts.ids.strip().split(',')
-    params = [ ('group_level', opts.level), 
-               ('source', opts.source),
-               ('evalue', opts.evalue),
-               ('identity', opts.identity),
-               ('length', opts.length),
-               ('version', opts.version),
-               ('result_type', 'abundance'),
-               ('asynchronous', '1') ]
+    params = [('group_level', opts.level),
+              ('source', opts.source),
+              ('evalue', opts.evalue),
+              ('identity', opts.identity),
+              ('length', opts.length),
+              ('version', opts.version),
+              ('result_type', 'abundance'),
+              ('asynchronous', '1') ]
     if opts.intersect_level and opts.intersect_name:
         params.append(('filter_source', opts.intersect_source))
         params.append(('filter_level', opts.intersect_level))
@@ -110,12 +111,12 @@ def main(args):
         else:
             for f in opts.intersect_name.strip().split(','):
                 params.append(('filter', f))
-    
+
     # retrieve data
     biom = None
     size = 50
     if len(id_list) > size:
-        for i in xrange(0, len(id_list), size):
+        for i in range(0, len(id_list), size):
             sub_ids = id_list[i:i+size]
             cur_params = copy.deepcopy(params)
             for i in sub_ids:
@@ -132,8 +133,7 @@ def main(args):
         biom = async_rest_api(url, auth=token)
         if opts.temp:
             json.dump(biom, open(opts.temp, 'w'))
-            
-    
+
     # get sub annotations
     sub_ann = set()
     if opts.filter_name and opts.filter_level:
@@ -147,30 +147,30 @@ def main(args):
             for f in opts.filter_name.strip().split(','):
                 filter_list.append(f)
         # annotation mapping from m5nr
-        params = [ ('version', opts.version),
-                   ('min_level', opts.level),
-                   ('source', opts.source) ]
+        params = [('version', opts.version),
+                  ('min_level', opts.level),
+                  ('source', opts.source) ]
         url = opts.url+'/m5nr/ontology?'+urlencode(params, True)
         data = obj_from_url(url)
         level = 'level4' if opts.level == 'function' else opts.level
         for ann in data['data']:
             if (opts.filter_level in ann) and (level in ann) and (ann[opts.filter_level] in filter_list):
                 sub_ann.add(ann[level])
-    
+
     # output data
     if (not opts.output) or (opts.output == '-'):
         out_hdl = sys.stdout
     else:
         out_hdl = open(opts.output, 'w')
-    
+
     if opts.format == 'biom':
         out_hdl.write(json.dumps(biom)+"\n")
     else:
-        biom_to_tab(biom["data"], out_hdl, rows=sub_ann)
-    
+        biom_to_tab(biom["data"], out_hdl, rows=sub_ann, use_id=not opts.hierarchy)
+
     out_hdl.close()
     return 0
-    
+
 
 if __name__ == "__main__":
     sys.exit(main(sys.argv))

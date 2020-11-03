@@ -6,7 +6,6 @@ import copy
 import base64
 import json
 import string
-import time
 import random
 import hashlib
 import subprocess
@@ -24,7 +23,7 @@ except ImportError:  # python2
 
 from .__init__ import API_URL
 
-if not sys.version_info[0:2][0] == 3 and not sys.version_info[0:2] == (2, 7) :
+if not sys.version_info[0:2][0] == 3 and not sys.version_info[0:2] == (2, 7):
     sys.stderr.write('ERROR: MG-RAST Tools requires at least Python 2.7.')
     exit(1)
 
@@ -65,7 +64,7 @@ def body_from_url(url, accept, auth=None, data=None, debug=False, method=None):
         except:
             sys.stderr.write("ERROR (%s): %s\n" %(error.code, error.read().decode("utf8")))
         finally:
-            raise(HTTPerror)
+            raise HTTPError(error.url, error.code, "HTTP error", error.hdrs, error.fp)
     if not res:
         sys.stderr.write("ERROR: no results returned\n")
         sys.exit(1)
@@ -75,18 +74,22 @@ def body_from_url(url, accept, auth=None, data=None, debug=False, method=None):
 def obj_from_url(url, auth=None, data=None, debug=False, method=None):
     url = quote(url, safe='/:=?&', encoding="utf-8", errors="strict")
     if type(data) is str:
-        data=data.encode("utf8")
+        data = data.encode("utf8")
+    if debug:
+        print("Data", repr(data))
     try:
         result = body_from_url(url, 'application/json', auth=auth, data=data, debug=debug, method=method)
         read = result.read()
     except:  # try one more time  ConnectionResetError is incompatible with python2
         result = body_from_url(url, 'application/json', auth=auth, data=data, debug=debug, method=method)
         read = result.read()
+    if debug:
+        print("Result", repr(read))
     if result.headers["content-type"] == "application/x-download" or result.headers["content-type"] == "application/octet-stream":
         return(read)   # Watch out!
     if result.headers["content-type"][0:9] == "text/html":  # json decoder won't work
         return(read)   # Watch out!
-    if result.headers["content-type"] == "application/json":  # If header is set, this should work 
+    if result.headers["content-type"] == "application/json":  # If header is set, this should work
         data = read.decode("utf8")
         obj = json.loads(data)
     else:
@@ -139,8 +142,8 @@ def async_rest_api(url, auth=None, data=None, debug=False, delay=60):
 # If "status" is nor present, or if "status" is somehow not "submitted"
 # assume this is not an asynchronous call and it's done.
     if type(submit) == bytes:   # can't decode
-        try: 
-            return decode("utf-8", submit)
+        try:
+            return submit.decode("utf-8")
         except:
             return submit
     if ('status' in submit) and (submit['status'] != 'submitted') and (submit['status'] != "processing") and ('data' in submit):
@@ -198,11 +201,12 @@ def post_file(url, keyname, filename, data={}, auth=None, debug=False):
     obj     = None
 
     # try maxt times
-    while not success and counter < maxt :
+    while not success and counter < maxt:
         try:
             res = requests.post(url, data=datagen, headers=header, stream=True)
         except HTTPError as error:
             try:
+                sys.stderr.write("Retrying POST "+url, repr(datagen), repr(header))
                 eobj = json.loads(error.read())
                 if 'ERROR' in eobj:
                     sys.stderr.write("ERROR (%s): %s\n" %(error.code, eobj['ERROR']))
@@ -213,13 +217,13 @@ def post_file(url, keyname, filename, data={}, auth=None, debug=False):
             finally:
                 # sys.exit(1)
                 return None
-        except OSError as error: 
+        except OSError as error:
             sys.stderr.write("ERROR with post_file\n")
             sys.stderr.write("ERROR (%s): %s\n" %(error.code, error.read()))
         if not res:
             sys.stderr.write("ERROR: no results returned for %s\n"% (filename))
             # sys.exit(1)
-        else: 
+        else:
             obj = json.loads(res.content.decode("utf8"))
             if debug:
                 print(json.dumps(obj))
@@ -228,7 +232,7 @@ def post_file(url, keyname, filename, data={}, auth=None, debug=False):
             else:
                 success = True
         # increase counter
-        if not success :
+        if not success:
             counter += 1
             time.sleep(counter * sleep)
     return(obj)
@@ -258,9 +262,34 @@ def sparse_to_dense(sMatrix, rmax, cmax):
         dMatrix[r][c] = v
     return dMatrix
 
+def clean_row(element):
+    a = ["domain", "phylum", "family" , "class", "order", "genus", "species"] 
+    b = [""] * len(a)
+    if element["metadata"] is None:
+         b[-1] = element["id"]
+         return(";".join(b))    
+    else:
+         if ('ontology' in element['metadata'].keys()):
+             name = ';'.join(element['metadata']['ontology']) 
+         if ('hierarchy' in element['metadata'].keys()):
+             if "level1" in element['metadata']["hierarchy"].keys(): 
+                 a = ["level1", "level2", "level3" , "level4", "function"]
+             else:
+                 a = ["domain", "phylum", "family" , "class", "order", "genus", "species"] 
+             b = [""] * len(a)
+             for k,v in element['metadata']["hierarchy"].items():
+                  b[a.index(k)] = v
+             name = ';'.join(b) 
+    return(name)
+
 # transform BIOM format to tabbed table
 # returns max value of matrix
 def biom_to_tab(biom, hdl, rows=None, use_id=True, col_name=False):
+    ''' biom
+        hdl
+        rows
+        use_id
+        col_name                           '''
     assert 'matrix_type' in biom.keys(), repr(biom)
     if biom['matrix_type'] == 'sparse':
         matrix = sparse_to_dense(biom['data'], biom['shape'][0], biom['shape'][1])
@@ -273,8 +302,10 @@ def biom_to_tab(biom, hdl, rows=None, use_id=True, col_name=False):
     rowmax = []
     for i, row in enumerate(matrix):
         name = biom['rows'][i]['id']
-        if (not use_id) and ('ontology' in biom['rows'][i]['metadata']):
-            name += ':'+biom['rows'][i]['metadata']['ontology'][-1]
+        if use_id: 
+             name = biom['rows'][i]["id"]    # Use row[].id   
+        else:
+            name = clean_row(biom['rows'][i]) 
         if rows and (name not in rows):
             continue
         try:
@@ -388,7 +419,7 @@ def merge_biom(b1, b2):
                 add_row.append(b2['data'][i][j])
         mBiom['rows'].append(r)
         mBiom['data'].append(add_row)
-    mBiom['shape'] = [ len(mBiom['rows']), len(mBiom['columns']) ]
+    mBiom['shape'] = [len(mBiom['rows']), len(mBiom['columns'])]
     return mBiom
 
 # transform BIOM format to matrix in json format
@@ -410,9 +441,9 @@ def biom_to_matrix(biom, col_name=False, sig_stats=False):
     else:
         data = biom['data']
     if sig_stats and ('significance' in biom['rows'][0]['metadata']) and (len(biom['rows'][0]['metadata']['significance']) > 0):
-        cols.extend([s[0] for s in biom['rows'][0]['metadata']['significance']] )
+        cols.extend([s[0] for s in biom['rows'][0]['metadata']['significance']])
         for i, r in enumerate(biom['rows']):
-            data[i].extend([s[1] for s in r['metadata']['significance']] )
+            data[i].extend([s[1] for s in r['metadata']['significance']])
     return rows, cols, data
 
 # transform tabbed table to matrix in json format
@@ -435,7 +466,7 @@ def sub_matrix(matrix, ncols):
         return matrix
     sub = list()
     for row in matrix:
-        sub.append(row[:ncols] )
+        sub.append(row[:ncols])
     return sub
 
 # return KBase id for MG-RAST id
@@ -467,7 +498,7 @@ def kbids_to_mgids(kbids):
 #  or reverse
 def kbid_lookup(ids, reverse=False):
     request = 'mg2kb' if reverse else 'kb2mg'
-    post = json.dumps({'ids': ids}, separators=(',',':'))
+    post = json.dumps({'ids': ids}, separators=(',', ':'))
     data = obj_from_url(API_URL+'/job/'+request, auth=auth, data=post)
     return data['data']
 
@@ -478,7 +509,7 @@ def get_auth_token(opts=None):
         return os.environ['MGRKEY']
     if hasattr(opts, "token") and opts.token is not None:
         return opts.token
-    elif hasattr(opts, 'user') and hasattr(opts, 'passwd') and (opts.user or opts.passwd):
+    if hasattr(opts, 'user') and hasattr(opts, 'passwd') and (opts.user or opts.passwd):
         if opts.user and opts.passwd:
             return token_from_login(opts.user, opts.passwd)
         else:
@@ -494,7 +525,7 @@ def get_auth(token):
     if not os.path.isfile(auth_file):
         sys.stderr.write("ERROR: missing authentication file, please login\n")
         return None
-    auth_obj = json.load(open(auth_file,'r'))
+    auth_obj = json.load(open(auth_file, 'r'))
     if ("token" not in auth_obj) or ("id" not in auth_obj) or ("expiration" not in auth_obj):
         sys.stderr.write("ERROR: invalid authentication file, please login\n")
         return None
@@ -510,7 +541,7 @@ def token_from_login(user, passwd):
 
 def login(token):
     auth_obj = obj_from_url(API_URL+"/user/authenticate", auth=token)
-    json.dump(auth_obj, open(auth_file,'w'))
+    json.dump(auth_obj, open(auth_file, 'w'))
 
 def login_from_token(token):
     parts = {}
