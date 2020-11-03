@@ -262,9 +262,34 @@ def sparse_to_dense(sMatrix, rmax, cmax):
         dMatrix[r][c] = v
     return dMatrix
 
+def clean_row(element):
+    a = ["domain", "phylum", "family" , "class", "order", "genus", "species"] 
+    b = [""] * len(a)
+    if element["metadata"] is None:
+         b[-1] = element["id"]
+         return(";".join(b))    
+    else:
+         if ('ontology' in element['metadata'].keys()):
+             name = ';'.join(element['metadata']['ontology']) 
+         if ('hierarchy' in element['metadata'].keys()):
+             if "level1" in element['metadata']["hierarchy"].keys(): 
+                 a = ["level1", "level2", "level3" , "level4", "function"]
+             else:
+                 a = ["domain", "phylum", "family" , "class", "order", "genus", "species"] 
+             b = [""] * len(a)
+             for k,v in element['metadata']["hierarchy"].items():
+                  b[a.index(k)] = v
+             name = ';'.join(b) 
+    return(name)
+
 # transform BIOM format to tabbed table
 # returns max value of matrix
 def biom_to_tab(biom, hdl, rows=None, use_id=True, col_name=False):
+    ''' biom
+        hdl
+        rows
+        use_id
+        col_name                           '''
     assert 'matrix_type' in biom.keys(), repr(biom)
     if biom['matrix_type'] == 'sparse':
         matrix = sparse_to_dense(biom['data'], biom['shape'][0], biom['shape'][1])
@@ -277,8 +302,10 @@ def biom_to_tab(biom, hdl, rows=None, use_id=True, col_name=False):
     rowmax = []
     for i, row in enumerate(matrix):
         name = biom['rows'][i]['id']
-        if (not use_id) and ('ontology' in biom['rows'][i]['metadata']):
-            name += ':'+biom['rows'][i]['metadata']['ontology'][-1]
+        if use_id: 
+             name = biom['rows'][i]["id"]    # Use row[].id   
+        else:
+            name = clean_row(biom['rows'][i]) 
         if rows and (name not in rows):
             continue
         try:

@@ -58,6 +58,7 @@ def main(args):
     parser.add_argument("--evalue", type=int, dest="evalue", default=15, help="negative exponent value for maximum e-value cutoff, default is 15")
     parser.add_argument("--identity", type=int, dest="identity", default=60, help="percent value for minimum %% identity cutoff, default is 60")
     parser.add_argument("--length", type=int, dest="length", default=15, help="value for minimum alignment length cutoff, default is 15")
+    parser.add_argument("--hierarchy", action="store_true", dest="hierarchy", help="Don't use id, show hierarchy")
     parser.add_argument("--version", type=int, dest="version", default=1, help="M5NR annotation version to use, default is 1")
     parser.add_argument("--temp", dest="temp", default=None, help="filename to temporarly save biom output at each iteration")
 
@@ -131,7 +132,7 @@ def main(args):
         for i in id_list:
             params.append(('id', i))
         url = opts.url+'/matrix/organism?'+urlencode(params, True)
-        biom = async_rest_api(url, auth=token)
+        biom = async_rest_api(url, auth=token)["data"]
         if opts.temp:
             json.dump(biom, open(opts.temp, 'w'))
 
@@ -165,7 +166,7 @@ def main(args):
     if opts.format == 'biom':
         out_hdl.write(json.dumps(biom)+"\n")
     else:
-        biom_to_tab(biom, out_hdl, rows=sub_ann)
+        biom_to_tab(biom, out_hdl, rows=sub_ann, use_id=not opts.hierarchy) 
 
     out_hdl.close()
     return 0
