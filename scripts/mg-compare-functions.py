@@ -54,6 +54,7 @@ def main(args):
     parser.add_argument("--intersect_name", dest="intersect_name", default=None, help="taxon name(s) for insersection, file or comma seperated list")
     parser.add_argument("--output", dest="output", default='-', help="output: filename or stdout (-), default is stdout")
     parser.add_argument("--format", dest="format", default='biom', help="output format: 'text' for tabbed table, 'biom' for BIOM format, default is biom")
+    parser.add_argument("--hierarchy", type=bool , dest="hierarchy", default=False, help="if output format text, print functional hierarchy")
     parser.add_argument("--evalue", type=int, dest="evalue", default=15, help="negative exponent value for maximum e-value cutoff, default is 15")
     parser.add_argument("--identity", type=int, dest="identity", default=60, help="percent value for minimum %% identity cutoff, default is 60")
     parser.add_argument("--length", type=int, dest="length", default=15, help="value for minimum alignment length cutoff, default is 15")
@@ -161,12 +162,12 @@ def main(args):
     if (not opts.output) or (opts.output == '-'):
         out_hdl = sys.stdout
     else:
-        out_hdl = open(opts.output, 'w')
+        out_hdl = open(opts.output, 'w') 
     
     if opts.format == 'biom':
         out_hdl.write(json.dumps(biom)+"\n")
     else:
-        biom_to_tab(biom["data"], out_hdl, rows=sub_ann)
+        biom_to_tab(biom["data"], out_hdl, rows=sub_ann , hierarchy=opts.hierarchy)
     
     out_hdl.close()
     return 0
