@@ -16,6 +16,7 @@ if __name__ == '__main__':
     parser.add_argument("-v", "--verbose", dest="verbose", action="store_true")
     parser.add_argument("-k", "--token", dest="token", type=str,
                       help="Auth token")
+    parser.add_argument("-n", "--name" , dest="name" , type=str, help="file name for output")
     parser.add_argument("URI", type=str, help="URI to query")
 
     opts = parser.parse_args()
@@ -32,15 +33,28 @@ if __name__ == '__main__':
     jsonstructure = async_rest_api(URI, auth=key)
 
 # unpack and display the data table
+    out = None
+    if opts.name :
+        out = open(opts.name , "w") 
+ 
     if type(jsonstructure) == dict:    # If we have data, not json structure
         print(json.dumps(jsonstructure), file=sys.stdout)
+        if out :
+            out.write(json.dumps(jsonstructure))
+            out.close()
     elif type(jsonstructure) == bytes:
         try:
             sys.stdout.write(jsonstructure.decode("utf-8"))
+            if out :
+                out.write(jsonstructure.decode("utf-8"))
+                out.close()
         except UnicodeDecodeError:  # It's binary data
             sys.stdout.buffer.write(jsonstructure)
     else:
         try:
             sys.stdout.write(jsonstructure.decode("utf-8"))
+            if out :
+                out.write(jsonstructure.decode("utf-8"))
+                out.close()
         except UnicodeDecodeError:
             sys.stdout.buffer.write(jsonstructure)
