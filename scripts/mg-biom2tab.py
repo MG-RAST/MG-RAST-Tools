@@ -111,7 +111,8 @@ def main(args):
                 h = id2o[c]
             else :
                 h.append(c)
-            out.append( h )
+            # out.append( h )
+            out = out + h
             print("\t".join( map( lambda x : str(x) , out )  ) )
     
     # # output data
