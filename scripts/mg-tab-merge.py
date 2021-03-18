@@ -106,7 +106,7 @@ def main(args):
                     #     )
                     # )
 
-                print up to level3
+                # print up to level3
                 print( "\t".join( 
                     map( 
                         lambda x : str(x), 
