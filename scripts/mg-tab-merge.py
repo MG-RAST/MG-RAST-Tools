@@ -43,6 +43,9 @@ def main(args):
     parser = ArgumentParser(usage='', description=prehelp%VERSION, epilog=posthelp%AUTH_LIST)
     parser.add_argument('profiles', metavar='N', type=str, nargs='+',
                     help='list of profiles in json')
+    parser.add_argument("--level", dest="level", type=int , default=3 , choices=[1,2,3,4] , help="print up to level")
+    parser.add_argument("--evalue", dest="evalue", type=int , default=0 , help="filter rows for < evalue")
+    parser.add_argument("--percent-identity", dest="percent_identity", type=float , default=0 , help="filter rows > percent identity")
     parser.add_argument("--retain_dup_ids", dest="retain_dups", action="store_true", default=False, help="append input number to duplicate input ID's rather than discarding duplicates, default is false")
 
     # get inputs
@@ -50,7 +53,7 @@ def main(args):
     if len(args) < 2:
         sys.stderr.write("ERROR: must have at least 2 file inputs\n")
         return 1
-    for f in args:
+    for f in opts.profiles :
         if not os.path.isfile(f):
             sys.stderr.write("ERROR: %s is not a valid file\n")
             return 1
@@ -63,6 +66,11 @@ def main(args):
     subsystem2abundance = {}
     column = 0
 
+    if opts.evalue > 0 :
+        opts.evalue = opts.evalue * (-1)
+    level = opts.level 
+    
+
     for profile in opts.profiles :
         header.append(profile)
 
@@ -72,6 +80,11 @@ def main(args):
 
                 # get subsystem levels - not generic 
                 levels = row[5:9]
+
+                if float(row[2]) > opts.evalue :
+                    continue
+                if float(row[3]) < opts.percent_identity :
+                    continue
    
                 if levels[0] not in subsystem2abundance :
                     subsystem2abundance[levels[0]] = {}
@@ -89,31 +102,66 @@ def main(args):
 
     # print 
     i = 0
-    print( '', '' , '' , header)
+    ss_header = [str(x + 1) for x in range(level)]
+    print( "\t".join( ss_header + header))
     for l1 in subsystem2abundance :
+        l1_abundances =  [0 for x in range( len(opts.profiles) )]
+        
         for l2 in subsystem2abundance[l1] :
+            l2_abundances =  [0 for x in range( len(opts.profiles) )]
+            
             for l3 in subsystem2abundance[l1][l2] :
-                abundances = init_row
+                l3_abundances =  [0 for x in range( len(opts.profiles) )]
+                
                 for l4 in subsystem2abundance[l1][l2][l3] :
-                    for col , value in enumerate(subsystem2abundance[l1][l2][l3][l4]) :
-                        abundances[col] += value
-                    # print level4
-                    # print( "\t".join( 
-                    #     map( 
-                    #         lambda x : str(x), 
-                    #         [l1, l2, l3 , l4] + subsystem2abundance[l1][l2][l3][l4] 
-                    #         )
-                    #     )
-                    # )
+                   
+                    if level == 4 : 
+                        print( "\t".join( 
+                            map( 
+                                lambda x : str(x), 
+                                [l1, l2, l3 , l4] + subsystem2abundance[l1][l2][l3][l4] 
+                                )
+                            )
+                        )
+                    else :
+                        for col , value in enumerate(subsystem2abundance[l1][l2][l3][l4]) :
+                            l3_abundances[col] += value
+
 
                 # print up to level3
+                if level == 3 :
+                    print( "\t".join( 
+                        map( 
+                            lambda x : str(x), 
+                            [l1, l2, l3] + l3_abundances 
+                            )
+                        )
+                    )
+                else :
+                    for col , value in enumerate(l3_abundances) :
+                        l2_abundances[col] += value
+            
+            if level == 2 :
                 print( "\t".join( 
                     map( 
                         lambda x : str(x), 
-                        [l1, l2, l3] + abundances 
+                        [l1, l2, l3] + l2_abundances 
                         )
                     )
                 )
+            else :
+                for col , value in enumerate(l2_abundances) :
+                    l1_abundances[col] += value
+
+        if level == 1 :
+            print( "\t".join( 
+                        map( 
+                            lambda x : str(x), 
+                            [l1, l2, l3] + l1_abundances 
+                            )
+                        )
+                    )
+
 
     return 0
 
