@@ -145,7 +145,7 @@ def main(args):
                 print( "\t".join( 
                     map( 
                         lambda x : str(x), 
-                        [l1, l2, l3] + l2_abundances 
+                        [l1, l2] + l2_abundances 
                         )
                     )
                 )
@@ -157,7 +157,7 @@ def main(args):
             print( "\t".join( 
                         map( 
                             lambda x : str(x), 
-                            [l1, l2, l3] + l1_abundances 
+                            [l1] + l1_abundances 
                             )
                         )
                     )
